@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Configurações comuns a todos os projetos da solution. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64;ARM64</Platforms>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Version>0.1.0</Version>
+    <Company>Darwin</Company>
+    <Product>Darwin</Product>
+    <Copyright>© Darwin</Copyright>
+    <NeutralLanguage>pt-BR</NeutralLanguage>
+  </PropertyGroup>
+
+  <!-- Não existe AnyCPU: sem plataforma explícita, deduz pela RID (publish -r) ou usa x64. -->
+  <PropertyGroup Condition="'$(Platform)' == '' or '$(Platform)' == 'AnyCPU'">
+    <Platform Condition="$(RuntimeIdentifier.EndsWith('arm64'))">ARM64</Platform>
+    <Platform Condition="'$(Platform)' != 'ARM64'">x64</Platform>
+  </PropertyGroup>
+
+</Project>

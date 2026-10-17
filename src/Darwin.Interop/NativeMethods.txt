@@ -1,0 +1,42 @@
+// Win32 usado pelo Darwin. O CsWin32 gera as declarações; nada de DllImport escrito à mão.
+
+// Hooks de eventos
+SetWinEventHook
+UnhookWinEvent
+EVENT_OBJECT_DESTROY
+EVENT_OBJECT_LOCATIONCHANGE
+WINEVENT_OUTOFCONTEXT
+WINEVENT_SKIPOWNPROCESS
+OBJECT_IDENTIFIER
+
+// Janelas
+IsZoomed
+IsIconic
+IsWindowVisible
+GetAncestor
+GetWindowLong
+GetWindowThreadProcessId
+GetForegroundWindow
+AllowSetForegroundWindow
+GetWindowPlacement
+SetWindowPlacement
+SetWindowPos
+GetWindowRect
+WINDOW_STYLE
+WINDOW_EX_STYLE
+
+// Monitores e DPI
+GetDpiForWindow
+MonitorFromWindow
+GetMonitorInfo
+
+// DWM
+DwmSetWindowAttribute
+DwmGetWindowAttribute
+DWMWINDOWATTRIBUTE
+DWM_WINDOW_CORNER_PREFERENCE
+DWMWA_COLOR_DEFAULT
+
+// Processos
+OpenProcess
+QueryFullProcessImageName

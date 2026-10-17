@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Usados no código -->
+  <data name="ModuleDisplayName" xml:space="preserve">
+    <value>Maximizar arredondado</value>
+  </data>
+  <data name="ModuleDescription" xml:space="preserve">
+    <value>Janelas maximizadas mantêm cantos arredondados e uma borda colorida, com uma pequena margem até a borda da tela.</value>
+  </data>
+  <data name="MarginValueFormat" xml:space="preserve">
+    <value>{0} px</value>
+    <comment>{0} = margem em pixels</comment>
+  </data>
+  <data name="ForegroundButtonText" xml:space="preserve">
+    <value>Adicionar janela em foco às exclusões</value>
+  </data>
+  <data name="ForegroundCountdownFormat" xml:space="preserve">
+    <value>Clique na janela desejada... {0}</value>
+    <comment>{0} = segundos restantes</comment>
+  </data>
+  <data name="ForegroundNotFound" xml:space="preserve">
+    <value>Não foi possível identificar a janela em foco.</value>
+  </data>
+  <data name="ForegroundIsDarwin" xml:space="preserve">
+    <value>A janela em foco era o próprio Darwin. Clique no botão e troque para a janela desejada em até 3 segundos.</value>
+  </data>
+  <data name="ForegroundAddedFormat" xml:space="preserve">
+    <value>"{0}" foi adicionado às exclusões.</value>
+    <comment>{0} = nome do processo</comment>
+  </data>
+  <data name="ForegroundAlreadyExcludedFormat" xml:space="preserve">
+    <value>"{0}" já está nas exclusões.</value>
+    <comment>{0} = nome do processo</comment>
+  </data>
+
+  <!-- x:Uid da página de configurações -->
+  <data name="AppearanceHeader.Text" xml:space="preserve">
+    <value>Aparência</value>
+  </data>
+  <data name="MarginTitle.Text" xml:space="preserve">
+    <value>Margem</value>
+  </data>
+  <data name="MarginDescription.Text" xml:space="preserve">
+    <value>Espaço entre a janela maximizada e as bordas da área de trabalho.</value>
+  </data>
+  <data name="MarginSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Margem em pixels</value>
+  </data>
+  <data name="AccentColorTitle.Text" xml:space="preserve">
+    <value>Usar cor de destaque do sistema</value>
+  </data>
+  <data name="AccentColorDescription.Text" xml:space="preserve">
+    <value>A borda acompanha a cor de destaque escolhida nas configurações do Windows.</value>
+  </data>
+  <data name="AccentColorToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Usar cor de destaque do sistema</value>
+  </data>
+  <data name="BorderColorTitle.Text" xml:space="preserve">
+    <value>Cor da borda</value>
+  </data>
+  <data name="ExclusionsHeader.Text" xml:space="preserve">
+    <value>Exclusões</value>
+  </data>
+  <data name="ExclusionsDescription.Text" xml:space="preserve">
+    <value>Janelas destes processos são maximizadas normalmente. Use o nome do executável, sem ".exe".</value>
+  </data>
+  <data name="NewExclusionBox.PlaceholderText" xml:space="preserve">
+    <value>Nome do processo (ex.: notepad)</value>
+  </data>
+  <data name="NewExclusionBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Nome do processo a excluir</value>
+  </data>
+  <data name="AddExclusionButton.Content" xml:space="preserve">
+    <value>Adicionar</value>
+  </data>
+  <data name="ExclusionsList.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Processos excluídos</value>
+  </data>
+  <data name="RemoveExclusionButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="RemoveExclusionButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="ElevatedNote.Text" xml:space="preserve">
+    <value>Janelas de apps executados como administrador só são afetadas se o Darwin também estiver rodando como administrador.</value>
+  </data>
+</root>
