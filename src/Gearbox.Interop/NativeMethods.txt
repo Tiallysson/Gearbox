@@ -1,0 +1,82 @@
+// Win32 usado pelo Gearbox. O CsWin32 gera as declarações; nada de DllImport escrito à mão.
+
+// Hooks de eventos
+SetWinEventHook
+UnhookWinEvent
+EVENT_OBJECT_DESTROY
+EVENT_OBJECT_LOCATIONCHANGE
+EVENT_SYSTEM_FOREGROUND
+EVENT_SYSTEM_MINIMIZEEND
+WINEVENT_OUTOFCONTEXT
+WINEVENT_SKIPOWNPROCESS
+OBJECT_IDENTIFIER
+
+// Janelas
+IsZoomed
+IsIconic
+IsWindowVisible
+GetAncestor
+GetWindowLong
+GetWindowThreadProcessId
+GetForegroundWindow
+AllowSetForegroundWindow
+GetWindowPlacement
+SetWindowPlacement
+SetWindowPos
+GetWindowRect
+WINDOW_STYLE
+WINDOW_EX_STYLE
+
+// Monitores e DPI
+GetDpiForWindow
+MonitorFromWindow
+MonitorFromRect
+GetMonitorInfo
+
+// DWM
+DwmSetWindowAttribute
+DwmGetWindowAttribute
+DWMWINDOWATTRIBUTE
+DWM_WINDOW_CORNER_PREFERENCE
+DWMWA_COLOR_DEFAULT
+
+// Processos
+OpenProcess
+QueryFullProcessImageName
+
+// Camada da área de trabalho (wallpaper em vídeo)
+FindWindow
+FindWindowEx
+EnumWindows
+SendMessageTimeout
+SetParent
+SetWindowLong
+MapWindowPoints
+GetClassName
+
+// Wallpaper estático (API do Windows)
+IDesktopWallpaper
+DesktopWallpaper
+DESKTOP_WALLPAPER_POSITION
+
+// Estado do sistema (bloqueio, tela apagada, monitores, Explorer reiniciado)
+RegisterClassEx
+UnregisterClass
+CreateWindowEx
+DestroyWindow
+DefWindowProc
+GetModuleHandle
+RegisterWindowMessage
+WTSRegisterSessionNotification
+WTSUnRegisterSessionNotification
+RegisterPowerSettingNotification
+UnregisterPowerSettingNotification
+GUID_CONSOLE_DISPLAY_STATE
+POWERBROADCAST_SETTING
+WM_WTSSESSION_CHANGE
+WM_POWERBROADCAST
+WM_DISPLAYCHANGE
+PBT_POWERSETTINGCHANGE
+WTS_SESSION_LOCK
+WTS_SESSION_UNLOCK
+NOTIFY_FOR_THIS_SESSION

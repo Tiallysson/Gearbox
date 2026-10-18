@@ -1,0 +1,54 @@
+<Page
+    x:Class="Gearbox.Views.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Spacing="4">
+        <TextBlock x:Uid="AboutTitle" Style="{StaticResource GearboxPageTitleStyle}" />
+
+        <Border Style="{StaticResource GearboxCardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Width="56" Height="56" Source="ms-appx:///Assets/Gearbox.png" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Gearbox" />
+                    <TextBlock x:Uid="AboutDescription" Style="{StaticResource GearboxCardDescriptionStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource GearboxCardStyle}">
+            <Grid ColumnSpacing="24" RowSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock x:Uid="VersionLabel" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Grid.Column="1" IsTextSelectionEnabled="True" Text="{x:Bind ViewModel.Version}" />
+
+                <TextBlock x:Uid="RuntimeLabel" Grid.Row="1" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" IsTextSelectionEnabled="True" Text="{x:Bind ViewModel.Runtime}" />
+
+                <TextBlock x:Uid="DataFolderLabel" Grid.Row="2" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Grid.Row="2" Grid.Column="1" IsTextSelectionEnabled="True" Text="{x:Bind ViewModel.DataFolder}" TextWrapping="Wrap" />
+            </Grid>
+        </Border>
+
+        <Button
+            x:Uid="OpenDataFolderButton"
+            Margin="0,8,0,0"
+            Command="{x:Bind ViewModel.OpenDataFolderCommand}" />
+    </StackPanel>
+</Page>

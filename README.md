@@ -1,12 +1,13 @@
-# Darwin
+# Gearbox
 
 Utilitários para Windows no estilo PowerToys, em .NET 10 + WinUI 3 (Windows App SDK), unpackaged.
-O Darwin vive na bandeja do sistema e cada ferramenta é um **módulo** independente que pode ser
+O Gearbox vive na bandeja do sistema e cada ferramenta é um **módulo** independente que pode ser
 ligado e desligado.
 
 | Módulo | O que faz |
 |---|---|
 | **Maximizar arredondado** (`RoundedMaximize`) | Janelas maximizadas mantêm cantos arredondados e uma borda colorida, com uma pequena margem até a borda da tela, como no macOS. |
+| **Wallpaper** (`Wallpaper`) | Vídeo (MP4/WebM/MKV, em loop e sem som, atrás dos ícones) ou imagem como wallpaper, um por monitor, com o wallpaper do Gearbox como padrão. Pausa o vídeo com app em tela cheia/maximizado, na bateria e com o PC bloqueado. Ao desligar, o wallpaper anterior volta. |
 
 ## Requisitos
 
@@ -19,13 +20,13 @@ ligado e desligado.
 
 ```powershell
 dotnet build                       # x64 por padrão (não existe AnyCPU)
-dotnet run --project src\Darwin    # o app abre só na bandeja
+dotnet run --project src\Gearbox    # o app abre só na bandeja
 ```
 
-Para abrir a janela, clique no ícone da bandeja ou execute o Darwin de novo: a segunda instância
+Para abrir a janela, clique no ícone da bandeja ou execute o Gearbox de novo: a segunda instância
 avisa a primeira, que mostra a janela, e encerra em seguida.
 
-No Visual Studio, defina `Darwin` como projeto de inicialização e escolha a plataforma `x64` ou `ARM64`.
+No Visual Studio, defina `Gearbox` como projeto de inicialização e escolha a plataforma `x64` ou `ARM64`.
 
 ### Testes
 
@@ -39,18 +40,18 @@ Os testes usam xUnit v3 sobre o Microsoft.Testing.Platform, ativado no `global.j
 
 | O quê | Onde |
 |---|---|
-| Configurações | `%LocalAppData%\Darwin\settings\{id}.json` (`general.json`, `modules.json` e um arquivo por módulo) |
-| Logs | `%LocalAppData%\Darwin\logs\darwin-AAAAMMDD.log` (rolling diário, 14 dias) |
-| Iniciar com o Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, valor `Darwin` |
+| Configurações | `%LocalAppData%\Gearbox\settings\{id}.json` (`general.json`, `modules.json` e um arquivo por módulo) |
+| Logs | `%LocalAppData%\Gearbox\logs\gearbox-AAAAMMDD.log` (rolling diário, 14 dias) |
+| Iniciar com o Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, valor `Gearbox` |
 
 ## Publicar
 
 ```powershell
-cd src\Darwin
+cd src\Gearbox
 dotnet publish -c Release -r win-x64      # ou -r win-arm64
 ```
 
-A saída fica em `src\Darwin\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\publish\`. É uma pasta
+A saída fica em `src\Gearbox\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\publish\`. É uma pasta
 autossuficiente quanto ao Windows App SDK (`WindowsAppSDKSelfContained=true`), mas usa o runtime do .NET 10
 instalado na máquina. Para incluir o .NET também:
 
@@ -58,7 +59,7 @@ instalado na máquina. Para incluir o .NET também:
 dotnet publish -c Release -r win-x64 --self-contained
 ```
 
-> Rode o `publish` dentro de `src\Darwin` (ou passe o `.csproj`). Na raiz, ele tentaria publicar também
+> Rode o `publish` dentro de `src\Gearbox` (ou passe o `.csproj`). Na raiz, ele tentaria publicar também
 > os projetos de teste.
 
 ## Instalador
@@ -71,51 +72,54 @@ O instalador é feito com o [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`
 ```
 
 O script publica o app em Release com o .NET embutido (`--self-contained`) em `artifacts\publish\win-<arch>`
-e gera `artifacts\installer\Darwin-<versão>-<arch>-setup.exe`. A versão vem do `<Version>` do
+e gera `artifacts\installer\Gearbox-<versão>-<arch>-setup.exe`. A versão vem do `<Version>` do
 `Directory.Build.props`.
 
 O que o instalador faz:
 
-- instala por usuário, sem pedir administrador, em `%LocalAppData%\Programs\Darwin`;
+- instala por usuário, sem pedir administrador, em `%LocalAppData%\Programs\Gearbox`;
 - cria o atalho no Menu Iniciar e, opcionalmente, na Área de Trabalho;
-- oferece "Iniciar o Darwin com o Windows", gravando o mesmo valor `Run` que a página Geral usa;
-- registra o Darwin em "Aplicativos instalados", com desinstalador;
-- **antes de atualizar ou desinstalar**, encerra o Darwin instalado com `Darwin.exe --exit`. É o mesmo caminho
+- oferece "Iniciar o Gearbox com o Windows", gravando o mesmo valor `Run` que a página Geral usa;
+- registra o Gearbox em "Aplicativos instalados", com desinstalador;
+- **antes de atualizar ou desinstalar**, encerra o Gearbox instalado com `Gearbox.exe --exit`. É o mesmo caminho
   do "Sair" da bandeja, que devolve as janelas pseudo-maximizadas ao normal. Matar o processo deixaria as
   janelas como estavam;
 - ao desinstalar, remove o valor `Run` (mesmo que tenha sido ligado pelo app) e pergunta se deve apagar as
-  configurações e os logs em `%LocalAppData%\Darwin`.
+  configurações e os logs em `%LocalAppData%\Gearbox`;
+- ao atualizar uma instalação do **Darwin** (nome anterior do app, mesmo `AppId`), encerra o `Darwin.exe`, apaga os
+  arquivos `Darwin*` da pasta, troca o valor `Run` "Darwin" por "Gearbox" e move `%LocalAppData%\Darwin` para
+  `%LocalAppData%\Gearbox` (se este ainda não existir). A pasta de instalação continua a mesma.
 
 Instalação silenciosa (para scripts ou implantação):
 
 ```powershell
-Darwin-0.1.0.0-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS=startup
-"%LocalAppData%\Programs\Darwin\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES   # mantém as configurações
+Gearbox-0.1.0.0-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS=startup
+"%LocalAppData%\Programs\Gearbox\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES   # mantém as configurações
 ```
 
-> O `AppId` em `installer\Darwin.iss` identifica a instalação para atualizações e desinstalação.
+> O `AppId` em `installer\Gearbox.iss` identifica a instalação para atualizações e desinstalação.
 > **Nunca o altere.** Para lançar uma versão nova, mude o `<Version>` no `Directory.Build.props`.
 
 ### Janelas de apps elevados
 
 Por causa do UIPI, um processo comum não consegue mover nem alterar janelas de processos que rodam
-como administrador. Para os módulos afetarem essas janelas, rode o Darwin como administrador ou troque
-`asInvoker` por `requireAdministrator` no `src\Darwin\app.manifest` (o arquivo explica o impacto disso
+como administrador. Para os módulos afetarem essas janelas, rode o Gearbox como administrador ou troque
+`asInvoker` por `requireAdministrator` no `src\Gearbox\app.manifest` (o arquivo explica o impacto disso
 na inicialização com o Windows).
 
 ---
 
 ## Como criar um novo módulo
 
-Exemplo: um módulo `Foo`. Use o `Darwin.Modules.RoundedMaximize` como referência; ele segue exatamente
+Exemplo: um módulo `Foo`. Use o `Gearbox.Modules.RoundedMaximize` como referência; ele segue exatamente
 esta estrutura.
 
 ### 1. Criar o projeto
 
 ```powershell
-dotnet new classlib -n Darwin.Modules.Foo -o src\Darwin.Modules.Foo
-dotnet sln add src\Darwin.Modules.Foo\Darwin.Modules.Foo.csproj --solution-folder src
-Remove-Item src\Darwin.Modules.Foo\Class1.cs
+dotnet new classlib -n Gearbox.Modules.Foo -o src\Gearbox.Modules.Foo
+dotnet sln add src\Gearbox.Modules.Foo\Gearbox.Modules.Foo.csproj --solution-folder src
+Remove-Item src\Gearbox.Modules.Foo\Class1.cs
 ```
 
 Substitua o `.csproj`. O `TargetFramework`, o `Nullable` e as plataformas vêm do `Directory.Build.props`,
@@ -125,7 +129,7 @@ e as versões dos pacotes vêm do `Directory.Packages.props`:
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Darwin.Modules.Foo</RootNamespace>
+    <RootNamespace>Gearbox.Modules.Foo</RootNamespace>
     <UseWinUI>true</UseWinUI>
     <DefaultLanguage>pt-BR</DefaultLanguage>
   </PropertyGroup>
@@ -138,12 +142,12 @@ e as versões dos pacotes vêm do `Directory.Packages.props`:
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Darwin.Core\Darwin.Core.csproj" />
-    <ProjectReference Include="..\Darwin.Interop\Darwin.Interop.csproj" />
+    <ProjectReference Include="..\Gearbox.Core\Gearbox.Core.csproj" />
+    <ProjectReference Include="..\Gearbox.Interop\Gearbox.Interop.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Darwin.Modules.Foo.Tests" />
+    <InternalsVisibleTo Include="Gearbox.Modules.Foo.Tests" />
   </ItemGroup>
 
 </Project>
@@ -155,13 +159,13 @@ projeto novo, mapeie-as para `x64` (ou abra a solution no Visual Studio, que faz
 ### 2. Criar os arquivos
 
 ```
-src/Darwin.Modules.Foo/
-  FooModule.cs                    # implementa IDarwinModule
+src/Gearbox.Modules.Foo/
+  FooModule.cs                    # implementa IGearboxModule
   FooSettings.cs                  # POCO serializado em settings\Foo.json
   ServiceCollectionExtensions.cs  # AddFooModule()
   ModuleStrings.cs                # acesso ao .resw do módulo
   Logic/                          # regras puras, sem Win32 (testáveis)
-  Native/                         # chamadas ao Win32 via Darwin.Interop
+  Native/                         # chamadas ao Win32 via Gearbox.Interop
   UI/
     FooSettingsPage.xaml(.cs)
     FooSettingsViewModel.cs
@@ -171,17 +175,17 @@ src/Darwin.Modules.Foo/
 **`FooModule.cs`**
 
 ```csharp
-using Darwin.Core.Modules;
-using Darwin.Core.Settings;
-using Darwin.Modules.Foo.UI;
+using Gearbox.Core.Modules;
+using Gearbox.Core.Settings;
+using Gearbox.Modules.Foo.UI;
 using Microsoft.Extensions.Logging;
 
-namespace Darwin.Modules.Foo;
+namespace Gearbox.Modules.Foo;
 
 public sealed class FooModule(
     ISettingsService<FooSettings> settings,
     IModuleFaultReporter faults,
-    ILogger<FooModule> logger) : IDarwinModule
+    ILogger<FooModule> logger) : IGearboxModule
 {
     public const string ModuleId = "Foo";        // estável: vira o nome do arquivo de configurações
 
@@ -232,27 +236,27 @@ public sealed class FooModule(
 **`ServiceCollectionExtensions.cs`**
 
 ```csharp
-using Darwin.Core;
-using Darwin.Modules.Foo.UI;
+using Gearbox.Core;
+using Gearbox.Modules.Foo.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Darwin.Modules.Foo;
+namespace Gearbox.Modules.Foo;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddFooModule(this IServiceCollection services)
     {
-        services.AddDarwinSettings<FooSettings>(FooModule.ModuleId);
+        services.AddGearboxSettings<FooSettings>(FooModule.ModuleId);
         services.TryAddTransient<FooSettingsViewModel>();
-        services.AddDarwinModule<FooModule, FooSettingsPage>();   // registra como IDarwinModule + página
+        services.AddGearboxModule<FooModule, FooSettingsPage>();   // registra como IGearboxModule + página
         return services;
     }
 }
 ```
 
 **`ModuleStrings.cs`**: copie o do RoundedMaximize e troque o mapa de recursos para
-`"Darwin.Modules.Foo/Resources"` (em bibliotecas, os `.resw` ficam num mapa com o nome do assembly).
+`"Gearbox.Modules.Foo/Resources"` (em bibliotecas, os `.resw` ficam num mapa com o nome do assembly).
 
 **`UI/FooSettingsPage.xaml.cs`**: a página recebe o ViewModel pelo construtor, porque o casco a cria pelo DI:
 
@@ -281,13 +285,13 @@ hora, sem reiniciar. Use propriedades `[ObservableProperty] public partial ...`.
 
 ### 3. Registrar no casco
 
-Em `src\Darwin\Darwin.csproj`:
+Em `src\Gearbox\Gearbox.csproj`:
 
 ```xml
-<ProjectReference Include="..\Darwin.Modules.Foo\Darwin.Modules.Foo.csproj" />
+<ProjectReference Include="..\Gearbox.Modules.Foo\Gearbox.Modules.Foo.csproj" />
 ```
 
-Em `src\Darwin\App.xaml.cs`, no método `BuildHost()`:
+Em `src\Gearbox\App.xaml.cs`, no método `BuildHost()`:
 
 ```csharp
 builder.Services.AddRoundedMaximizeModule();
@@ -300,11 +304,11 @@ persistência ligado/desligado e o isolamento de falhas vêm automaticamente do 
 ### 4. Testes (recomendado)
 
 ```powershell
-dotnet new classlib -n Darwin.Modules.Foo.Tests -o tests\Darwin.Modules.Foo.Tests
-dotnet sln add tests\Darwin.Modules.Foo.Tests\Darwin.Modules.Foo.Tests.csproj --solution-folder tests
+dotnet new classlib -n Gearbox.Modules.Foo.Tests -o tests\Gearbox.Modules.Foo.Tests
+dotnet sln add tests\Gearbox.Modules.Foo.Tests\Gearbox.Modules.Foo.Tests.csproj --solution-folder tests
 ```
 
-Use o `.csproj` de `tests\Darwin.Modules.RoundedMaximize.Tests` como modelo (`OutputType=Exe`, `xunit.v3`,
+Use o `.csproj` de `tests\Gearbox.Modules.RoundedMaximize.Tests` como modelo (`OutputType=Exe`, `xunit.v3`,
 referência ao módulo) e teste as classes de `Logic/`.
 
 ### Regras para módulos
@@ -316,28 +320,28 @@ referência ao módulo) e teste as classes de `Logic/`.
   (eventos, timers) devem ir para o `IModuleFaultReporter`. Exceções em handlers do
   `WinEventHookManager` são capturadas e reportadas automaticamente.
 - Eventos de janela: `hooks.Subscribe(Id, handler)` no `WinEventHookManager` (um único hook compartilhado).
-  Para precisar de outro evento Win32, adicione-o ao `WinEventKind` e à faixa do hook em `Darwin.Interop`.
-- Win32: adicione o nome da API ao `src\Darwin.Interop\NativeMethods.txt` e exponha um wrapper tipado em
-  `NativeWindow`. Nada de `DllImport` escrito à mão e nenhum tipo do CsWin32 fora do `Darwin.Interop`.
+  Para precisar de outro evento Win32, adicione-o ao `WinEventKind` e à faixa do hook em `Gearbox.Interop`.
+- Win32: adicione o nome da API ao `src\Gearbox.Interop\NativeMethods.txt` e exponha um wrapper tipado em
+  `NativeWindow`. Nada de `DllImport` escrito à mão e nenhum tipo do CsWin32 fora do `Gearbox.Interop`.
 - Textos da UI ficam no `.resw`, nunca fixos no código ou no XAML.
 
 ## Estrutura
 
 ```
-Darwin.sln
+Gearbox.sln
 Directory.Build.props       # TFM, Nullable, plataformas, TreatWarningsAsErrors
 Directory.Packages.props    # versões dos pacotes (Central Package Management)
 global.json                 # dotnet test com Microsoft.Testing.Platform
 src/
-  Darwin/                   # casco WinUI: bandeja, janela, navegação, DI
-  Darwin.Core/              # contratos e serviços sem UI
-  Darwin.Interop/           # Win32/DWM via CsWin32 + WinEventHookManager
-  Darwin.Modules.RoundedMaximize/
+  Gearbox/                   # casco WinUI: bandeja, janela, navegação, DI
+  Gearbox.Core/              # contratos e serviços sem UI
+  Gearbox.Interop/           # Win32/DWM via CsWin32 + WinEventHookManager
+  Gearbox.Modules.RoundedMaximize/
 tests/
-  Darwin.Core.Tests/
-  Darwin.Modules.RoundedMaximize.Tests/
+  Gearbox.Core.Tests/
+  Gearbox.Modules.RoundedMaximize.Tests/
 installer/
-  Darwin.iss                # script do Inno Setup
+  Gearbox.iss                # script do Inno Setup
   build-installer.ps1       # publica + gera o setup em artifacts\installer
 docs/
   ARCHITECTURE.md
@@ -348,6 +352,6 @@ Detalhes do fluxo em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Pontos em aberto
 
 - **Tamanho da publicação (~170 MB):** o metapacote `Microsoft.WindowsAppSDK` 2.x traz componentes de IA
-  (`onnxruntime.dll`, `DirectML.dll`, ~38 MB) que o Darwin não usa. Dá para reduzir referenciando só os
+  (`onnxruntime.dll`, `DirectML.dll`, ~38 MB) que o Gearbox não usa. Dá para reduzir referenciando só os
   componentes necessários, mas o `H.NotifyIcon.WinUI` depende do metapacote.
 - Sem instalador, MSIX ou Store por enquanto.

@@ -1,26 +1,27 @@
 # Arquitetura
 
 ```
-┌──────────────────────────── Darwin (casco WinUI) ────────────────────────────┐
+┌──────────────────────────── Gearbox (casco WinUI) ────────────────────────────┐
 │ Program ─► App ─► Host (DI + Serilog)                                        │
 │                    ├─ TrayIconService ─────────┐                             │
 │                    ├─ MainWindowService ─► MainWindow ─► ModulePage          │
 │                    └─ ModuleManager ◄──────────┘   (toggles e navegação)     │
 └──────────────────────────────┬───────────────────────────────────────────────┘
-                               │ IEnumerable<IDarwinModule>
-┌──────────────────────────────▼───────────── Darwin.Core (sem UI) ────────────┐
-│ IDarwinModule · ModuleManager · ModuleFaultHub · ISettingsService<T>         │
-│ IStartupService · DarwinPaths · DarwinLogging                                │
+                               │ IEnumerable<IGearboxModule>
+┌──────────────────────────────▼───────────── Gearbox.Core (sem UI) ────────────┐
+│ IGearboxModule · ModuleManager · ModuleFaultHub · ISettingsService<T>         │
+│ IStartupService · GearboxPaths · GearboxLogging                                │
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
-┌──────────────────────────────▼──────── Darwin.Modules.* (um por ferramenta) ─┐
+┌──────────────────────────────▼──────── Gearbox.Modules.* (um por ferramenta) ─┐
 │ Módulo (Start/Stop) ─► Logic/ (regras puras) + Native/ (aplica no sistema)   │
 │ UI/ (página de configurações + ViewModel) · Strings/*.resw                   │
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
-┌──────────────────────────────▼────────────────────────── Darwin.Interop ─────┐
-│ WinEventHookManager (1 hook out-of-context) · NativeWindow (wrappers)        │
-│ CsWin32 → user32 / dwmapi / kernel32                                         │
+┌──────────────────────────────▼────────────────────────── Gearbox.Interop ─────┐
+│ WinEventHookManager (hooks out-of-context) · NativeWindow (wrappers)         │
+│ DesktopLayer · DesktopWallpaper · SystemStateMonitor                         │
+│ CsWin32 → user32 / dwmapi / kernel32 / wtsapi32 / IDesktopWallpaper          │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -29,11 +30,11 @@ Core e Interop; Core e Interop não conhecem ninguém.
 
 ## Inicialização
 
-1. **`Program.Main`** chama `AppInstance.FindOrRegisterForKey`. Se já existe um Darwin rodando, a
+1. **`Program.Main`** chama `AppInstance.FindOrRegisterForKey`. Se já existe um Gearbox rodando, a
    ativação é redirecionada para ele (depois de `AllowSetForegroundWindow`) e o processo termina.
 2. **`App.OnLaunched`**:
    - define `DispatcherShutdownMode = OnExplicitShutdown`, para o app continuar vivo sem janela;
-   - monta o `Host` genérico: Serilog, `AddDarwinCore()`, serviços do casco e `Add{Módulo}Module()`;
+   - monta o `Host` genérico: Serilog, `AddGearboxCore()`, serviços do casco e `Add{Módulo}Module()`;
    - cria o `WinEventHookManager` **na thread de UI** e liga `HandlerFaulted` ao `ModuleFaultHub`;
    - cria o ícone da bandeja e chama `ModuleManager.StartEnabledModules()`;
    - assina `AppInstance.Activated`, para mostrar a janela quando outra instância for aberta.
@@ -41,8 +42,8 @@ Core e Interop; Core e Interop não conhecem ninguém.
 
 ## Módulos
 
-- Cada módulo se registra com `services.AddXxxModule()`, que chama `AddDarwinModule<TModule, TPage>()`.
-  O casco descobre os módulos por `IEnumerable<IDarwinModule>`: a navegação, o menu da bandeja e o
+- Cada módulo se registra com `services.AddXxxModule()`, que chama `AddGearboxModule<TModule, TPage>()`.
+  O casco descobre os módulos por `IEnumerable<IGearboxModule>`: a navegação, o menu da bandeja e o
   `modules.json` (estado ligado/desligado) são gerados a partir dessa lista.
 - A página do módulo é criada pelo DI (`ActivatorUtilities`) e embutida na `ModulePage` do casco, que
   desenha o cabeçalho, o botão "Ativar módulo" e o aviso de falha.
@@ -103,3 +104,37 @@ EVENT_OBJECT_LOCATIONCHANGE (OBJID_WINDOW, CHILDID_SELF)
   Por isso o motor confere o resultado e, se preciso, insiste com `SetWindowPos`.
 - `Stop()` restaura todas as janelas rastreadas e reverte os atributos do DWM. Isso também acontece
   ao sair pelo menu da bandeja.
+
+## Wallpaper, em detalhe
+
+```
+WallpaperSettings + monitores (IDesktopWallpaper) + wallpaper embutido
+  └─► WallpaperResolver ─► por monitor: imagem | vídeo | manter o original (+ problema, se a escolha caiu)
+        └─► WallpaperEngine
+              ├─ imagem  → IDesktopWallpaper.SetWallpaper (API do próprio Windows)
+              ├─ vídeo   → wallpaper original por trás + VideoWallpaperWindow presa no WorkerW
+              └─ original → devolve a imagem guardada no snapshot
+```
+
+- **Vídeo atrás dos ícones**: `DesktopLayer` manda `0x052C` ao `Progman` e acha o `WorkerW` do wallpaper (filho do
+  `Progman` no Windows 11 24H2+, ou de topo no layout clássico). A `VideoWallpaperWindow` é uma janela WinUI sem
+  moldura com `MediaPlayerElement` (loop, sem som). Ela precisa **aparecer antes** de virar filha do WorkerW:
+  reparentar uma janela WinUI que ainda não foi exibida derruba o processo. Por isso nasce fora da tela, aparece
+  sem ativar e é presa 300 ms depois.
+- **Snapshot do original**: antes da primeira mudança, o wallpaper e o ajuste de cada monitor vão para
+  `settings\Wallpaper.restore.json` (separado das configurações, que a página regrava), com uma cópia das imagens
+  em `%LocalAppData%\Gearbox\wallpaper`. `Stop()` restaura e limpa o snapshot. Se a restauração falhar, o snapshot
+  fica e é usado na próxima vez.
+- **Pausa** (`PausePolicy`): monitor coberto por uma janela, na bateria, sessão bloqueada ou tela apagada.
+  A `CoverageRules` considera "coberto" o monitor inteiro (tela cheia) ou a área de trabalho com folga de 72 px
+  por lado, o que inclui as janelas pseudo-maximizadas pelo RoundedMaximize (que não ficam `IsZoomed`). A
+  reavaliação acontece 250 ms depois de uma rajada de eventos do hook (`LocationChanged`, `ForegroundChanged`,
+  `MinimizeEnded`). Overlays (`WS_EX_TRANSPARENT`), janelas de ferramenta, "cloaked" e do shell não contam.
+- **Estado do sistema**: `SystemStateMonitor` é uma janela de topo oculta (não `HWND_MESSAGE`, porque
+  `WM_DISPLAYCHANGE` e `TaskbarCreated` são broadcasts) que recebe bloqueio de sessão, tela apagada, mudança de
+  monitores e reinício do Explorer. Energia vem do `PowerManager` (WinRT).
+- **Falhas de mídia** (arquivo sumiu, formato não suportado, vídeo que não toca) não desligam o módulo: o
+  monitor cai no wallpaper do Gearbox (ou no original) e a página mostra o motivo.
+- **Wallpaper embutido**: `Assets\Wallpapers\Gearbox.jpg` (e `Gearbox.mp4`, opcional) do projeto do módulo. No build
+  ele vai para `Gearbox.Modules.Wallpaper\Assets\...` e no publish para `Assets\...`; o módulo procura nos dois.
+

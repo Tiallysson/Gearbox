@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    O metapacote Microsoft.WindowsAppSDK traz componentes que o Gearbox não usa: IA (Windows AI, ONNX Runtime,
+    DirectML, busca semântica) e o provedor do Quadro de Widgets. Não dá para trocar o metapacote pelos
+    componentes porque o H.NotifyIcon.WinUI depende dele; então esses pacotes são referenciados diretamente
+    sem nenhum asset.
+  -->
+  <ItemGroup Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.WindowsAppSDK'))' != ''">
+    <PackageReference Include="Microsoft.WindowsAppSDK.AI" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.ML" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Search" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Widgets" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

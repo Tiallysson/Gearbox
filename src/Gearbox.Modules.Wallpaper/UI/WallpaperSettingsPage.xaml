@@ -1,0 +1,182 @@
+<Page
+    x:Class="Gearbox.Modules.Wallpaper.UI.WallpaperSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:Gearbox.Modules.Wallpaper.UI"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <!-- Um arquivo escolhido: miniatura, nome e botões. -->
+        <DataTemplate x:Key="ChoiceTemplate" x:DataType="ui:WallpaperChoiceViewModel">
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,4">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border
+                        Width="96"
+                        Height="54"
+                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                        CornerRadius="4">
+                        <Grid>
+                            <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="UniformToFill" Visibility="{x:Bind HasThumbnail, Mode=OneWay}" />
+                            <FontIcon FontSize="20" Glyph="{x:Bind KindGlyph, Mode=OneWay}" Visibility="{x:Bind HasGlyph, Mode=OneWay}" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{x:Bind Title}" />
+                        <TextBlock
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind FileName, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTipService.ToolTip="{x:Bind Path, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button x:Uid="PickFileButton" Command="{x:Bind PickCommand}" />
+                        <Button x:Uid="ClearFileButton" Command="{x:Bind ClearCommand}" Style="{ThemeResource SubtleButtonStyle}">
+                            <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+
+    <StackPanel Spacing="4">
+
+        <InfoBar
+            IsClosable="True"
+            IsOpen="{x:Bind ViewModel.IsStatusOpen, Mode=TwoWay}"
+            Message="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+            Severity="{x:Bind ViewModel.StatusSeverity, Mode=OneWay}" />
+
+        <!-- Wallpaper -->
+        <TextBlock x:Uid="WallpaperHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,8,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="UseGearboxTitle" />
+                    <TextBlock x:Uid="UseGearboxDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch x:Uid="UseGearboxToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.UseGearboxWallpaper, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="SameForAllTitle" />
+                    <TextBlock x:Uid="SameForAllDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch x:Uid="SameForAllToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.SameForAllMonitors, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <ContentControl
+            HorizontalContentAlignment="Stretch"
+            Content="{x:Bind ViewModel.DefaultChoice}"
+            ContentTemplate="{StaticResource ChoiceTemplate}"
+            IsTabStop="False"
+            Visibility="{x:Bind ViewModel.SameForAllMonitors, Mode=OneWay}" />
+
+        <ItemsControl
+            IsTabStop="False"
+            ItemTemplate="{StaticResource ChoiceTemplate}"
+            ItemsSource="{x:Bind ViewModel.Monitors}"
+            Visibility="{x:Bind ViewModel.IsPerMonitor, Mode=OneWay}" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="FitTitle" />
+                    <TextBlock x:Uid="FitDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ComboBox x:Uid="FitCombo" Grid.Column="1" MinWidth="160" VerticalAlignment="Center" SelectedIndex="{x:Bind ViewModel.FitIndex, Mode=TwoWay}">
+                    <ComboBoxItem x:Uid="FitFill" />
+                    <ComboBoxItem x:Uid="FitFit" />
+                    <ComboBoxItem x:Uid="FitStretch" />
+                    <ComboBoxItem x:Uid="FitCenter" />
+                </ComboBox>
+            </Grid>
+        </Border>
+
+        <!-- Economia de recursos -->
+        <TextBlock x:Uid="PauseHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <StackPanel Spacing="12">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="PauseFullscreenTitle" />
+                        <TextBlock x:Uid="PauseFullscreenDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Uid="PauseFullscreenToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.PauseOnFullscreen, Mode=TwoWay}" />
+                </Grid>
+
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="PauseBatteryTitle" />
+                        <TextBlock x:Uid="PauseBatteryDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Uid="PauseBatteryToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.PauseOnBattery, Mode=TwoWay}" />
+                </Grid>
+
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="PauseLockedTitle" />
+                        <TextBlock x:Uid="PauseLockedDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch x:Uid="PauseLockedToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.PauseWhenLocked, Mode=TwoWay}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <TextBlock
+            x:Uid="FormatsNote"
+            Margin="1,16,0,0"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+            TextWrapping="Wrap" />
+    </StackPanel>
+</Page>

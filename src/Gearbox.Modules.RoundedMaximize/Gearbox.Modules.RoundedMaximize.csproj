@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Gearbox.Modules.RoundedMaximize</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <DefaultLanguage>pt-BR</DefaultLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- PrivateAssets: o casco já referencia o Windows App SDK; assim os testes não herdam o SDK. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" PrivateAssets="all" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gearbox.Core\Gearbox.Core.csproj" />
+    <ProjectReference Include="..\Gearbox.Interop\Gearbox.Interop.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gearbox.Modules.RoundedMaximize.Tests" />
+  </ItemGroup>
+
+</Project>

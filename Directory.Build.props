@@ -10,10 +10,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>x64;ARM64</Platforms>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>0.1.0</Version>
-    <Company>Darwin</Company>
-    <Product>Darwin</Product>
-    <Copyright>© Darwin</Copyright>
+    <Version>0.2.0</Version>
+    <Company>Gearbox</Company>
+    <Product>Gearbox</Product>
+    <Copyright>© Gearbox</Copyright>
     <NeutralLanguage>pt-BR</NeutralLanguage>
   </PropertyGroup>
 

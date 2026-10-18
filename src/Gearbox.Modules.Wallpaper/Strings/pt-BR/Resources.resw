@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Usados no código -->
+  <data name="ModuleDisplayName" xml:space="preserve">
+    <value>Wallpaper</value>
+  </data>
+  <data name="ModuleDescription" xml:space="preserve">
+    <value>Vídeo ou imagem como wallpaper, um para cada monitor, com o wallpaper do Gearbox como padrão. Ao desligar, o wallpaper anterior volta.</value>
+  </data>
+  <data name="AllMonitorsTitle" xml:space="preserve">
+    <value>Todos os monitores</value>
+  </data>
+  <data name="MonitorTitleFormat" xml:space="preserve">
+    <value>Monitor {0} · {1}×{2}</value>
+    <comment>{0} = número do monitor, {1} = largura, {2} = altura</comment>
+  </data>
+  <data name="NoFileChosen" xml:space="preserve">
+    <value>Nenhum arquivo escolhido</value>
+  </data>
+  <data name="PickerError" xml:space="preserve">
+    <value>Não foi possível abrir o seletor de arquivos. Os detalhes estão nos logs.</value>
+  </data>
+  <data name="ProblemLineFormat" xml:space="preserve">
+    <value>{0}: {1} Usando {2}.</value>
+    <comment>{0} = monitor, {1} = problema, {2} = o que está sendo usado no lugar</comment>
+  </data>
+  <data name="ProblemFileNotFound" xml:space="preserve">
+    <value>o arquivo escolhido não existe mais.</value>
+  </data>
+  <data name="ProblemUnsupportedFormat" xml:space="preserve">
+    <value>o formato do arquivo não é suportado.</value>
+  </data>
+  <data name="ProblemPlaybackFailed" xml:space="preserve">
+    <value>o vídeo não pôde ser reproduzido (arquivo corrompido ou codec ausente).</value>
+  </data>
+  <data name="FallbackGearbox" xml:space="preserve">
+    <value>o wallpaper do Gearbox</value>
+  </data>
+  <data name="FallbackOriginal" xml:space="preserve">
+    <value>o wallpaper do Windows</value>
+  </data>
+
+  <!-- Página: wallpaper -->
+  <data name="WallpaperHeader.Text" xml:space="preserve">
+    <value>Wallpaper</value>
+  </data>
+  <data name="UseGearboxTitle.Text" xml:space="preserve">
+    <value>Usar o wallpaper do Gearbox</value>
+  </data>
+  <data name="UseGearboxDescription.Text" xml:space="preserve">
+    <value>Monitores sem arquivo escolhido mostram o wallpaper do Gearbox. Desligado, eles mantêm o wallpaper do Windows.</value>
+  </data>
+  <data name="UseGearboxToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Usar o wallpaper do Gearbox</value>
+  </data>
+  <data name="SameForAllTitle.Text" xml:space="preserve">
+    <value>Mesmo wallpaper em todos os monitores</value>
+  </data>
+  <data name="SameForAllDescription.Text" xml:space="preserve">
+    <value>Desligado, cada monitor pode ter seu próprio vídeo ou imagem.</value>
+  </data>
+  <data name="SameForAllToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mesmo wallpaper em todos os monitores</value>
+  </data>
+  <data name="PickFileButton.Content" xml:space="preserve">
+    <value>Escolher arquivo…</value>
+  </data>
+  <data name="ClearFileButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="ClearFileButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="FitTitle.Text" xml:space="preserve">
+    <value>Ajuste</value>
+  </data>
+  <data name="FitDescription.Text" xml:space="preserve">
+    <value>Como a imagem ou o vídeo ocupa a tela. O Windows usa o mesmo ajuste em todos os monitores.</value>
+  </data>
+  <data name="FitCombo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ajuste</value>
+  </data>
+  <data name="FitFill.Content" xml:space="preserve">
+    <value>Preencher</value>
+  </data>
+  <data name="FitFit.Content" xml:space="preserve">
+    <value>Ajustar</value>
+  </data>
+  <data name="FitStretch.Content" xml:space="preserve">
+    <value>Esticar</value>
+  </data>
+  <data name="FitCenter.Content" xml:space="preserve">
+    <value>Centralizar</value>
+  </data>
+
+  <!-- Página: economia de recursos -->
+  <data name="PauseHeader.Text" xml:space="preserve">
+    <value>Economia de recursos</value>
+  </data>
+  <data name="PauseFullscreenTitle.Text" xml:space="preserve">
+    <value>Pausar com um app em tela cheia ou maximizado</value>
+  </data>
+  <data name="PauseFullscreenDescription.Text" xml:space="preserve">
+    <value>O vídeo do monitor coberto por uma janela fica pausado até ela sair.</value>
+  </data>
+  <data name="PauseFullscreenToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pausar com um app em tela cheia ou maximizado</value>
+  </data>
+  <data name="PauseBatteryTitle.Text" xml:space="preserve">
+    <value>Pausar na bateria</value>
+  </data>
+  <data name="PauseBatteryDescription.Text" xml:space="preserve">
+    <value>Em notebooks fora da tomada.</value>
+  </data>
+  <data name="PauseBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pausar na bateria</value>
+  </data>
+  <data name="PauseLockedTitle.Text" xml:space="preserve">
+    <value>Pausar com o PC bloqueado ou a tela apagada</value>
+  </data>
+  <data name="PauseLockedDescription.Text" xml:space="preserve">
+    <value>Quando você bloqueia o Windows (Win+L) ou o monitor desliga.</value>
+  </data>
+  <data name="PauseLockedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pausar com o PC bloqueado ou a tela apagada</value>
+  </data>
+  <data name="FormatsNote.Text" xml:space="preserve">
+    <value>Imagens: JPG, PNG, BMP e WebP. Vídeos: MP4, WebM e MKV, em loop e sem som. Vídeos WebM precisam da extensão "Extensões de Vídeo VP9" da Microsoft Store.</value>
+  </data>
+</root>
