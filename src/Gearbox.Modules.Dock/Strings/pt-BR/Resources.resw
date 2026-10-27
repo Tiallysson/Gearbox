@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ModuleDisplayName" xml:space="preserve">
+    <value>Dock</value>
+  </data>
+  <data name="ModuleDescription" xml:space="preserve">
+    <value>Seus aplicativos e ferramentas em uma barra flutuante, com relógio e temporizador de foco.</value>
+  </data>
+  <data name="SettingsIntro" xml:space="preserve">
+    <value>Inspirada nas docks do macOS e Windows 11. Fica centralizada no monitor principal, acima da barra de tarefas. As alterações são aplicadas imediatamente.</value>
+  </data>
+  <data name="DarkTheme" xml:space="preserve">
+    <value>Tema escuro</value>
+  </data>
+  <data name="ShowClock" xml:space="preserve">
+    <value>Mostrar data e relógio</value>
+  </data>
+  <data name="ShowFocus" xml:space="preserve">
+    <value>Mostrar temporizador de foco</value>
+  </data>
+  <data name="IconSize" xml:space="preserve">
+    <value>Tamanho dos ícones (32–56 px)</value>
+  </data>
+  <data name="BottomMargin" xml:space="preserve">
+    <value>Distância da borda inferior da área útil (0–64 px)</value>
+  </data>
+  <data name="Explorer" xml:space="preserve">
+    <value>Explorador de Arquivos</value>
+  </data>
+  <data name="Browser" xml:space="preserve">
+    <value>Navegador padrão</value>
+  </data>
+  <data name="Terminal" xml:space="preserve">
+    <value>Prompt de Comando</value>
+  </data>
+  <data name="Notepad" xml:space="preserve">
+    <value>Bloco de Notas</value>
+  </data>
+  <data name="Calculator" xml:space="preserve">
+    <value>Calculadora</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Configurações do Windows</value>
+  </data>
+  <data name="Calendar" xml:space="preserve">
+    <value>Data e hora — abrir Relógio do Windows</value>
+  </data>
+  <data name="FocusTip" xml:space="preserve">
+    <value>Clique para iniciar ou pausar. Botão direito para reiniciar.</value>
+  </data>
+  <data name="ResetFocus" xml:space="preserve">
+    <value>Reiniciar em 25 minutos</value>
+  </data>
+  <data name="FocusDone" xml:space="preserve">
+    <value>Foco concluído</value>
+  </data>
+  <data name="FocusPaused" xml:space="preserve">
+    <value>Foco · iniciar / continuar</value>
+  </data>
+  <data name="FocusRunning" xml:space="preserve">
+    <value>Foco · pausar</value>
+  </data>
+  <data name="Volume" xml:space="preserve">
+    <value>Configurações de som</value>
+  </data>
+  <data name="RecycleBin" xml:space="preserve">
+    <value>Lixeira</value>
+  </data>
+  <data name="LaunchFailed" xml:space="preserve">
+    <value>Não foi possível abrir o aplicativo. Verifique se ele está instalado.</value>
+  </data>
+</root>
