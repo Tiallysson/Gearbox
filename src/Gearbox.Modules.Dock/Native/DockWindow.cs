@@ -75,7 +75,9 @@ internal sealed class DockWindow : IDisposable
     {
         _settings = settings;
         _surface.RequestedTheme = settings.DarkTheme ? ElementTheme.Dark : ElementTheme.Light;
-        _surface.Background = Brush(settings.DarkTheme ? 0xED : 0xF2, settings.DarkTheme ? 24 : 246, settings.DarkTheme ? 29 : 242, settings.DarkTheme ? 40 : 234);
+        _surface.Background = settings.DarkTheme
+            ? Brush(0xED, 24, 29, 40)
+            : Brush(0xF2, 246, 242, 234);
         _surface.BorderBrush = Brush(90, 155, 165, 185);
         // Os textos são reutilizados; solta o pai anterior antes de montar os novos cartões.
         foreach (var text in new[] { _date, _clock, _focusLabel, _focus })
