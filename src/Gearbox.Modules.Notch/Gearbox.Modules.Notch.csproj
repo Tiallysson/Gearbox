@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Gearbox.Modules.Notch</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <DefaultLanguage>pt-BR</DefaultLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- PrivateAssets: o casco já referencia o Windows App SDK; assim os testes não herdam o SDK. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" PrivateAssets="all" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Gearbox.Core\Gearbox.Core.csproj" />
+    <ProjectReference Include="..\Gearbox.Interop\Gearbox.Interop.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Ícones da ilha: Phosphor Icons (regular) 2.1.1, licença MIT (Assets\Fonts\Phosphor-LICENSE.txt), do pacote npm
+      @phosphor-icons/web. Vai para Gearbox.Modules.Notch\Assets\Fonts ao lado do Gearbox.exe
+      (ms-appx:///Gearbox.Modules.Notch/Assets/Fonts/Phosphor.ttf).
+    -->
+    <Content Include="Assets\Fonts\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="Gearbox.Modules.Notch\Assets\Fonts\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gearbox.Modules.Notch.Tests" />
+  </ItemGroup>
+
+</Project>

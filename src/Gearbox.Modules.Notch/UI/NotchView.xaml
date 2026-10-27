@@ -1,0 +1,573 @@
+<UserControl
+    x:Class="Gearbox.Modules.Notch.UI.NotchView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:interop="using:Gearbox.Interop"
+    xmlns:local="using:Gearbox.Modules.Notch.UI"
+    mc:Ignorable="d"
+    RequestedTheme="Dark">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Paleta e estilos base (shadcn/ui): NotchTheme.xaml. -->
+            <ResourceDictionary.MergedDictionaries>
+                <local:NotchTheme />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--
+                Phosphor Icons (regular). Conteúdo de biblioteca WinUI vai para uma pasta com o nome do assembly ao lado
+                do Gearbox.exe. Codepoints: NotchGlyphs.
+            -->
+            <FontFamily x:Key="PhosphorFont">ms-appx:///Gearbox.Modules.Notch/Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
+
+            <!-- Aqui (e não no tema): SetBackground muda a opacidade destes dois pelo índice do dicionário. -->
+            <SolidColorBrush x:Key="IslandBrush" Color="#FF0A0A0A" />
+            <SolidColorBrush x:Key="ArtPlaceholderBrush" Color="#FF262626" />
+
+            <Style x:Key="MediaButtonStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                <Setter Property="Width" Value="32" />
+                <Setter Property="Height" Value="32" />
+                <Setter Property="Padding" Value="0" />
+            </Style>
+            <Style x:Key="TabStyle" TargetType="ToggleButton" BasedOn="{StaticResource TabTriggerStyle}">
+                <Setter Property="Height" Value="24" />
+                <Setter Property="MinWidth" Value="0" />
+            </Style>
+            <Style x:Key="QuickToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource ShadToggleStyle}">
+                <Setter Property="Height" Value="32" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="12,0" />
+            </Style>
+            <Style x:Key="QuickRowStyle" TargetType="Button" BasedOn="{StaticResource OutlineButtonStyle}">
+                <Setter Property="Height" Value="30" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="10,0" />
+            </Style>
+            <Style x:Key="BackRowStyle" TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                <Setter Property="Height" Value="26" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="Padding" Value="6,0" />
+                <Setter Property="Foreground" Value="{StaticResource MutedForegroundBrush}" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!--
+        Fundo transparente: só a ilha aparece; o resto da janela existe só durante as animações.
+        Colunas: a ilha no meio e uma "orelha" encostada em cada lado; as colunas * dividem a sobra igualmente, então as
+        orelhas acompanham a ilha enquanto ela anima.
+    -->
+    <Grid Background="Transparent">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--
+            Orelhas: cantos côncavos que escorrem para a borda da tela (quadrado menos um quarto de círculo). Mesmo tom
+            da ilha; o traço continua a borda de vidro pela curva. Geometria em 10x10, esticada para o raio atual.
+        -->
+        <Grid x:Name="LeftEar" Width="0" Height="0" HorizontalAlignment="Right" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed">
+            <Path Data="M0,0 L10,0 L10,10 A10,10 0 0 0 0,0 Z" Fill="{StaticResource IslandBrush}" Stretch="Fill" />
+            <Path x:Name="LeftEarEdge" Data="M10,10 A10,10 0 0 0 0,0" Stretch="Fill" Stroke="{StaticResource GlassEdgeStartBrush}" StrokeThickness="1" />
+        </Grid>
+        <Grid x:Name="RightEar" Grid.Column="2" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed">
+            <Path Data="M10,0 L0,0 L0,10 A10,10 0 0 1 10,0 Z" Fill="{StaticResource IslandBrush}" Stretch="Fill" />
+            <Path x:Name="RightEarEdge" Data="M0,10 A10,10 0 0 1 10,0" Stretch="Fill" Stroke="{StaticResource GlassEdgeEndBrush}" StrokeThickness="1" />
+        </Grid>
+
+        <Border
+            x:Name="Island"
+            Grid.Column="1"
+            Width="180"
+            Height="30"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Background="Transparent"
+            CornerRadius="0,0,12,12"
+            PointerEntered="OnIslandPointerEntered"
+            PointerExited="OnIslandPointerExited">
+            <Grid>
+
+                <!-- Fundo em duas camadas: acrílico (desfoca o que está atrás da ilha) e, por cima, o tom preto. -->
+                <SystemBackdropElement x:Name="Acrylic" CornerRadius="0,0,12,12" Visibility="Collapsed" />
+                <Border x:Name="Tint" Background="{StaticResource IslandBrush}" CornerRadius="0,0,12,12" />
+
+                <!--
+                    Borda de vidro: 1 px por cima do fundo, sem o lado de cima (a ilha encosta na borda da tela). Começa
+                    abaixo das orelhas (margem de cima = raio delas), onde o traço da curva termina.
+                -->
+                <Border
+                    x:Name="GlassEdge"
+                    BorderBrush="{StaticResource GlassEdgeBrush}"
+                    BorderThickness="1,0,1,1"
+                    CornerRadius="0,0,12,12"
+                    IsHitTestVisible="False" />
+
+                <!-- Recolhida: capa à esquerda e barrinhas animadas à direita enquanto algo toca. -->
+                <Grid x:Name="CollapsedPanel" Padding="10,0">
+                    <Border
+                        x:Name="SmallArtFrame"
+                        Width="20"
+                        Height="20"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="{StaticResource ArtPlaceholderBrush}"
+                        CornerRadius="5">
+                        <Image x:Name="SmallArt" Stretch="UniformToFill" />
+                    </Border>
+                    <StackPanel
+                        x:Name="Bars"
+                        Height="14"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="2">
+                        <Rectangle x:Name="Bar1" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.4" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <Rectangle x:Name="Bar2" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.8" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <Rectangle x:Name="Bar3" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                            <Rectangle.RenderTransform>
+                                <ScaleTransform ScaleY="0.6" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Aviso temporário: ícone (ou capa), texto ou barra de volume e valor. -->
+                <Grid x:Name="PeekPanel" Padding="16,0" ColumnSpacing="12" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="24" Height="24" VerticalAlignment="Center">
+                        <Border x:Name="PeekArtFrame" Background="{StaticResource ArtPlaceholderBrush}" CornerRadius="6" Visibility="Collapsed">
+                            <Image x:Name="PeekArt" Stretch="UniformToFill" />
+                        </Border>
+                        <FontIcon x:Name="PeekIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="16" />
+                    </Grid>
+                    <!-- Barra de volume como o Progress do shadcn: trilho "primary/20" e indicador "primary". -->
+                    <Grid x:Name="PeekBar" Grid.Column="1" Height="6" VerticalAlignment="Center">
+                        <Border Background="#33E5E5E5" CornerRadius="3" />
+                        <Border Background="{StaticResource PrimaryBrush}" CornerRadius="3" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="PeekBarScale" ScaleX="0" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                    <TextBlock
+                        x:Name="PeekText"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        MaxLines="1"
+                        TextTrimming="CharacterEllipsis" />
+                    <TextBlock
+                        x:Name="PeekValue"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        Foreground="{StaticResource MutedForegroundBrush}" />
+                </Grid>
+
+                <!--
+                    Aberta: abas (só com algum controle rápido ligado), a página da aba, data e bateria.
+                    Sem RowSpacing: com as abas escondidas, a linha vazia não pode empurrar o conteúdo.
+                -->
+                <Grid x:Name="ExpandedPanel" Padding="22,12,22,12" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- TabsList: fundo "muted" com 3 px em volta das abas. Abas só com ícone: o nome fica na dica e no leitor de tela. -->
+                    <Border
+                        x:Name="TabsPanel"
+                        Margin="0,0,0,8"
+                        Padding="3"
+                        HorizontalAlignment="Left"
+                        Background="{StaticResource MutedBrush}"
+                        CornerRadius="8"
+                        Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <ToggleButton x:Name="MediaTab" x:Uid="MediaTab" Click="OnMediaTabClick" IsChecked="True" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE340;" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="ControlsTab" x:Uid="ControlsTab" Click="OnControlsTabClick" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE434;" />
+                            </ToggleButton>
+                            <!-- hard-drives -->
+                            <ToggleButton x:Name="StorageTab" x:Uid="StorageTab" Click="OnStorageTabClick" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE2A0;" />
+                            </ToggleButton>
+                            <!-- cpu -->
+                            <ToggleButton x:Name="SystemTab" x:Uid="SystemTab" Click="OnSystemTabClick" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE610;" />
+                            </ToggleButton>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Aba "Mídia": o que está tocando com controles, ou o relógio. -->
+                    <Grid x:Name="MediaPage" Grid.Row="1">
+                        <Grid x:Name="MediaPanel" ColumnSpacing="14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Width="76"
+                                Height="76"
+                                VerticalAlignment="Center"
+                                Background="{StaticResource ArtPlaceholderBrush}"
+                                CornerRadius="12">
+                                <Grid>
+                                    <FontIcon x:Name="ArtPlaceholder" FontFamily="{StaticResource PhosphorFont}" FontSize="28" Foreground="{StaticResource MutedForegroundBrush}" />
+                                    <Image x:Name="LargeArt" Stretch="UniformToFill" />
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                <TextBlock
+                                    x:Name="TitleText"
+                                    FontSize="15"
+                                    FontWeight="Medium"
+                                    MaxLines="1"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="ArtistText"
+                                    FontSize="12"
+                                    Foreground="{StaticResource MutedForegroundBrush}"
+                                    MaxLines="1"
+                                    TextTrimming="CharacterEllipsis" />
+                                <StackPanel Margin="-10,4,0,0" Orientation="Horizontal" Spacing="2">
+                                    <Button x:Name="PreviousButton" x:Uid="PreviousButton" Click="OnPreviousClick" Style="{StaticResource MediaButtonStyle}">
+                                        <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE5A4;" />
+                                    </Button>
+                                    <Button x:Name="PlayPauseButton" x:Uid="PlayPauseButton" Click="OnPlayPauseClick" Style="{StaticResource MediaButtonStyle}">
+                                        <FontIcon x:Name="PlayPauseIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="16" />
+                                    </Button>
+                                    <Button x:Name="NextButton" x:Uid="NextButton" Click="OnNextClick" Style="{StaticResource MediaButtonStyle}">
+                                        <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE5A6;" />
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+    
+                        <StackPanel x:Name="ClockPanel" VerticalAlignment="Center" Visibility="Collapsed">
+                            <!-- "text-4xl font-semibold tracking-tight" -->
+                            <TextBlock x:Name="ClockText" CharacterSpacing="-25" FontSize="40" FontWeight="SemiBold" />
+                            <TextBlock x:Uid="NothingPlayingText" FontSize="12" Foreground="{StaticResource MutedForegroundBrush}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Aba "Controles": rádios (clique alterna, botão direito abre a lista do Windows), volume e saída. -->
+                    <StackPanel x:Name="ControlsPage" Grid.Row="1" VerticalAlignment="Center" Spacing="6" Visibility="Collapsed">
+                        <Grid x:Name="RadiosRow" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton
+                                x:Name="WiFiButton"
+                                x:Uid="WiFiButton"
+                                Click="OnWiFiClick"
+                                RightTapped="OnWiFiRightTapped"
+                                Style="{StaticResource QuickToggleStyle}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon x:Name="WiFiIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                                    <TextBlock x:Name="WiFiText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </ToggleButton>
+                            <ToggleButton
+                                x:Name="BluetoothButton"
+                                x:Uid="BluetoothButton"
+                                Grid.Column="1"
+                                Click="OnBluetoothClick"
+                                RightTapped="OnBluetoothRightTapped"
+                                Style="{StaticResource QuickToggleStyle}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon x:Name="BluetoothIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                                    <TextBlock x:Uid="BluetoothText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </ToggleButton>
+                        </Grid>
+
+                        <Grid x:Name="VolumeRow" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="MuteButton" x:Uid="MuteButton" Click="OnMuteClick" Style="{StaticResource MediaButtonStyle}">
+                                <FontIcon x:Name="MuteIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                            </Button>
+                            <!-- Sem a dica do polegar: é um popup fora da janela da ilha. -->
+                            <Slider
+                                x:Name="VolumeSlider"
+                                x:Uid="VolumeSlider"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                IsThumbToolTipEnabled="False"
+                                Maximum="100"
+                                StepFrequency="1"
+                                ValueChanged="OnVolumeSliderChanged" />
+                            <TextBlock
+                                x:Name="VolumeText"
+                                Grid.Column="2"
+                                MinWidth="36"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{StaticResource MutedForegroundBrush}"
+                                TextAlignment="Right" />
+                        </Grid>
+
+                        <Button x:Name="OutputButton" x:Uid="OutputButton" Click="OnOutputClick" Style="{StaticResource QuickRowStyle}">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xEA08;" />
+                                <TextBlock x:Name="OutputText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                <FontIcon Grid.Column="2" FontFamily="{StaticResource PhosphorFont}" FontSize="10" Glyph="&#xE13A;" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Escolha da saída de áudio: lista dentro da ilha (um menu seria um popup fora dela e a fecharia). -->
+                    <Grid x:Name="DevicesPage" Grid.Row="1" RowSpacing="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Button x:Uid="DevicesBackButton" Click="OnDevicesBackClick" Style="{StaticResource BackRowStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="&#xE138;" />
+                                <TextBlock x:Uid="DevicesTitle" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <ListView
+                            x:Name="DeviceList"
+                            Grid.Row="1"
+                            IsItemClickEnabled="True"
+                            ItemClick="OnDeviceClick"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                    <Setter Property="MinHeight" Value="28" />
+                                    <Setter Property="Padding" Value="8,0" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="interop:AudioOutputDevice">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12" MaxLines="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            FontFamily="{StaticResource PhosphorFont}"
+                                            FontSize="12"
+                                            Foreground="{StaticResource ForegroundBrush}"
+                                            Glyph="&#xE182;"
+                                            Visibility="{x:Bind IsDefault}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+
+                    <!-- Aba "Armazenamento": um anel por disco; clique abre o disco no Explorer. -->
+                    <Grid x:Name="StoragePage" Grid.Row="1" Visibility="Collapsed">
+                        <TextBlock
+                            x:Name="NoDrivesText"
+                            x:Uid="NoDrivesText"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{StaticResource MutedForegroundBrush}"
+                            Visibility="Collapsed" />
+                        <ScrollViewer
+                            HorizontalScrollBarVisibility="Auto"
+                            HorizontalScrollMode="Enabled"
+                            VerticalScrollBarVisibility="Disabled"
+                            VerticalScrollMode="Disabled">
+                            <ItemsControl x:Name="DriveList">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:DriveItem">
+                                        <Button
+                                            Padding="8,6"
+                                            Click="OnDriveClick"
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Tag="{x:Bind Root}"
+                                            ToolTipService.ToolTip="{x:Bind ToolTip}"
+                                            AutomationProperties.Name="{x:Bind ToolTip}">
+                                            <StackPanel Spacing="4">
+                                                <local:UsageRing HorizontalAlignment="Center" Percent="{x:Bind Percent}" />
+                                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="{x:Bind Glyph}" />
+                                                    <TextBlock FontSize="12" FontWeight="Medium" Text="{x:Bind Letter}" />
+                                                </StackPanel>
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    FontSize="11"
+                                                    Foreground="{StaticResource MutedForegroundBrush}"
+                                                    Text="{x:Bind Caption}" />
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!--
+                        Aba "Sistema": modelo, barra de uso e valor (uso · temperatura) de CPU, GPU e memória, e a placa-mãe.
+                        Temperatura só aparece quando o Windows a informa sem driver extra.
+                    -->
+                    <StackPanel x:Name="SystemPage" Grid.Row="1" VerticalAlignment="Center" Spacing="7" Visibility="Collapsed">
+                        <StackPanel.Resources>
+                            <Style x:Key="RowIconStyle" TargetType="FontIcon">
+                                <Setter Property="FontFamily" Value="{StaticResource PhosphorFont}" />
+                                <Setter Property="FontSize" Value="15" />
+                                <Setter Property="Foreground" Value="{StaticResource MutedForegroundBrush}" />
+                            </Style>
+                            <Style x:Key="RowTitleStyle" TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="MaxLines" Value="1" />
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                            </Style>
+                            <Style x:Key="RowValueStyle" TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                                <Setter Property="Foreground" Value="{StaticResource MutedForegroundBrush}" />
+                            </Style>
+                        </StackPanel.Resources>
+
+                        <!-- cpu -->
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE610;" Style="{StaticResource RowIconStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock x:Name="CpuName" Style="{StaticResource RowTitleStyle}" />
+                                <Grid Height="3">
+                                    <Border Background="{StaticResource MutedBrush}" CornerRadius="1.5" />
+                                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="CpuBarScale" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                            <TextBlock x:Name="CpuValue" Grid.Column="2" Style="{StaticResource RowValueStyle}" />
+                        </Grid>
+
+                        <!-- graphics-card -->
+                        <Grid x:Name="GpuRow" ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE612;" Style="{StaticResource RowIconStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock x:Name="GpuName" Style="{StaticResource RowTitleStyle}" />
+                                <Grid Height="3">
+                                    <Border Background="{StaticResource MutedBrush}" CornerRadius="1.5" />
+                                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="GpuBarScale" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                            <TextBlock x:Name="GpuValue" Grid.Column="2" Style="{StaticResource RowValueStyle}" />
+                        </Grid>
+
+                        <!-- memory -->
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE9C4;" Style="{StaticResource RowIconStyle}" />
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock x:Name="MemoryName" Style="{StaticResource RowTitleStyle}" />
+                                <Grid Height="3">
+                                    <Border Background="{StaticResource MutedBrush}" CornerRadius="1.5" />
+                                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="MemoryBarScale" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                            <TextBlock x:Name="MemoryValue" Grid.Column="2" Style="{StaticResource RowValueStyle}" />
+                        </Grid>
+
+                        <!-- circuitry -->
+                        <Grid x:Name="BoardRow" ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE9C2;" Style="{StaticResource RowIconStyle}" />
+                            <TextBlock x:Name="BoardName" Grid.Column="1" VerticalAlignment="Center" Style="{StaticResource RowTitleStyle}" />
+                        </Grid>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <TextBlock
+                            x:Name="DateText"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{StaticResource MutedForegroundBrush}" />
+                        <StackPanel
+                            x:Name="BatteryPanel"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="6">
+                            <FontIcon x:Name="BatteryIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                            <TextBlock x:Name="BatteryText" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

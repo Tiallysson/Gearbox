@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Usados no código -->
+  <data name="ModuleDisplayName" xml:space="preserve">
+    <value>Ilha dinâmica</value>
+  </data>
+  <data name="ModuleDescription" xml:space="preserve">
+    <value>Uma ilha no topo da tela, como os apps de notch do macOS: mostra o que está tocando, avisa mudanças de volume e do carregador e abre ao passar o mouse, com controles de mídia, relógio, bateria e controles rápidos de Wi‑Fi, Bluetooth e áudio.</value>
+  </data>
+  <data name="PercentFormat" xml:space="preserve">
+    <value>{0}%</value>
+    <comment>{0} = porcentagem</comment>
+  </data>
+  <data name="TrackFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+    <comment>{0} = título da faixa, {1} = artista</comment>
+  </data>
+  <data name="TimeDateFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+    <comment>{0} = hora, {1} = data</comment>
+  </data>
+  <data name="VolumeMuted" xml:space="preserve">
+    <value>Mudo</value>
+  </data>
+  <data name="BatteryCharging" xml:space="preserve">
+    <value>Carregando</value>
+  </data>
+  <data name="BatteryCharged" xml:space="preserve">
+    <value>Carregada</value>
+  </data>
+  <data name="BatteryOnBattery" xml:space="preserve">
+    <value>Na bateria</value>
+  </data>
+  <data name="WiFiName" xml:space="preserve">
+    <value>Wi‑Fi</value>
+  </data>
+  <data name="NoOutputDevice" xml:space="preserve">
+    <value>Sem saída de áudio</value>
+  </data>
+  <data name="WiFiToolTip" xml:space="preserve">
+    <value>Ligar/desligar o Wi‑Fi (botão direito: redes disponíveis)</value>
+  </data>
+  <data name="EthernetName" xml:space="preserve">
+    <value>Rede cabeada</value>
+  </data>
+  <data name="EthernetToolTip" xml:space="preserve">
+    <value>Conectado por cabo. Clique para abrir as configurações de Ethernet.</value>
+  </data>
+  <data name="LinkFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+    <comment>{0} = nome da rede, {1} = velocidade do link (ex.: 1 Gbps)</comment>
+  </data>
+  <data name="DriveFreeFormat" xml:space="preserve">
+    <value>{0} livres</value>
+    <comment>{0} = espaço livre (ex.: 120 GB)</comment>
+  </data>
+  <data name="DriveToolTipFormat" xml:space="preserve">
+    <value>{0}: {1} de {2} usados. Clique para abrir no Explorer.</value>
+    <comment>{0} = nome do disco, {1} = espaço usado, {2} = tamanho total</comment>
+  </data>
+  <data name="CpuUnknown" xml:space="preserve">
+    <value>Processador</value>
+  </data>
+  <data name="BoardUnknown" xml:space="preserve">
+    <value>Placa-mãe não identificada</value>
+  </data>
+  <data name="MemoryTitleFormat" xml:space="preserve">
+    <value>Memória · {0} de {1}</value>
+    <comment>{0} = memória em uso, {1} = memória total</comment>
+  </data>
+  <data name="GpuMemoryToolTipFormat" xml:space="preserve">
+    <value>{0}: {1} de {2} de memória de vídeo em uso</value>
+    <comment>{0} = placa de vídeo, {1} = memória em uso, {2} = memória dedicada total</comment>
+  </data>
+  <data name="UsageTemperatureFormat" xml:space="preserve">
+    <value>{0} · {1} °C</value>
+    <comment>{0} = uso (ex.: 23%), {1} = temperatura em graus Celsius</comment>
+  </data>
+
+  <!-- x:Uid da ilha -->
+  <data name="PreviousButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="PreviousButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="PlayPauseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Reproduzir/pausar</value>
+  </data>
+  <data name="PlayPauseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Reproduzir/pausar</value>
+  </data>
+  <data name="NextButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Próxima</value>
+  </data>
+  <data name="NextButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Próxima</value>
+  </data>
+  <data name="NothingPlayingText.Text" xml:space="preserve">
+    <value>Nada tocando</value>
+  </data>
+  <data name="MediaTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mídia</value>
+  </data>
+  <data name="MediaTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mídia</value>
+  </data>
+  <data name="ControlsTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Controles</value>
+  </data>
+  <data name="ControlsTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Controles</value>
+  </data>
+  <data name="StorageTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Armazenamento</value>
+  </data>
+  <data name="StorageTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Armazenamento</value>
+  </data>
+  <data name="SystemTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="SystemTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="NoDrivesText.Text" xml:space="preserve">
+    <value>Nenhum disco encontrado</value>
+  </data>
+  <data name="WiFiButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ligar/desligar o Wi‑Fi (botão direito: redes disponíveis)</value>
+  </data>
+  <data name="WiFiButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Wi‑Fi</value>
+  </data>
+  <data name="BluetoothButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ligar/desligar o Bluetooth (botão direito: dispositivos)</value>
+  </data>
+  <data name="BluetoothButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bluetooth</value>
+  </data>
+  <data name="BluetoothText.Text" xml:space="preserve">
+    <value>Bluetooth</value>
+  </data>
+  <data name="MuteButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ativar/desativar o mudo</value>
+  </data>
+  <data name="MuteButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mudo</value>
+  </data>
+  <data name="VolumeSlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Volume</value>
+  </data>
+  <data name="OutputButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Escolher a saída de áudio</value>
+  </data>
+  <data name="OutputButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Saída de áudio</value>
+  </data>
+  <data name="DevicesBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voltar aos controles</value>
+  </data>
+  <data name="DevicesTitle.Text" xml:space="preserve">
+    <value>Saída de áudio</value>
+  </data>
+
+  <!-- x:Uid da página de configurações -->
+  <data name="ContentHeader.Text" xml:space="preserve">
+    <value>Conteúdo</value>
+  </data>
+  <data name="AppearanceHeader.Text" xml:space="preserve">
+    <value>Aparência</value>
+  </data>
+  <data name="AcrylicBackgroundTitle.Text" xml:space="preserve">
+    <value>Fundo acrílico</value>
+  </data>
+  <data name="AcrylicBackgroundDescription.Text" xml:space="preserve">
+    <value>Desfoca o que está atrás da ilha, como os menus do Windows 11. Se os efeitos de transparência estiverem desligados nas configurações do Windows (ou no modo economia de energia), o fundo fica sólido.</value>
+  </data>
+  <data name="AcrylicBackgroundToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Fundo acrílico</value>
+  </data>
+  <data name="GlassBorderTitle.Text" xml:space="preserve">
+    <value>Borda de vidro</value>
+  </data>
+  <data name="GlassBorderDescription.Text" xml:space="preserve">
+    <value>Uma borda fina e quase transparente nos lados e embaixo da ilha, como um reflexo de vidro.</value>
+  </data>
+  <data name="GlassBorderToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Borda de vidro</value>
+  </data>
+  <data name="BackgroundOpacityTitle.Text" xml:space="preserve">
+    <value>Opacidade do fundo</value>
+  </data>
+  <data name="BackgroundOpacityDescription.Text" xml:space="preserve">
+    <value>Quanto o tom preto cobre o fundo. Com o fundo acrílico, quanto menor, mais o desfoque aparece. Texto, capa e ícones continuam opacos.</value>
+  </data>
+  <data name="BackgroundOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Opacidade do fundo em porcentagem</value>
+  </data>
+  <data name="BehaviorHeader.Text" xml:space="preserve">
+    <value>Comportamento</value>
+  </data>
+  <data name="ShowMediaTitle.Text" xml:space="preserve">
+    <value>Mídia tocando</value>
+  </data>
+  <data name="ShowMediaDescription.Text" xml:space="preserve">
+    <value>Capa, título e controles do que está tocando no Spotify, no navegador ou em qualquer app que apareça nos controles de mídia do Windows.</value>
+  </data>
+  <data name="ShowMediaToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mídia tocando</value>
+  </data>
+  <data name="ShowVolumeTitle.Text" xml:space="preserve">
+    <value>Aviso de volume</value>
+  </data>
+  <data name="ShowVolumeDescription.Text" xml:space="preserve">
+    <value>Mostra o nível ao mudar o volume ou o mudo. O aviso do próprio Windows continua aparecendo.</value>
+  </data>
+  <data name="ShowVolumeToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Aviso de volume</value>
+  </data>
+  <data name="ShowBatteryTitle.Text" xml:space="preserve">
+    <value>Bateria</value>
+  </data>
+  <data name="ShowBatteryDescription.Text" xml:space="preserve">
+    <value>Avisa ao ligar ou desligar o carregador e mostra a carga na ilha aberta. Sem efeito em PCs sem bateria.</value>
+  </data>
+  <data name="ShowBatteryToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bateria</value>
+  </data>
+  <data name="QuickControlsHeader.Text" xml:space="preserve">
+    <value>Controles rápidos</value>
+  </data>
+  <data name="ShowConnectivityTitle.Text" xml:space="preserve">
+    <value>Wi‑Fi e Bluetooth</value>
+  </data>
+  <data name="ShowConnectivityDescription.Text" xml:space="preserve">
+    <value>Botões na aba "Controles" da ilha aberta. Clique para ligar ou desligar; com o botão direito, abre a lista de redes ou de dispositivos Bluetooth do Windows.</value>
+  </data>
+  <data name="ShowConnectivityToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Wi‑Fi e Bluetooth</value>
+  </data>
+  <data name="ShowAudioControlsTitle.Text" xml:space="preserve">
+    <value>Volume e saída de áudio</value>
+  </data>
+  <data name="ShowAudioControlsDescription.Text" xml:space="preserve">
+    <value>Slider de volume, mudo e troca da saída de áudio (fone, caixa, HDMI) na aba "Controles". A troca de saída usa um recurso interno do Windows e pode deixar de funcionar após uma atualização.</value>
+  </data>
+  <data name="ShowAudioControlsToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Volume e saída de áudio</value>
+  </data>
+  <data name="ShowStorageTitle.Text" xml:space="preserve">
+    <value>Armazenamento</value>
+  </data>
+  <data name="ShowStorageDescription.Text" xml:space="preserve">
+    <value>Aba com o uso de cada disco em anéis. Clique num disco para abri-lo no Explorer. Unidades de rede e de CD/DVD ficam de fora.</value>
+  </data>
+  <data name="ShowStorageToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Armazenamento</value>
+  </data>
+  <data name="ShowSystemInfoTitle.Text" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="ShowSystemInfoDescription.Text" xml:space="preserve">
+    <value>Aba com processador, placa de vídeo, memória e placa-mãe, com uso e temperatura atualizados a cada segundo enquanto a aba está aberta. A temperatura aparece quando o Windows a informa: a da GPU depende do driver, e a do processador vem da zona térmica do sistema, que nem todo PC tem.</value>
+  </data>
+  <data name="ShowSystemInfoToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="HideOnFullscreenTitle.Text" xml:space="preserve">
+    <value>Esconder em tela cheia</value>
+  </data>
+  <data name="HideOnFullscreenDescription.Text" xml:space="preserve">
+    <value>A ilha some enquanto um jogo, vídeo ou apresentação ocupa a tela inteira.</value>
+  </data>
+  <data name="HideOnFullscreenToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Esconder em tela cheia</value>
+  </data>
+  <data name="CompactWhenCoveredTitle.Text" xml:space="preserve">
+    <value>Encolher sobre janelas</value>
+  </data>
+  <data name="CompactWhenCoveredDescription.Text" xml:space="preserve">
+    <value>Quando a janela em foco passa por baixo da ilha (maximizada, por exemplo), ela vira só uma alça fina para não cobrir abas e botões. Passe o mouse no topo da tela para abrir.</value>
+  </data>
+  <data name="CompactWhenCoveredToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Encolher sobre janelas</value>
+  </data>
+  <data name="HoverNote.Text" xml:space="preserve">
+    <value>A ilha fica no topo do monitor principal. Passe o mouse sobre ela para abrir; ao sair, ela volta a recolher.</value>
+  </data>
+</root>

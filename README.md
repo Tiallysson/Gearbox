@@ -7,6 +7,7 @@ ligado e desligado.
 | Módulo | O que faz |
 |---|---|
 | **Maximizar arredondado** (`RoundedMaximize`) | Janelas maximizadas mantêm cantos arredondados e uma borda colorida, com uma pequena margem até a borda da tela, como no macOS. |
+| **Ilha dinâmica** (`Notch`) | Uma "ilha" no topo do monitor principal, no estilo dos apps de notch do macOS: mostra o que está tocando (capa e barrinhas animadas), avisa mudanças de volume e do carregador e abre ao passar o mouse, com controles de mídia, hora, data e bateria. Some com app em tela cheia e vira só uma alça fina sobre janelas maximizadas. |
 | **Wallpaper** (`Wallpaper`) | Vídeo (MP4/WebM/MKV, em loop e sem som, atrás dos ícones) ou imagem como wallpaper, um por monitor, com o wallpaper do Gearbox como padrão. Pausa o vídeo com app em tela cheia/maximizado, na bateria e com o PC bloqueado. Ao desligar, o wallpaper anterior volta. |
 
 ## Requisitos
@@ -336,10 +337,14 @@ src/
   Gearbox/                   # casco WinUI: bandeja, janela, navegação, DI
   Gearbox.Core/              # contratos e serviços sem UI
   Gearbox.Interop/           # Win32/DWM via CsWin32 + WinEventHookManager
+  Gearbox.Modules.Notch/
   Gearbox.Modules.RoundedMaximize/
+  Gearbox.Modules.Wallpaper/
 tests/
   Gearbox.Core.Tests/
+  Gearbox.Modules.Notch.Tests/
   Gearbox.Modules.RoundedMaximize.Tests/
+  Gearbox.Modules.Wallpaper.Tests/
 installer/
   Gearbox.iss                # script do Inno Setup
   build-installer.ps1       # publica + gera o setup em artifacts\installer

@@ -1,0 +1,263 @@
+<Page
+    x:Class="Gearbox.Modules.Notch.UI.NotchSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{ThemeResource OverlayCornerRadius}" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+    </Page.Resources>
+
+    <StackPanel Spacing="4">
+
+        <!-- Conteúdo -->
+        <TextBlock x:Uid="ContentHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,8,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowMediaTitle" />
+                    <TextBlock x:Uid="ShowMediaDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowMediaToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowMedia, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowVolumeTitle" />
+                    <TextBlock x:Uid="ShowVolumeDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowVolumeToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowVolume, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowBatteryTitle" />
+                    <TextBlock x:Uid="ShowBatteryDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowBatteryToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowBattery, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <!-- Controles rápidos -->
+        <TextBlock x:Uid="QuickControlsHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowConnectivityTitle" />
+                    <TextBlock x:Uid="ShowConnectivityDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowConnectivityToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowConnectivity, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowAudioControlsTitle" />
+                    <TextBlock x:Uid="ShowAudioControlsDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowAudioControlsToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowAudioControls, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowStorageTitle" />
+                    <TextBlock x:Uid="ShowStorageDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowStorageToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowStorage, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowSystemInfoTitle" />
+                    <TextBlock x:Uid="ShowSystemInfoDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowSystemInfoToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowSystemInfo, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <!-- Aparência -->
+        <TextBlock x:Uid="AppearanceHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="AcrylicBackgroundTitle" />
+                    <TextBlock x:Uid="AcrylicBackgroundDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="AcrylicBackgroundToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.AcrylicBackground, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="GlassBorderTitle" />
+                    <TextBlock x:Uid="GlassBorderDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="GlassBorderToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.GlassBorder, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="BackgroundOpacityTitle" />
+                    <TextBlock x:Uid="BackgroundOpacityDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind ViewModel.BackgroundOpacityText, Mode=OneWay}" VerticalAlignment="Center" MinWidth="40" TextAlignment="Right" />
+                    <Slider
+                        x:Uid="BackgroundOpacitySlider"
+                        Width="200"
+                        Minimum="{x:Bind ViewModel.MinOpacity}"
+                        Maximum="{x:Bind ViewModel.MaxOpacity}"
+                        StepFrequency="5"
+                        TickFrequency="20"
+                        TickPlacement="Outside"
+                        Value="{x:Bind ViewModel.BackgroundOpacity, Mode=TwoWay}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Comportamento -->
+        <TextBlock x:Uid="BehaviorHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="HideOnFullscreenTitle" />
+                    <TextBlock x:Uid="HideOnFullscreenDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="HideOnFullscreenToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.HideOnFullscreen, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="CompactWhenCoveredTitle" />
+                    <TextBlock x:Uid="CompactWhenCoveredDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="CompactWhenCoveredToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.CompactWhenCovered, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <TextBlock
+            x:Uid="HoverNote"
+            Margin="1,16,0,0"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+            TextWrapping="Wrap" />
+    </StackPanel>
+</Page>

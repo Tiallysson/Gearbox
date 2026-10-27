@@ -46,6 +46,7 @@
     <ProjectReference Include="..\Gearbox.Interop\Gearbox.Interop.csproj" />
     <ProjectReference Include="..\Gearbox.Modules.RoundedMaximize\Gearbox.Modules.RoundedMaximize.csproj" />
     <ProjectReference Include="..\Gearbox.Modules.Wallpaper\Gearbox.Modules.Wallpaper.csproj" />
+    <ProjectReference Include="..\Gearbox.Modules.Notch\Gearbox.Modules.Notch.csproj" />
   </ItemGroup>
 
 </Project>

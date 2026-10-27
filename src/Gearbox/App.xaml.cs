@@ -3,6 +3,7 @@ using Gearbox.Core.Logging;
 using Gearbox.Core.Modules;
 using Gearbox.Core.Startup;
 using Gearbox.Interop;
+using Gearbox.Modules.Notch;
 using Gearbox.Modules.RoundedMaximize;
 using Gearbox.Modules.Wallpaper;
 using Gearbox.Services;
@@ -128,6 +129,7 @@ public partial class App : Application
         // Módulos: cada um se registra com a própria extension.
         builder.Services.AddRoundedMaximizeModule();
         builder.Services.AddWallpaperModule();
+        builder.Services.AddNotchModule();
 
         return builder.Build();
     }

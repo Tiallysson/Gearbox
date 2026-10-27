@@ -4,6 +4,8 @@ using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.System.Threading;
+using Windows.Win32.UI.HiDpi;
+using Windows.Win32.UI.Shell;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace Gearbox.Interop;
@@ -31,6 +33,22 @@ public readonly record struct TopLevelWindow(
     bool IsClickThrough,
     uint ProcessId);
 
+/// <summary>Um monitor: área inteira, área de trabalho (sem a barra de tarefas) e escala de DPI (1.0 = 96 DPI).</summary>
+public readonly record struct DisplayMonitor(PixelRect Bounds, PixelRect WorkArea, double DpiScale);
+
+/// <summary>O que o Windows acha que o usuário está fazendo (mesmos valores de <c>QUERY_USER_NOTIFICATION_STATE</c>).</summary>
+public enum UserNotificationState
+{
+    Unknown = 0,
+    NotPresent = 1,
+    Busy = 2,
+    RunningDirect3DFullScreen = 3,
+    PresentationMode = 4,
+    AcceptsNotifications = 5,
+    QuietTime = 6,
+    App = 7,
+}
+
 /// <summary>Wrappers finos e tipados sobre o Win32/DWM. Nenhum tipo do CsWin32 vaza daqui.</summary>
 public static class NativeWindow
 {
@@ -49,6 +67,20 @@ public static class NativeWindow
     public static bool IsTopLevel(nint hwnd) => PInvoke.GetAncestor(new HWND(hwnd), GET_ANCESTOR_FLAGS.GA_ROOT) == new HWND(hwnd);
 
     public static nint GetForegroundWindow() => PInvoke.GetForegroundWindow();
+
+    /// <summary>Posição do cursor em coordenadas de tela (pixels físicos).</summary>
+    public static bool TryGetCursorPosition(out int x, out int y)
+    {
+        if (PInvoke.GetCursorPos(out var point))
+        {
+            x = point.X;
+            y = point.Y;
+            return true;
+        }
+
+        x = y = 0;
+        return false;
+    }
 
     public static bool AllowSetForegroundWindow(uint processId) => PInvoke.AllowSetForegroundWindow(processId);
 
@@ -229,6 +261,63 @@ public static class NativeWindow
 
         workArea = ToPixelRect(info.rcWork);
         return true;
+    }
+
+    /// <summary>Monitor principal (o que contém a origem da tela).</summary>
+    public static bool TryGetPrimaryMonitor(out DisplayMonitor monitor)
+    {
+        var handle = PInvoke.MonitorFromPoint(new System.Drawing.Point(0, 0), MONITOR_FROM_FLAGS.MONITOR_DEFAULTTOPRIMARY);
+        var info = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
+        if (handle.IsNull || !PInvoke.GetMonitorInfo(handle, ref info))
+        {
+            monitor = default;
+            return false;
+        }
+
+        var scale = PInvoke.GetDpiForMonitor(handle, MONITOR_DPI_TYPE.MDT_EFFECTIVE_DPI, out var dpiX, out _).Succeeded && dpiX > 0
+            ? dpiX / 96.0
+            : 1.0;
+        monitor = new DisplayMonitor(ToPixelRect(info.rcMonitor), ToPixelRect(info.rcWork), scale);
+        return true;
+    }
+
+    /// <summary>Estado do usuário segundo o shell (detecta jogos em tela cheia exclusiva e modo apresentação).</summary>
+    public static UserNotificationState GetUserNotificationState() =>
+        PInvoke.SHQueryUserNotificationState(out var state).Succeeded ? (UserNotificationState)(int)state : UserNotificationState.Unknown;
+
+    /// <summary>
+    /// Transforma a janela num overlay: popup sem nenhuma moldura (a área cliente é a janela inteira), que não
+    /// ativa ao ser clicado (não rouba o foco do app atual) e não aparece no Alt+Tab nem na barra de tarefas.
+    /// </summary>
+    /// <remarks>
+    /// Mesmo sem borda e sem barra de título, o <c>OverlappedPresenter</c> do WinUI deixa um <c>WS_DLGFRAME</c>
+    /// de 3 px em volta da área cliente. Chame depois de configurar o presenter.
+    /// </remarks>
+    public static void MakeOverlay(nint hwnd)
+    {
+        var handle = new HWND(hwnd);
+        var style = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        style &= ~(WINDOW_STYLE.WS_CAPTION | WINDOW_STYLE.WS_THICKFRAME | WINDOW_STYLE.WS_SYSMENU |
+            WINDOW_STYLE.WS_MINIMIZEBOX | WINDOW_STYLE.WS_MAXIMIZEBOX);
+        style |= WINDOW_STYLE.WS_POPUP;
+        _ = PInvoke.SetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)(uint)style);
+
+        var exStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+        exStyle |= WINDOW_EX_STYLE.WS_EX_NOACTIVATE | WINDOW_EX_STYLE.WS_EX_TOOLWINDOW;
+        exStyle &= ~(WINDOW_EX_STYLE.WS_EX_APPWINDOW | WINDOW_EX_STYLE.WS_EX_WINDOWEDGE |
+            WINDOW_EX_STYLE.WS_EX_DLGMODALFRAME | WINDOW_EX_STYLE.WS_EX_CLIENTEDGE);
+        _ = PInvoke.SetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)(uint)exStyle);
+
+        // Sem SWP_FRAMECHANGED o Windows continua usando a moldura antiga.
+        PInvoke.SetWindowPos(
+            handle,
+            HWND.Null,
+            0,
+            0,
+            0,
+            0,
+            SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER |
+            SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED);
     }
 
     /// <summary>
