@@ -27,8 +27,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gearbox.Modules.Notch", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gearbox.Modules.Notch.Tests", "tests\Gearbox.Modules.Notch.Tests\Gearbox.Modules.Notch.Tests.csproj", "{1DED0BBA-E82A-403A-85AD-172F46CA82A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gearbox.Modules.Dock", "src\Gearbox.Modules.Dock\Gearbox.Modules.Dock.csproj", "{0D8B1082-D153-4982-8B97-CAB4CF94A106}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -37,14 +35,6 @@ Global
 		Release|ARM64 = Release|ARM64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Debug|x64.ActiveCfg = Debug|x64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Debug|x64.Build.0 = Debug|x64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Debug|ARM64.Build.0 = Debug|ARM64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Release|x64.ActiveCfg = Release|x64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Release|x64.Build.0 = Release|x64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Release|ARM64.ActiveCfg = Release|ARM64
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106}.Release|ARM64.Build.0 = Release|ARM64
 		{B4FE5302-37AE-4165-B662-891EED29315D}.Debug|x64.ActiveCfg = Debug|x64
 		{B4FE5302-37AE-4165-B662-891EED29315D}.Debug|x64.Build.0 = Debug|x64
 		{B4FE5302-37AE-4165-B662-891EED29315D}.Debug|ARM64.ActiveCfg = Debug|ARM64
@@ -130,7 +120,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{0D8B1082-D153-4982-8B97-CAB4CF94A106} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B4FE5302-37AE-4165-B662-891EED29315D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{E21C4445-1684-40F4-9A45-E6148F3C3520} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{7098B536-B3B1-43B2-A160-143AFD9CF803} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
