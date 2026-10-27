@@ -4,6 +4,7 @@ using Gearbox.Core.Modules;
 using Gearbox.Core.Startup;
 using Gearbox.Interop;
 using Gearbox.Modules.Notch;
+using Gearbox.Modules.Dock;
 using Gearbox.Modules.RoundedMaximize;
 using Gearbox.Modules.Wallpaper;
 using Gearbox.Services;
@@ -130,6 +131,7 @@ public partial class App : Application
         builder.Services.AddRoundedMaximizeModule();
         builder.Services.AddWallpaperModule();
         builder.Services.AddNotchModule();
+        builder.Services.AddDockModule();
 
         return builder.Build();
     }
