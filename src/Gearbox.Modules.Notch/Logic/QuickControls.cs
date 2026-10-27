@@ -57,8 +57,35 @@ public static class QuickControls
     /// </summary>
     public static VolumeLevel FromSlider(VolumeLevel current, double percent)
     {
+        if (!double.IsFinite(percent))
+        {
+            return current;
+        }
+
         float level = Math.Clamp((float)(percent / 100.0), 0f, 1f);
         bool isMuted = level == 0;
         return new VolumeLevel(level, isMuted);
     }
+
+    /// <summary>Aplica o nível ainda no mudo; uma falha ao ajustar o volume nunca libera o nível anterior.</summary>
+    public static bool TryApplySlider(
+        VolumeLevel current,
+        double percent,
+        Func<float, bool> setLevel,
+        Func<bool, bool> setMuted)
+    {
+        if (!double.IsFinite(percent))
+        {
+            return false;
+        }
+
+        var target = FromSlider(current, percent);
+        if (!setLevel(target.Level))
+        {
+            return false;
+        }
+
+        return target.IsMuted == current.IsMuted || setMuted(target.IsMuted);
+    }
 }
+

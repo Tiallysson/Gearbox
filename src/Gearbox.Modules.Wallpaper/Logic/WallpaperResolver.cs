@@ -9,6 +9,9 @@ public enum WallpaperProblem
 
     /// <summary>O arquivo existe, mas o vídeo não tocou (corrompido, codec ausente...).</summary>
     PlaybackFailed,
+
+    /// <summary>O fundo atual foi preservado porque sua restauração não pode ser garantida.</summary>
+    OriginalNotRestorable,
 }
 
 /// <summary>Arquivos do wallpaper embutido. <see cref="VideoPath"/> é opcional.</summary>
@@ -95,3 +98,4 @@ public static class WallpaperResolver
         return settings.Default?.Path;
     }
 }
+

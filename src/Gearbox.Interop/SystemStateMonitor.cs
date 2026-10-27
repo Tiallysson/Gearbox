@@ -17,8 +17,10 @@ namespace Gearbox.Interop;
 /// </remarks>
 public sealed class SystemStateMonitor : IDisposable
 {
-    private const string ClassName = "Gearbox.SystemStateMonitor";
-    private const int ErrorClassAlreadyExists = 1410;
+    // O WndProc pertence à instância. Compartilhar o nome reutilizaria o callback da primeira janela.
+    private readonly string _className = $"Gearbox.SystemStateMonitor.{Guid.NewGuid():N}";
+    private readonly int _threadId = Environment.CurrentManagedThreadId;
+    private bool _classRegistered;
 
     private readonly ILogger _logger;
     private readonly WNDPROC _wndProc; // Campo: o delegate não pode ser coletado enquanto a janela existir.
@@ -32,7 +34,15 @@ public sealed class SystemStateMonitor : IDisposable
         _logger = logger;
         _wndProc = WndProc;
         _taskbarCreatedMessage = PInvoke.RegisterWindowMessage("TaskbarCreated");
-        CreateWindow();
+        try
+        {
+            CreateWindow();
+        }
+        catch
+        {
+            Dispose();
+            throw;
+        }
     }
 
     /// <summary>Sessão bloqueada (<c>true</c>) ou desbloqueada (<c>false</c>).</summary>
@@ -49,9 +59,9 @@ public sealed class SystemStateMonitor : IDisposable
 
     public void Dispose()
     {
-        if (_hwnd.IsNull)
+        if (Environment.CurrentManagedThreadId != _threadId)
         {
-            return;
+            throw new InvalidOperationException("SystemStateMonitor deve ser descartado na thread que o criou.");
         }
 
         if (_sessionRegistered)
@@ -66,16 +76,33 @@ public sealed class SystemStateMonitor : IDisposable
             _displayNotification = default;
         }
 
-        PInvoke.DestroyWindow(_hwnd);
-        _hwnd = HWND.Null;
-        PInvoke.UnregisterClass(ClassName, PInvoke.GetModuleHandle((string?)null));
+        if (!_hwnd.IsNull)
+        {
+            if (!PInvoke.DestroyWindow(_hwnd))
+            {
+                throw new InvalidOperationException($"DestroyWindow falhou ({Marshal.GetLastPInvokeError()}).");
+            }
+
+            _hwnd = HWND.Null;
+        }
+
+        if (_classRegistered)
+        {
+            using var module = PInvoke.GetModuleHandle((string?)null);
+            if (!PInvoke.UnregisterClass(_className, module))
+            {
+                throw new InvalidOperationException($"UnregisterClass falhou ({Marshal.GetLastPInvokeError()}).");
+            }
+
+            _classRegistered = false;
+        }
     }
 
     private unsafe void CreateWindow()
     {
         using var module = PInvoke.GetModuleHandle((string?)null);
         var instance = new HINSTANCE(module.DangerousGetHandle());
-        fixed (char* className = ClassName)
+        fixed (char* className = _className)
         {
             var wc = new WNDCLASSEXW
             {
@@ -85,16 +112,17 @@ public sealed class SystemStateMonitor : IDisposable
                 lpszClassName = className,
             };
 
-            // Já registrada (ex.: módulo religado): segue com a existente.
-            if (PInvoke.RegisterClassEx(in wc) == 0 && Marshal.GetLastPInvokeError() != ErrorClassAlreadyExists)
+            if (PInvoke.RegisterClassEx(in wc) == 0)
             {
                 throw new InvalidOperationException($"RegisterClassEx falhou ({Marshal.GetLastPInvokeError()}).");
             }
+
+            _classRegistered = true;
         }
 
         _hwnd = PInvoke.CreateWindowEx(
             WINDOW_EX_STYLE.WS_EX_TOOLWINDOW,
-            ClassName,
+            _className,
             string.Empty,
             WINDOW_STYLE.WS_POPUP,
             0,
@@ -175,3 +203,4 @@ public sealed class SystemStateMonitor : IDisposable
         return PInvoke.DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }
+

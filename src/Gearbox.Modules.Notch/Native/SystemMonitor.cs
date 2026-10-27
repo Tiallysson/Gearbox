@@ -1,3 +1,4 @@
+using Gearbox.Core.Threading;
 using Gearbox.Interop;
 using Gearbox.Modules.Notch.Logic;
 using Microsoft.Extensions.Logging;
@@ -16,11 +17,13 @@ namespace Gearbox.Modules.Notch.Native;
 /// <see cref="HardwareChanged"/> e <see cref="SnapshotChanged"/> disparam nela. Falhas só são logadas: sem um
 /// sensor, o campo fica vazio.
 /// </remarks>
-internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) : IDisposable
+internal sealed class SystemMonitor : IDisposable
 {
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
 
-    private CancellationTokenSource? _loop;
+    private readonly DispatcherQueue _dispatcher;
+    private readonly ILogger _logger;
+    private readonly BackgroundLoop _loop;
     private HardwareInfo? _hardware;
     private bool _disposed;
 
@@ -28,46 +31,29 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
 
     public event EventHandler<SystemSnapshot>? SnapshotChanged;
 
-    /// <summary>Liga (aba "Sistema" na tela) ou desliga a amostragem.</summary>
-    public void SetActive(bool active)
+    public SystemMonitor(DispatcherQueue dispatcher, ILogger logger)
     {
-        if (_disposed || active == (_loop is not null))
-        {
-            return;
-        }
-
-        if (active)
-        {
-            _loop = new CancellationTokenSource();
-            _ = Task.Run(() => RunAsync(_loop.Token));
-        }
-        else
-        {
-            _loop!.Cancel();
-            _loop.Dispose();
-            _loop = null;
-        }
+        _dispatcher = dispatcher;
+        _logger = logger;
+        _loop = new BackgroundLoop(RunAsync, logger);
     }
+
+    /// <summary>Liga (aba "Sistema" na tela) ou desliga a amostragem.</summary>
+    public void SetActive(bool active) => _loop.SetActive(active);
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        SetActive(false);
         _disposed = true;
+        _loop.Dispose();
     }
 
     private async Task RunAsync(CancellationToken cancellation)
     {
         try
         {
-            var hardware = _hardware ?? ReadHardware();
+            var hardware = _hardware ??= ReadHardware();
             Post(() =>
             {
-                _hardware = hardware;
                 HardwareChanged?.Invoke(this, hardware);
             }, cancellation);
 
@@ -96,7 +82,7 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Leitura do sistema interrompida");
+            _logger.LogWarning(ex, "Leitura do sistema interrompida");
         }
     }
 
@@ -118,7 +104,7 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
             }
             catch (Exception ex)
             {
-                logger.LogDebug(ex, "Falha ao calcular o uso da GPU");
+                _logger.LogDebug(ex, "Falha ao calcular o uso da GPU");
             }
 
             if (GpuCounters.MemoryByAdapter(counters.Read(gpuMemory)).TryGetValue(gpu.LuidKey, out var used))
@@ -147,7 +133,7 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
         var board = string.Join(' ', new[] { boardMaker, boardModel }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         // Com placa integrada e dedicada (notebooks), a principal é a com mais memória dedicada.
-        var gpu = GraphicsAdapters.Enumerate(logger).MaxBy(a => a.DedicatedBytes);
+        var gpu = GraphicsAdapters.Enumerate(_logger).MaxBy(a => a.DedicatedBytes);
         return new HardwareInfo(cpu, board.Length > 0 ? board : null, gpu);
     }
 
@@ -160,12 +146,12 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
         }
         catch (Exception ex) when (ex is System.Security.SecurityException or IOException or UnauthorizedAccessException)
         {
-            logger.LogDebug(ex, "Não foi possível ler {Path}\\{Name}", path, name);
+            _logger.LogDebug(ex, "Não foi possível ler {Path}\\{Name}", path, name);
             return null;
         }
     }
 
-    private void Post(Action action, CancellationToken cancellation) => dispatcher.TryEnqueue(() =>
+    private void Post(Action action, CancellationToken cancellation) => _dispatcher.TryEnqueue(() =>
     {
         if (!_disposed && !cancellation.IsCancellationRequested)
         {
@@ -173,3 +159,4 @@ internal sealed class SystemMonitor(DispatcherQueue dispatcher, ILogger logger) 
         }
     });
 }
+

@@ -51,6 +51,64 @@ public sealed class QuickControlsTests
     }
 
     [Fact]
+    public void TryApplySlider_NoMudo_ReduzNivelAntesDeLiberarAudio()
+    {
+        var actual = new VolumeLevel(1f, true);
+        var audible = new List<float>();
+        var calls = new List<string>();
+
+        var success = QuickControls.TryApplySlider(actual, 10,
+            level =>
+            {
+                calls.Add("level");
+                actual = actual with { Level = level };
+                if (!actual.IsMuted) audible.Add(actual.Level);
+                return true;
+            },
+            muted =>
+            {
+                calls.Add("mute");
+                actual = actual with { IsMuted = muted };
+                if (!muted) audible.Add(actual.Level);
+                return true;
+            });
+
+        Assert.True(success);
+        Assert.Equal(["level", "mute"], calls);
+        Assert.Equal([0.1f], audible);
+    }
+
+    [Fact]
+    public void TryApplySlider_FalhaAoMudarNivel_NaoRetiraMudo()
+    {
+        var muteCalls = 0;
+        var success = QuickControls.TryApplySlider(new VolumeLevel(1f, true), 10,
+            _ => false,
+            _ => { muteCalls++; return true; });
+
+        Assert.False(success);
+        Assert.Equal(0, muteCalls);
+    }
+
+    [Fact]
+    public void TryApplySlider_FalhaAoMudarMudo_RetornaFalha()
+    {
+        Assert.False(QuickControls.TryApplySlider(new VolumeLevel(1f, true), 10, _ => true, _ => false));
+    }
+
+    [Theory]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void TryApplySlider_ValorNaoFinito_NaoAlteraAudio(double percent)
+    {
+        var calls = 0;
+        Assert.False(QuickControls.TryApplySlider(new VolumeLevel(0.5f, true), percent,
+            _ => { calls++; return true; }, _ => { calls++; return true; }));
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
     public void ShapeFor_AbertaComAbas_EMaisAlta()
     {
         var plain = NotchLayout.ShapeFor(NotchMode.Expanded, isPlaying: true, compact: false, withTabs: false);
@@ -71,3 +129,4 @@ public sealed class QuickControlsTests
             NotchLayout.ShapeFor(mode, isPlaying: false, compact: false, withTabs: true));
     }
 }
+

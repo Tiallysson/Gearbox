@@ -1,3 +1,4 @@
+using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -90,6 +91,50 @@ public sealed class JsonSettingsServiceTests : IDisposable
         Assert.Contains("\"second\"", json, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("{\"items\":null}")]
+    [InlineData("{\"mode\":1234}")]
+    [InlineData("{\"mode\":\"naoExiste\"}")]
+    public void Load_JsonValidoComValorInvalido_RecuperaPadroes(string json)
+    {
+        var service = CreateService();
+        Directory.CreateDirectory(Path.GetDirectoryName(service.FilePath)!);
+        File.WriteAllText(service.FilePath, json);
+
+        var loaded = service.Load();
+
+        Assert.Equal(["a"], loaded.Items);
+        Assert.Equal(SampleMode.First, loaded.Mode);
+        Assert.Equal(json, File.ReadAllText(service.FilePath + ".corrupt"));
+    }
+
+    [Fact]
+    public void Load_ModulosComEnabledNulo_RecuperaDicionario()
+    {
+        var service = new JsonSettingsService<ModuleStateSettings>(
+            "modules", new GearboxPaths(_root), NullLogger<JsonSettingsService<ModuleStateSettings>>.Instance);
+        Directory.CreateDirectory(Path.GetDirectoryName(service.FilePath)!);
+        File.WriteAllText(service.FilePath, "{\"enabled\":null}");
+
+        var loaded = service.Load();
+
+        Assert.NotNull(loaded.Enabled);
+        Assert.Empty(loaded.Enabled);
+        Assert.True(File.Exists(service.FilePath + ".corrupt"));
+    }
+
+    [Fact]
+    public void Save_ConfiguracaoInvalida_NaoSobrescreveArquivoValido()
+    {
+        var service = CreateService();
+        service.Save(new SampleSettings { Number = 7 });
+        var previous = File.ReadAllText(service.FilePath);
+
+        Assert.Throws<System.Text.Json.JsonException>(() => service.Save(new SampleSettings { Items = null! }));
+
+        Assert.Equal(previous, File.ReadAllText(service.FilePath));
+    }
+
     private JsonSettingsService<SampleSettings> CreateService() =>
         new("sample", new GearboxPaths(_root), NullLogger<JsonSettingsService<SampleSettings>>.Instance);
 
@@ -108,3 +153,4 @@ public sealed class JsonSettingsServiceTests : IDisposable
         public SampleMode Mode { get; set; }
     }
 }
+

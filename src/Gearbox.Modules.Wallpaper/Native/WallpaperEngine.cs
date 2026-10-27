@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
 using Gearbox.Core;
 using Gearbox.Core.Settings;
 using Gearbox.Interop;
@@ -16,19 +13,15 @@ namespace Gearbox.Modules.Wallpaper.Native;
 /// </summary>
 internal sealed class WallpaperEngine : IDisposable
 {
-    private readonly ISettingsService<WallpaperRestoreState> _restore;
-    private readonly string _backupDirectory;
+    private readonly WallpaperRestoration _restoration;
     private readonly ILogger _logger;
     private readonly DesktopWallpaper _api = new();
     private readonly Dictionary<string, VideoWallpaperWindow> _videos = new(StringComparer.OrdinalIgnoreCase);
-    private WallpaperRestoreState _restoreState;
 
     public WallpaperEngine(ISettingsService<WallpaperRestoreState> restore, GearboxPaths paths, ILogger logger)
     {
-        _restore = restore;
-        _backupDirectory = Path.Combine(paths.RootDirectory, "wallpaper");
         _logger = logger;
-        _restoreState = restore.Load();
+        _restoration = new WallpaperRestoration(_api, restore, paths, logger);
         Monitors = _api.GetMonitors();
     }
 
@@ -42,37 +35,51 @@ internal sealed class WallpaperEngine : IDisposable
 
     public void RefreshMonitors() => Monitors = _api.GetMonitors();
 
-    public void Apply(IReadOnlyList<WallpaperAssignment> assignments, WallpaperFit fit)
+    public IReadOnlyList<WallpaperAssignment> Apply(IReadOnlyList<WallpaperAssignment> assignments, WallpaperFit fit)
     {
+        var applied = new List<WallpaperAssignment>();
         foreach (var assignment in assignments)
         {
             switch (assignment.Kind)
             {
                 case MediaKind.Image when assignment.Path is not null:
                     RemoveVideo(assignment.DevicePath);
-                    SetStatic(assignment.DevicePath, assignment.Path);
+                    if (!_restoration.TryApplyImage(assignment.DevicePath, assignment.Path))
+                    {
+                        applied.Add(assignment with
+                        {
+                            Path = null,
+                            Kind = MediaKind.Unsupported,
+                            IsGearboxWallpaper = false,
+                            Problem = WallpaperProblem.OriginalNotRestorable,
+                        });
+                        continue;
+                    }
+
                     break;
 
                 case MediaKind.Video when assignment.Path is not null:
                     // Por trás do vídeo fica o wallpaper original: é o que aparece se o Gearbox fechar.
-                    RestoreStatic(assignment.DevicePath);
+                    _restoration.RestoreMonitor(assignment.DevicePath);
                     ShowVideo(assignment.DevicePath, assignment.Path, fit);
                     break;
 
                 default:
                     RemoveVideo(assignment.DevicePath);
-                    RestoreStatic(assignment.DevicePath);
+                    _restoration.RestoreMonitor(assignment.DevicePath);
                     break;
             }
+
+            applied.Add(assignment);
         }
 
-        if (assignments.Any(a => a.Kind == MediaKind.Image && a.Path is not null))
+        if (applied.Any(a => a.Kind == MediaKind.Image && a.Path is not null))
         {
-            SetFit(fit);
+            _restoration.SetFit(fit);
         }
         else
         {
-            RestoreFit();
+            _restoration.RestoreFit();
         }
 
         // Monitores que sumiram (ou que não estão mais na lista).
@@ -80,6 +87,8 @@ internal sealed class WallpaperEngine : IDisposable
         {
             RemoveVideo(devicePath);
         }
+
+        return applied;
     }
 
     public void SetPaused(string devicePath, bool paused)
@@ -113,21 +122,7 @@ internal sealed class WallpaperEngine : IDisposable
             RemoveVideo(devicePath);
         }
 
-        if (_restoreState.IsEmpty)
-        {
-            return;
-        }
-
-        foreach (var devicePath in _restoreState.Monitors.Keys.ToList())
-        {
-            RestoreStatic(devicePath);
-        }
-
-        RestoreFit();
-
-        _restoreState = new WallpaperRestoreState();
-        _restore.Save(_restoreState);
-        _logger.LogInformation("Wallpaper original restaurado");
+        _restoration.RestoreAll(Monitors.Select(m => m.DevicePath));
     }
 
     public void Dispose()
@@ -180,102 +175,6 @@ internal sealed class WallpaperEngine : IDisposable
         RemoveVideo(devicePath);
         VideoFailed?.Invoke(this, new VideoFailedEventArgs(devicePath, path, message));
     }
-
-    private void SetStatic(string devicePath, string imagePath)
-    {
-        if (string.Equals(_api.GetWallpaper(devicePath), imagePath, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        EnsureSnapshot();
-        _api.SetWallpaper(devicePath, imagePath);
-    }
-
-    /// <summary>Volta a imagem original do monitor, se o Gearbox a tiver trocado.</summary>
-    private void RestoreStatic(string devicePath)
-    {
-        var entry = _restoreState.Monitors
-            .FirstOrDefault(e => string.Equals(e.Key, devicePath, StringComparison.OrdinalIgnoreCase)).Value;
-        if (entry is null)
-        {
-            return;
-        }
-
-        var image = File.Exists(entry.OriginalPath) ? entry.OriginalPath : File.Exists(entry.BackupPath) ? entry.BackupPath : null;
-        if (image is null)
-        {
-            _logger.LogWarning("A imagem original do monitor {Monitor} não existe mais; o wallpaper atual fica", devicePath);
-            return;
-        }
-
-        if (!string.Equals(_api.GetWallpaper(devicePath), image, StringComparison.OrdinalIgnoreCase))
-        {
-            _api.SetWallpaper(devicePath, image);
-        }
-    }
-
-    private void SetFit(WallpaperFit fit)
-    {
-        if (_api.GetFit() == fit)
-        {
-            return;
-        }
-
-        EnsureSnapshot();
-        _api.SetFit(fit);
-    }
-
-    private void RestoreFit()
-    {
-        if (_restoreState.Fit is { } fit && _api.GetFit() != fit)
-        {
-            _api.SetFit(fit);
-        }
-    }
-
-    /// <summary>Antes da primeira mudança: guarda (em disco) o wallpaper e o ajuste atuais de cada monitor.</summary>
-    private void EnsureSnapshot()
-    {
-        if (!_restoreState.IsEmpty)
-        {
-            return;
-        }
-
-        var state = new WallpaperRestoreState { Fit = _api.GetFit() };
-        foreach (var monitor in Monitors)
-        {
-            var original = _api.GetWallpaper(monitor.DevicePath);
-            state.Monitors[monitor.DevicePath] = new RestoreEntry(original, Backup(monitor.DevicePath, original));
-        }
-
-        _restoreState = state;
-        _restore.Save(state);
-        _logger.LogInformation("Wallpaper original guardado ({Count} monitores)", state.Monitors.Count);
-    }
-
-    /// <summary>Copia a imagem original para a pasta do Gearbox (ela pode ser apagada enquanto o módulo está ligado).</summary>
-    private string? Backup(string devicePath, string? original)
-    {
-        if (original is null || !File.Exists(original))
-        {
-            return null;
-        }
-
-        try
-        {
-            Directory.CreateDirectory(_backupDirectory);
-            var name = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(devicePath)))[..16];
-            var backup = Path.Combine(_backupDirectory, $"original-{name}{Path.GetExtension(original)}");
-            File.Copy(original, backup, overwrite: true);
-            return backup;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ExternalException)
-        {
-            _logger.LogWarning(ex, "Não foi possível guardar uma cópia de {Path}", original);
-            return null;
-        }
-    }
 }
 
 internal sealed class VideoFailedEventArgs(string devicePath, string path, string message) : EventArgs
@@ -286,3 +185,4 @@ internal sealed class VideoFailedEventArgs(string devicePath, string path, strin
 
     public string Message { get; } = message;
 }
+
