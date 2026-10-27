@@ -12,7 +12,8 @@ public sealed class JsonSettingsService<T>(string id, GearboxPaths paths, ILogge
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        RespectNullableAnnotations = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
     };
 
     private readonly Lock _gate = new();
@@ -76,3 +77,4 @@ public sealed class JsonSettingsService<T>(string id, GearboxPaths paths, ILogge
         }
     }
 }
+

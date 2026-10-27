@@ -74,28 +74,42 @@ public sealed class AudioVolumeMonitor : IDisposable
     }
 
     /// <summary>Muda o volume principal (0 a 1). Dispara <see cref="VolumeChanged"/> como qualquer outra mudança.</summary>
-    public unsafe void SetLevel(float level)
+    public unsafe bool TrySetLevel(float level)
     {
+        if (_endpoint is null || !float.IsFinite(level))
+        {
+            return false;
+        }
+
         try
         {
-            _endpoint?.SetMasterVolumeLevelScalar(Math.Clamp(level, 0f, 1f), null);
+            _endpoint.SetMasterVolumeLevelScalar(Math.Clamp(level, 0f, 1f), null);
+            return true;
         }
         catch (COMException ex)
         {
             // O dispositivo sumiu entre a leitura e a escrita: o aviso de troca de dispositivo resolve.
             _logger.LogDebug(ex, "Não foi possível mudar o volume");
+            return false;
         }
     }
 
-    public unsafe void SetMuted(bool muted)
+    public unsafe bool TrySetMuted(bool muted)
     {
+        if (_endpoint is null)
+        {
+            return false;
+        }
+
         try
         {
-            _endpoint?.SetMute(muted, null);
+            _endpoint.SetMute(muted, null);
+            return true;
         }
         catch (COMException ex)
         {
             _logger.LogDebug(ex, "Não foi possível mudar o mudo");
+            return false;
         }
     }
 
@@ -196,3 +210,4 @@ public sealed class AudioVolumeMonitor : IDisposable
         }
     }
 }
+

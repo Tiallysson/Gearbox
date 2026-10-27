@@ -671,7 +671,7 @@ public sealed class NotchModule(
                 _ = LaunchAsync("ms-settings:network-ethernet");
                 break;
             case QuickAction.ToggleMute when _volume?.Current is { } volume:
-                _volume.SetMuted(!volume.IsMuted);
+                _volume.TrySetMuted(!volume.IsMuted);
                 break;
         }
     });
@@ -683,13 +683,10 @@ public sealed class NotchModule(
             return;
         }
 
-        var target = QuickControls.FromSlider(current, percent);
-        if (target.IsMuted != current.IsMuted)
+        if (!QuickControls.TryApplySlider(current, percent, _volume.TrySetLevel, _volume.TrySetMuted))
         {
-            _volume.SetMuted(target.IsMuted);
+            PushVolume();
         }
-
-        _volume.SetLevel(target.Level);
     });
 
     private void OnOutputDeviceSelected(object? sender, AudioOutputDevice device) => Guard(() =>
@@ -812,3 +809,4 @@ public sealed class NotchModule(
         }
     }
 }
+

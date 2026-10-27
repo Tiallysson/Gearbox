@@ -46,6 +46,9 @@
   <data name="ProblemPlaybackFailed" xml:space="preserve">
     <value>o vídeo não pôde ser reproduzido (arquivo corrompido ou codec ausente).</value>
   </data>
+  <data name="ProblemOriginalNotRestorable" xml:space="preserve">
+    <value>O fundo atual foi preservado: cor sólida, apresentação de slides ou imagem original indisponível</value>
+  </data>
   <data name="FallbackGearbox" xml:space="preserve">
     <value>o wallpaper do Gearbox</value>
   </data>
@@ -141,3 +144,4 @@
     <value>Imagens: JPG, PNG, BMP e WebP. Vídeos: MP4, WebM e MKV, em loop e sem som. Vídeos WebM precisam da extensão "Extensões de Vídeo VP9" da Microsoft Store.</value>
   </data>
 </root>
+

@@ -181,12 +181,12 @@ public sealed class WallpaperModule(
             File.Exists,
             _failedVideos);
 
+        Assignments = _engine.Apply(Assignments, _current.Fit);
         foreach (var problem in Assignments.Where(a => a.Problem != WallpaperProblem.None))
         {
             logger.LogWarning("Monitor {Monitor}: escolha descartada ({Problem})", problem.DevicePath, problem.Problem);
         }
 
-        _engine.Apply(Assignments, _current.Fit);
         UpdatePause();
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -328,3 +328,4 @@ public sealed class WallpaperModule(
         }
     }
 }
+

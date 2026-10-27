@@ -21,7 +21,7 @@ public enum WallpaperFit
 public readonly record struct WallpaperMonitor(string DevicePath, PixelRect Bounds);
 
 /// <summary>Wrapper do <c>IDesktopWallpaper</c>: o wallpaper estático do próprio Windows, por monitor.</summary>
-public sealed class DesktopWallpaper : IDisposable
+public sealed class DesktopWallpaper : IDesktopWallpaperBackend, IDisposable
 {
     private IDesktopWallpaper? _api;
 
@@ -31,6 +31,17 @@ public sealed class DesktopWallpaper : IDisposable
     }
 
     private IDesktopWallpaper Api => _api ?? throw new ObjectDisposedException(nameof(DesktopWallpaper));
+
+    /// <summary>Slideshow exige guardar mais que a imagem atual; o Gearbox preserva esse modo.</summary>
+    public unsafe bool HasSlideshow
+    {
+        get
+        {
+            DESKTOP_SLIDESHOW_STATE state;
+            Api.GetStatus(&state);
+            return (state & DESKTOP_SLIDESHOW_STATE.DSS_SLIDESHOW) != 0;
+        }
+    }
 
     /// <summary>Monitores ativos (os desconectados, que o Windows ainda lista, ficam de fora).</summary>
     public unsafe IReadOnlyList<WallpaperMonitor> GetMonitors()
@@ -133,3 +144,4 @@ public sealed class DesktopWallpaper : IDisposable
         }
     }
 }
+

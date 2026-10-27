@@ -12,6 +12,7 @@ namespace Gearbox.Modules.RoundedMaximize.Native;
 internal sealed class RoundedMaximizeEngine(ILogger logger)
 {
     private readonly PseudoMaximizeTracker _tracker = new();
+    private readonly WindowPlacementTransaction _placement = new(new WindowPlacementApi(), logger);
     private readonly ProcessNameCache _processNames = new(hwnd => NativeWindow.GetProcessName(NativeWindow.GetProcessId(hwnd)));
     private readonly HashSet<nint> _failedWindows = [];
     private readonly uint _ownProcessId = (uint)Environment.ProcessId;
@@ -64,6 +65,7 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
                 break;
             case WinEventKind.Destroyed:
                 _tracker.Forget(e.Hwnd);
+                _placement.Forget(e.Hwnd);
                 _processNames.Remove(e.Hwnd);
                 _failedWindows.Remove(e.Hwnd);
                 break;
@@ -95,6 +97,16 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
             }
         }
 
+        _busy = true;
+        try
+        {
+            _placement.RestorePending();
+        }
+        finally
+        {
+            _busy = false;
+        }
+
         logger.LogInformation("{Count} janela(s) restaurada(s)", _tracker.Count);
         _tracker.Clear();
         _processNames.Clear();
@@ -104,7 +116,7 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
     private void OnLocationChanged(nint hwnd)
     {
         // Nossas próprias chamadas a SetWindowPlacement/SetWindowPos geram eventos: ignorar.
-        if (_busy)
+        if (_busy || _placement.HasPending(hwnd))
         {
             return;
         }
@@ -175,34 +187,20 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
         _busy = true;
         try
         {
-            if (!NativeWindow.TryGetPlacement(hwnd, out var maximized) ||
-                !NativeWindow.TryGetWorkArea(hwnd, out var workArea))
+            var result = _placement.Apply(hwnd, _margin);
+            if (result.Window is not { } tracked)
             {
+                if (result.FailedOperation is { } operation)
+                {
+                    MarkFailed(hwnd, processName, operation, result.Error);
+                }
+
                 return;
             }
 
-            // 1. Sai do estado maximizado (o Windows 11 tira cantos e borda de janelas maximizadas).
-            if (!NativeWindow.TrySetPlacement(hwnd, maximized with { ShowCommand = ShowWindowCommand.Normal }))
-            {
-                MarkFailed(hwnd, processName, "SetWindowPlacement");
-                return;
-            }
-
-            // 2. Ocupa a área de trabalho menos a margem, descontando as bordas invisíveis.
-            var target = PseudoMaximizeLayout.Compute(workArea, _margin, NativeWindow.GetFrameInsets(hwnd));
-            if (!NativeWindow.TrySetBounds(hwnd, target))
-            {
-                MarkFailed(hwnd, processName, "SetWindowPos");
-                return;
-            }
-
-            // 3. Guarda o retângulo resultante (o app pode ter ajustado o tamanho pedido).
-            NativeWindow.TryGetPlacement(hwnd, out var pseudo);
-            NativeWindow.TryGetWindowRect(hwnd, out var pseudoRect);
-            _tracker.Track(new TrackedWindow(hwnd, maximized, pseudo.NormalPosition, pseudoRect));
-
+            _tracker.Track(tracked);
             ApplyDwm(hwnd);
-            logger.LogDebug("Janela {Hwnd} ({Process}) pseudo-maximizada em {Rect}", Hex(hwnd), processName, pseudoRect);
+            logger.LogDebug("Janela {Hwnd} ({Process}) pseudo-maximizada em {Rect}", Hex(hwnd), processName, tracked.PseudoWindowRect);
         }
         finally
         {
@@ -328,7 +326,7 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
         }
     }
 
-    private void MarkFailed(nint hwnd, string? processName, string operation)
+    private void MarkFailed(nint hwnd, string? processName, string operation, int error)
     {
         // Típico de janelas elevadas (UIPI): logar uma vez e não tentar de novo até a janela ser destruída.
         _failedWindows.Add(hwnd);
@@ -337,8 +335,9 @@ internal sealed class RoundedMaximizeEngine(ILogger logger)
             operation,
             Hex(hwnd),
             processName,
-            NativeWindow.LastError);
+            error);
     }
 
     private static string Hex(nint hwnd) => $"0x{hwnd:X}";
 }
+
