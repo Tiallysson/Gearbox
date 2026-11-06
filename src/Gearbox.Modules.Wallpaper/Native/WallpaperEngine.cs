@@ -35,7 +35,7 @@ internal sealed class WallpaperEngine : IDisposable
 
     public void RefreshMonitors() => Monitors = _api.GetMonitors();
 
-    public IReadOnlyList<WallpaperAssignment> Apply(IReadOnlyList<WallpaperAssignment> assignments, WallpaperFit fit)
+    public IReadOnlyList<WallpaperAssignment> Apply(IReadOnlyList<WallpaperAssignment> assignments, WallpaperFitMode fit)
     {
         var applied = new List<WallpaperAssignment>();
         foreach (var assignment in assignments)
@@ -75,7 +75,7 @@ internal sealed class WallpaperEngine : IDisposable
 
         if (applied.Any(a => a.Kind == MediaKind.Image && a.Path is not null))
         {
-            _restoration.SetFit(fit);
+            _restoration.SetFit(fit.ToWallpaperFit());
         }
         else
         {
@@ -136,7 +136,7 @@ internal sealed class WallpaperEngine : IDisposable
         _api.Dispose();
     }
 
-    private void ShowVideo(string devicePath, string path, WallpaperFit fit)
+    private void ShowVideo(string devicePath, string path, WallpaperFitMode fit)
     {
         if (_videos.TryGetValue(devicePath, out var existing))
         {

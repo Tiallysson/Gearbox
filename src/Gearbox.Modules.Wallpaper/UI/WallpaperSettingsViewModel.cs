@@ -14,7 +14,7 @@ namespace Gearbox.Modules.Wallpaper.UI;
 public sealed partial class WallpaperSettingsViewModel : ObservableObject
 {
     /// <summary>Opções do combo "Ajuste", na ordem em que aparecem.</summary>
-    private static readonly WallpaperFit[] s_fits = [WallpaperFit.Fill, WallpaperFit.Fit, WallpaperFit.Stretch, WallpaperFit.Center];
+    private static readonly WallpaperFitMode[] s_fits = [WallpaperFitMode.Fill, WallpaperFitMode.Fit, WallpaperFitMode.Stretch, WallpaperFitMode.Center];
 
     private readonly ISettingsService<WallpaperSettings> _settings;
     private readonly WallpaperModule _module;
