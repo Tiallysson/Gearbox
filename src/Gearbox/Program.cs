@@ -1,4 +1,4 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;

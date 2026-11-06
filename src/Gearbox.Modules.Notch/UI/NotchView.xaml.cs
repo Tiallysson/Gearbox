@@ -1,5 +1,5 @@
 using System.Globalization;
-using Gearbox.Interop;
+using Gearbox.Interop.Audio;
 using Gearbox.Modules.Notch.Logic;
 using Gearbox.Modules.Notch.Native;
 using Microsoft.UI.Xaml;

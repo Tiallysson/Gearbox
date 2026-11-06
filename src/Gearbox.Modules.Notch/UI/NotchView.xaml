@@ -4,7 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:interop="using:Gearbox.Interop"
+    xmlns:audio="using:Gearbox.Interop.Audio"
+    xmlns:controls="using:Gearbox.Modules.Notch.UI.Controls"
     xmlns:local="using:Gearbox.Modules.Notch.UI"
     mc:Ignorable="d"
     RequestedTheme="Dark">
@@ -382,7 +383,7 @@
                                 </Style>
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="interop:AudioOutputDevice">
+                                <DataTemplate x:DataType="audio:AudioOutputDevice">
                                     <Grid ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -432,7 +433,7 @@
                                             ToolTipService.ToolTip="{x:Bind ToolTip}"
                                             AutomationProperties.Name="{x:Bind ToolTip}">
                                             <StackPanel Spacing="4">
-                                                <local:UsageRing HorizontalAlignment="Center" Percent="{x:Bind Percent}" />
+                                                <controls:UsageRing HorizontalAlignment="Center" Percent="{x:Bind Percent}" />
                                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
                                                     <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="{x:Bind Glyph}" />
                                                     <TextBlock FontSize="12" FontWeight="Medium" Text="{x:Bind Letter}" />

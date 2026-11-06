@@ -1,5 +1,5 @@
 using Gearbox.Core.Threading;
-using Gearbox.Interop;
+using Gearbox.Interop.Metrics;
 using Gearbox.Modules.Notch.Logic;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;

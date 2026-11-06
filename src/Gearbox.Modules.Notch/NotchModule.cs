@@ -1,6 +1,9 @@
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Audio;
+using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Session;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.Notch.Logic;
 using Gearbox.Modules.Notch.Native;
 using Gearbox.Modules.Notch.UI;

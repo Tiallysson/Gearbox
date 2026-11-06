@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
 
 namespace Gearbox.Modules.Wallpaper;
 

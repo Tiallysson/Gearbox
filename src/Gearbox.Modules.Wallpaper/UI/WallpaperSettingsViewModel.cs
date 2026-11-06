@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
 using Gearbox.Modules.Wallpaper.Logic;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;

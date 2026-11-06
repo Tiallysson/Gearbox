@@ -1,4 +1,6 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
+using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Windowing;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;

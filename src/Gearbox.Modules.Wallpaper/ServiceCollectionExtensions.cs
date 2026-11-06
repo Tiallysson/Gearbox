@@ -1,5 +1,5 @@
 using Gearbox.Core;
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.Wallpaper.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

@@ -1,6 +1,6 @@
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.RoundedMaximize.Logic;
 using Gearbox.Modules.RoundedMaximize.Native;
 using Gearbox.Modules.RoundedMaximize.UI;

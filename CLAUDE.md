@@ -39,15 +39,22 @@ Layered, dependencies point down only:
   on/off state), `ISettingsService<T>` / `JsonSettingsService` (atomic writes; corrupt file → `{id}.json.corrupt`,
   defaults used), startup registry, paths, logging.
 - `src/Gearbox.Interop` — the **only** place that touches Win32, via CsWin32. Add API names to `NativeMethods.txt`
-  and expose typed wrappers (e.g. in `NativeWindow`). No hand-written `DllImport`, no CsWin32 types leaking out.
-  Also hosts the single shared `WinEventHookManager` (modules call `hooks.Subscribe(Id, handler)`; new Win32 events
-  go into `WinEventKind` and the hook range), `DesktopLayer`, `DesktopWallpaper`, `SystemStateMonitor`.
+  and expose typed wrappers (e.g. in `Windowing/NativeWindow`). No hand-written `DllImport`, no CsWin32 types leaking
+  out. Also hosts the single shared `WinEventHookManager` (modules call `hooks.Subscribe(Id, handler)`; new Win32
+  events go into `WinEventKind` and the hook range). Files are grouped by responsibility, folder == namespace
+  (`Gearbox.Interop.<Folder>`): `Geometry/` (`PixelRect`, `FrameInsets`), `Windowing/` (`NativeWindow`,
+  `WindowPlacement`, `TransparentWindow`, `WinEventHookManager`), `Desktop/` (`DesktopLayer`, `DesktopWallpaper`),
+  `Audio/` (Core Audio), `Metrics/` (PDH, DXGI, memory), `Session/` (`SystemStateMonitor`: lock, display
+  power/topology, Explorer restart). `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
+  `Gearbox.Interop.*` it would shadow `Windows.Win32` (CsWin32) / `System.*` and break name resolution.
 - `src/Gearbox.Modules.*` — one project per tool, layout: `XxxModule.cs` (implements `IGearboxModule`),
   `XxxSettings.cs` (POCO → `settings\{ModuleId}.json`), `ServiceCollectionExtensions.cs`
   (`AddGearboxSettings<T>` + `AddGearboxModule<TModule, TPage>`), `Logic/` (pure, Win32-free, unit-tested),
   `Native/` (applies to the system via Interop), `UI/` (settings page + `ObservableObject` ViewModel),
   `Strings/pt-BR/Resources.resw`. `Gearbox.Modules.RoundedMaximize` is the reference implementation.
 - `tests/` — one xUnit v3 project per production project (`OutputType=Exe`), testing mainly the `Logic/` classes.
+  Test files mirror the folder of the class under test, with a matching namespace (e.g.
+  `tests/Gearbox.Modules.Notch.Tests/Logic/NotchLayoutTests.cs` → `Gearbox.Modules.Notch.Tests.Logic`).
 
 The shell derives navigation, tray toggles and persisted on/off state from `IEnumerable<IGearboxModule>`; the
 module's settings page is created via DI (ViewModel injected through the constructor) and embedded inside the
