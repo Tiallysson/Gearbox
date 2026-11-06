@@ -1,4 +1,4 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Geometry;
 
 namespace Gearbox.Modules.Wallpaper.Logic;
 

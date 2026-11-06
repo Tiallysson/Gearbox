@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.RoundedMaximize.Logic;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;

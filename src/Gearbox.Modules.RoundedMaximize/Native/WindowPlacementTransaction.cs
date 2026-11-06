@@ -1,4 +1,5 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.RoundedMaximize.Logic;
 using Microsoft.Extensions.Logging;
 

@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Gearbox.Core;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
 using Microsoft.Extensions.Logging;
 
 namespace Gearbox.Modules.Wallpaper.Native;

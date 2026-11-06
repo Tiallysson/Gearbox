@@ -1,5 +1,5 @@
 using Gearbox.Core.Modules;
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Gearbox.Services;
 using Gearbox.ViewModels;
 using Microsoft.Extensions.DependencyInjection;

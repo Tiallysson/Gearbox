@@ -1,7 +1,8 @@
 using Gearbox.Core;
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
-using Gearbox.Interop;
+using Gearbox.Interop.Session;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.Wallpaper.Logic;
 using Gearbox.Modules.Wallpaper.Native;
 using Gearbox.Modules.Wallpaper.UI;

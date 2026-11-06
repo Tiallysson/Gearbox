@@ -321,9 +321,11 @@ referência ao módulo) e teste as classes de `Logic/`.
   (eventos, timers) devem ir para o `IModuleFaultReporter`. Exceções em handlers do
   `WinEventHookManager` são capturadas e reportadas automaticamente.
 - Eventos de janela: `hooks.Subscribe(Id, handler)` no `WinEventHookManager` (um único hook compartilhado).
-  Para precisar de outro evento Win32, adicione-o ao `WinEventKind` e à faixa do hook em `Gearbox.Interop`.
-- Win32: adicione o nome da API ao `src\Gearbox.Interop\NativeMethods.txt` e exponha um wrapper tipado em
-  `NativeWindow`. Nada de `DllImport` escrito à mão e nenhum tipo do CsWin32 fora do `Gearbox.Interop`.
+  Para precisar de outro evento Win32, adicione-o ao `WinEventKind` e à faixa do hook em
+  `src\Gearbox.Interop\Windowing\WinEventHookManager.cs`.
+- Win32: adicione o nome da API ao `src\Gearbox.Interop\NativeMethods.txt` e exponha um wrapper tipado na pasta
+  temática do `Gearbox.Interop` (ex.: `Windowing/NativeWindow`). Nada de `DllImport` escrito à mão e nenhum tipo do
+  CsWin32 fora do `Gearbox.Interop`.
 - Textos da UI ficam no `.resw`, nunca fixos no código ou no XAML.
 
 ## Estrutura
@@ -337,10 +339,16 @@ src/
   Gearbox/                   # casco WinUI: bandeja, janela, navegação, DI
   Gearbox.Core/              # contratos e serviços sem UI
   Gearbox.Interop/           # Win32/DWM via CsWin32 + WinEventHookManager
+    Geometry/                #   PixelRect, FrameInsets
+    Windowing/               #   NativeWindow, WindowPlacement, TransparentWindow, WinEventHookManager
+    Desktop/                 #   DesktopLayer, DesktopWallpaper
+    Audio/                   #   AudioEndpoints, AudioVolumeMonitor (Core Audio)
+    Metrics/                 #   PerformanceCounters (PDH), GraphicsAdapters (DXGI), SystemMemory
+    Session/                 #   SystemStateMonitor (bloqueio, energia da tela, monitores, Explorer)
   Gearbox.Modules.Notch/
   Gearbox.Modules.RoundedMaximize/
   Gearbox.Modules.Wallpaper/
-tests/
+tests/                       # pastas e namespaces espelham os do código testado (Logic/, Native/, ...)
   Gearbox.Core.Tests/
   Gearbox.Modules.Notch.Tests/
   Gearbox.Modules.RoundedMaximize.Tests/

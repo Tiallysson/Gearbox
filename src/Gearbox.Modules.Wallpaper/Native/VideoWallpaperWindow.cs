@@ -1,4 +1,7 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
+using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Windowing;
+using Gearbox.Modules.Wallpaper.Logic;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -37,7 +40,7 @@ internal sealed class VideoWallpaperWindow : IDisposable
     private bool _paused;
     private bool _disposed;
 
-    public VideoWallpaperWindow(string path, WallpaperFit fit, PixelRect bounds, ILogger logger)
+    public VideoWallpaperWindow(string path, WallpaperFitMode fit, PixelRect bounds, ILogger logger)
     {
         _logger = logger;
         _dispatcher = DispatcherQueue.GetForCurrentThread()
@@ -100,7 +103,7 @@ internal sealed class VideoWallpaperWindow : IDisposable
 
     public string Path { get; }
 
-    public void SetFit(WallpaperFit fit) => _element.Stretch = ToStretch(fit);
+    public void SetFit(WallpaperFitMode fit) => _element.Stretch = ToStretch(fit);
 
     /// <summary>Pausa ou retoma. Devolve <c>true</c> se o estado mudou.</summary>
     public bool SetPaused(bool paused)
@@ -179,11 +182,11 @@ internal sealed class VideoWallpaperWindow : IDisposable
         });
     }
 
-    private static Stretch ToStretch(WallpaperFit fit) => fit switch
+    private static Stretch ToStretch(WallpaperFitMode fit) => fit switch
     {
-        WallpaperFit.Fit => Stretch.Uniform,
-        WallpaperFit.Stretch => Stretch.Fill,
-        WallpaperFit.Center => Stretch.None,
-        _ => Stretch.UniformToFill, // Fill, Tile e Span
+        WallpaperFitMode.Fit => Stretch.Uniform,
+        WallpaperFitMode.Stretch => Stretch.Fill,
+        WallpaperFitMode.Center => Stretch.None,
+        _ => Stretch.UniformToFill,
     };
 }

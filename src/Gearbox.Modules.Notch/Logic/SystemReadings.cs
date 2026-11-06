@@ -1,4 +1,4 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Metrics;
 
 namespace Gearbox.Modules.Notch.Logic;
 

@@ -1,4 +1,5 @@
-using Gearbox.Interop;
+using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Windowing;
 
 namespace Gearbox.Modules.Notch.Logic;
 

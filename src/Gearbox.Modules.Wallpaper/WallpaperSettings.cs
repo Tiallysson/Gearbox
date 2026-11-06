@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using Gearbox.Interop;
+using Gearbox.Interop.Desktop;
+using Gearbox.Modules.Wallpaper.Logic;
 
 namespace Gearbox.Modules.Wallpaper;
 
@@ -19,7 +20,7 @@ public sealed class WallpaperSettings
     public Dictionary<string, MonitorWallpaper> Monitors { get; set; } = [];
 
     /// <summary>Como imagens e vídeos ocupam o monitor. O Windows só tem um ajuste para todos os monitores.</summary>
-    public WallpaperFit Fit { get; set; } = WallpaperFit.Fill;
+    public WallpaperFitMode Fit { get; set; } = WallpaperFitMode.Fill;
 
     public bool PauseOnFullscreen { get; set; } = true;
 

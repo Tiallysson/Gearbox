@@ -19,12 +19,19 @@
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼────────────────────────── Gearbox.Interop ─────┐
-│ WinEventHookManager (hooks out-of-context) · NativeWindow (wrappers)         │
-│ DesktopLayer · DesktopWallpaper · SystemStateMonitor                         │
-│ TransparentWindow · AudioVolumeMonitor · AudioEndpoints (Core Audio)         │
+│ Windowing/: WinEventHookManager (hooks out-of-context) · NativeWindow        │
+│             WindowPlacement · TransparentWindow                              │
+│ Desktop/: DesktopLayer · DesktopWallpaper    Session/: SystemStateMonitor    │
+│ Audio/: AudioVolumeMonitor · AudioEndpoints (Core Audio)                     │
+│ Metrics/: PerformanceCounters · GraphicsAdapters · SystemMemory              │
+│ Geometry/: PixelRect · FrameInsets                                           │
 │ CsWin32 → user32 / dwmapi / kernel32 / wtsapi32 / IDesktopWallpaper          │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+Cada pasta do `Gearbox.Interop` é um namespace (`Gearbox.Interop.Windowing`, `Gearbox.Interop.Desktop`, ...). Nenhuma
+pasta pode se chamar `Windows`, `System` ou `Microsoft`: dentro de `Gearbox.Interop.*` ela esconderia o `Windows.Win32`
+gerado pelo CsWin32 (e o `System.*`) e quebraria a resolução de nomes.
 
 Dependências apontam só para baixo: o casco conhece Core, Interop e os módulos; um módulo conhece
 Core e Interop; Core e Interop não conhecem ninguém.
@@ -226,9 +233,9 @@ NotchModule (orquestra, timers)
 - **Abas e páginas**: a view expõe `CurrentPage` (`NotchPage`) e `PageChanged`; `NotchModule.UpdatePageSources` só lê
   discos e sensores com a ilha aberta **e** a página deles na tela.
   - *Armazenamento*: `DriveScanner` (`DriveInfo`, numa thread do pool; só discos fixos e removíveis, sem rede/CD) é
-    relido cada vez que a aba aparece. Anéis em `UsageRing` (geometria em `RingGeometry`, vermelho a partir de 90%).
-    O clique abre o disco com o caminho completo do `explorer.exe` e o disco como argumento separado, sem shell.
-    Antes, confere se é mesmo a raiz de uma unidade.
+    relido cada vez que a aba aparece. Anéis em `UsageRing` (controle em `UI/Controls`, geometria em `RingGeometry`,
+    vermelho a partir de 90%). O clique abre o disco com o caminho completo do `explorer.exe` e o disco como argumento
+    separado, sem shell. Antes, confere se é mesmo a raiz de uma unidade.
   - *Sistema*: `SystemMonitor` amostra a cada 1 s numa thread do pool enquanto a aba está visível (`SetActive`).
     Modelos da CPU e da placa-mãe vêm do registro (`HARDWARE\DESCRIPTION\System`), a GPU principal (a com mais memória
     dedicada) vem do DXGI (`GraphicsAdapters`). Uso via PDH (`PerformanceCounters`, caminhos em inglês):

@@ -2,7 +2,7 @@ using Gearbox.Core;
 using Gearbox.Core.Logging;
 using Gearbox.Core.Modules;
 using Gearbox.Core.Startup;
-using Gearbox.Interop;
+using Gearbox.Interop.Windowing;
 using Gearbox.Modules.Notch;
 using Gearbox.Modules.RoundedMaximize;
 using Gearbox.Modules.Wallpaper;
