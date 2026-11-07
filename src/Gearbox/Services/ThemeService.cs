@@ -11,12 +11,6 @@ public enum AppTheme
     Dark,
 }
 
-/// <summary>Configurações do casco, em <c>settings\general.json</c>.</summary>
-public sealed class GeneralSettings
-{
-    public AppTheme Theme { get; set; } = AppTheme.System;
-}
-
 /// <summary>
 /// Tema da janela principal. No WinUI 3 o tema do <c>Application</c> só pode ser definido no construtor,
 /// então ele é aplicado no elemento raiz da janela (o Mica e a barra de título acompanham).
