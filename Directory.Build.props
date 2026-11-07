@@ -10,7 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>x64;ARM64</Platforms>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>0.3.0</Version>
+    <Version>0.4.106</Version>
     <Company>Gearbox</Company>
     <Product>Gearbox</Product>
     <Copyright>© 2026 Tiallysson Costa</Copyright>
