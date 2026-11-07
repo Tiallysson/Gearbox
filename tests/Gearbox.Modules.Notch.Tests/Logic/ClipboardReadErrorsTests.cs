@@ -24,4 +24,25 @@ public sealed class ClipboardReadErrorsTests
     {
         Assert.False(ClipboardReadErrors.IsTransient(unchecked((int)hresult)));
     }
+
+    [Fact]
+    public void RetryDelay_CresceACadaFalhaAteOLimite()
+    {
+        var delays = Enumerable.Range(1, ClipboardReadErrors.MaxRetries).Select(ClipboardReadErrors.RetryDelay).ToList();
+
+        Assert.All(delays, d => Assert.NotNull(d));
+        Assert.Equal(delays.OrderBy(d => d).ToList(), delays);
+        Assert.True(delays[0] > TimeSpan.Zero);
+        Assert.True(delays.Sum(d => d!.Value.TotalMilliseconds) <= 2000);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(5)]
+    [InlineData(100)]
+    public void RetryDelay_ForaDasTentativas_NaoTentaDeNovo(int failedAttempts)
+    {
+        Assert.Null(ClipboardReadErrors.RetryDelay(failedAttempts));
+    }
 }

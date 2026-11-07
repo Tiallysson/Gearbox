@@ -124,22 +124,44 @@ internal sealed class ClipboardWatcher : IDisposable
             return;
         }
 
-        try
+        for (var failedAttempts = 0; ; failedAttempts++)
         {
-            var (item, image) = await ReadAsync();
-            if (_disposed || version != _readVersion || ClipboardMonitor.SequenceNumber != e.SequenceNumber || item is null)
+            try
             {
-                image?.Dispose();
+                var (item, image) = await ReadAsync();
+                if (IsStale(version, e.SequenceNumber) || item is null)
+                {
+                    image?.Dispose();
+                    return;
+                }
+
+                Add(item, image);
                 return;
             }
-
-            Add(item, image);
-        }
-        catch (Exception ex)
-        {
-            LogReadFailure(ex, "Não foi possível ler a área de transferência");
+            catch (COMException ex) when (ClipboardReadErrors.IsTransient(ex.HResult) && ClipboardReadErrors.RetryDelay(failedAttempts + 1) is { } delay)
+            {
+                _logger.LogDebug(ex, "Área de transferência ocupada; nova tentativa {Attempt} em {Delay} ms", failedAttempts + 1, delay.TotalMilliseconds);
+                await Task.Delay(delay);
+                if (IsStale(version, e.SequenceNumber))
+                {
+                    return;
+                }
+            }
+            catch (COMException ex) when (ClipboardReadErrors.IsTransient(ex.HResult))
+            {
+                _logger.LogWarning(ex, "A área de transferência continuou ocupada depois de {Attempts} tentativas; o item copiado ficou fora do histórico", failedAttempts + 1);
+                return;
+            }
+            catch (Exception ex)
+            {
+                LogReadFailure(ex, "Não foi possível ler a área de transferência");
+                return;
+            }
         }
     }
+
+    private bool IsStale(int version, uint sequenceNumber) =>
+        _disposed || version != _readVersion || ClipboardMonitor.SequenceNumber != sequenceNumber;
 
     private void LogReadFailure(Exception ex, string message)
     {
