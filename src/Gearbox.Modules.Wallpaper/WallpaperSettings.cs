@@ -7,8 +7,7 @@ namespace Gearbox.Modules.Wallpaper;
 /// <summary>Gravado em <c>%LocalAppData%\Gearbox\settings\Wallpaper.json</c>.</summary>
 public sealed class WallpaperSettings
 {
-    /// <summary>Monitores sem arquivo escolhido (ou com arquivo inválido) usam o wallpaper do Gearbox.</summary>
-    public bool UseGearboxWallpaper { get; set; } = true;
+    public string? GalleryWallpaperId { get; set; }
 
     /// <summary>Usa <see cref="Default"/> em todos os monitores, ignorando <see cref="Monitors"/>.</summary>
     public bool SameForAllMonitors { get; set; } = true;

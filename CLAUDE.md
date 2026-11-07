@@ -53,7 +53,7 @@ Layered, dependencies point down only:
   (`Gearbox.Interop.<Folder>`): `Geometry/` (`PixelRect`, `FrameInsets`), `Windowing/` (`NativeWindow`,
   `WindowPlacement`, `TransparentWindow`, `WinEventHookManager`), `Desktop/` (`DesktopLayer`, `DesktopWallpaper`),
   `Audio/` (Core Audio), `Metrics/` (PDH, DXGI, memory), `Session/` (`SystemStateMonitor`: lock, display
-  power/topology, Explorer restart). `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
+  power/topology, Explorer restart), `Shell/` (`InstalledApps`: Start menu apps and their icons), `Clipboard/`. `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
   `Gearbox.Interop.*` it would shadow `Windows.Win32` (CsWin32) / `System.*` and break name resolution.
 - `src/Gearbox.Modules.*` — one project per tool, layout: `XxxModule.cs` (implements `IGearboxModule`),
   `XxxSettings.cs` (POCO → `settings\{ModuleId}.json`), `ServiceCollectionExtensions.cs`

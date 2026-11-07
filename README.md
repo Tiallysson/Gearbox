@@ -22,15 +22,24 @@ Uma "ilha" discreta no topo da tela, inspirada no notch do Mac.
 - Avisa rapidinho quando o volume muda ou quando o carregador é ligado ou desligado.
 - Some sozinha durante jogos, vídeos e apresentações em tela cheia, e vira só uma alça fininha quando uma
   janela maximizada fica embaixo dela.
+- Do seu jeito: escolha a cor do fundo (de uma paleta, a de destaque do Windows ou qualquer outra), se ele fica
+  opaco, mais ou menos transparente ou como um vidro fosco, cantos mais ou menos arredondados e animação com efeito
+  de mola. A engrenagem na ilha aberta leva direto para essas opções.
+- Na aba **Links**, guarde atalhos para seus sites e apps favoritos, com o ícone de cada um. Clique para abrir o site
+  no seu navegador ou o app; o "+" adiciona um novo, e nas configurações dá para reordenar e remover.
 
 ### Wallpaper
 
-Coloque um vídeo ou uma imagem como papel de parede.
+Uma galeria de wallpapers exclusivos do Gearbox, ou um vídeo ou imagem seu.
 
+- **Galeria**: 5 wallpapers estáticos (Abstract Gradient, Dark Minimal, Aurora, Geometric e Nature), gerados na
+  resolução exata do seu monitor, e 5 interativos (Living Gradient, Aurora Flow, Particles, Digital Clock e Fluid
+  Waves), com movimento suave e leve. Filtre por tipo, passe o mouse para ver os interativos se mexendo, abra a
+  prévia e ative. Nenhum vem ativado: você escolhe.
 - Vídeos em MP4, WebM ou MKV ficam em loop, sem som, atrás dos ícones da área de trabalho.
 - Use o mesmo wallpaper em todas as telas ou um diferente em cada monitor.
 - Escolha como ele ocupa a tela: preencher, ajustar, esticar ou centralizar.
-- Para não pesar no computador, o vídeo pausa quando um jogo ou janela cobre a tela, quando o notebook está na
+- Para não pesar no computador, vídeos e wallpapers interativos pausam quando um jogo ou janela cobre a tela, quando o notebook está na
   bateria e quando o PC está bloqueado.
 - Desligou? O wallpaper que você tinha antes volta do jeito que estava.
 

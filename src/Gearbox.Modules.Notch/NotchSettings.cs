@@ -1,10 +1,16 @@
+using System.Text.Json.Serialization;
 using Gearbox.Modules.Notch.Logic;
 
 namespace Gearbox.Modules.Notch;
 
 /// <summary>Gravado em <c>%LocalAppData%\Gearbox\settings\Notch.json</c>.</summary>
-public sealed class NotchSettings
+public sealed class NotchSettings : IJsonOnDeserialized
 {
+    private BackgroundStyle _backgroundStyle = BackgroundStyle.Glass;
+    private bool _backgroundStyleRead;
+    private bool? _legacyAcrylic;
+    private int? _legacyOpacity;
+
     /// <summary>Música/vídeo tocando (qualquer app integrado aos controles de mídia do Windows).</summary>
     public bool ShowMedia { get; set; } = true;
 
@@ -26,21 +32,69 @@ public sealed class NotchSettings
     /// <summary>Aba "Sistema": processador, placa de vídeo, memória, temperaturas e placa-mãe.</summary>
     public bool ShowSystemInfo { get; set; } = true;
 
-    /// <summary>Fundo acrílico: desfoca o que está atrás da ilha (o tom preto fica por cima).</summary>
-    public bool AcrylicBackground { get; set; } = true;
+    public bool ShowClipboard { get; set; } = true;
+
+    public bool ShowLinks { get; set; } = true;
+
+    public BackgroundStyle BackgroundStyle
+    {
+        get => _backgroundStyle;
+        set
+        {
+            _backgroundStyle = value;
+            _backgroundStyleRead = true;
+        }
+    }
+
+    public string BackgroundColor { get; set; } = NotchAppearance.Black.ToHex();
+
+    public bool UseAccentColor { get; set; }
+
+    public NotchRoundness Roundness { get; set; } = NotchRoundness.Default;
+
+    public bool SpringAnimation { get; set; } = true;
+
+    public SpringIntensity SpringIntensity { get; set; } = SpringIntensity.Normal;
 
     /// <summary>Borda de 1 px quase transparente em volta da ilha (efeito de vidro).</summary>
     public bool GlassBorder { get; set; } = true;
 
-    /// <summary>
-    /// Opacidade do tom preto da ilha, em % (20–100). Com o fundo acrílico, quanto menor, mais o desfoque aparece.
-    /// O conteúdo continua opaco.
-    /// </summary>
-    public int BackgroundOpacity { get; set; } = NotchAppearance.DefaultOpacity;
+    [JsonInclude]
+    [JsonPropertyName("acrylicBackground")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    private bool? LegacyAcrylicBackground
+    {
+        get => null;
+        set => _legacyAcrylic = value;
+    }
+
+    [JsonInclude]
+    [JsonPropertyName("backgroundOpacity")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    private int? LegacyBackgroundOpacity
+    {
+        get => null;
+        set => _legacyOpacity = value;
+    }
 
     /// <summary>Esconde a ilha com um app em tela cheia (jogos, vídeos, apresentações).</summary>
     public bool HideOnFullscreen { get; set; } = true;
 
     /// <summary>Recolhida, vira só uma alça quando a janela em foco passa por baixo dela.</summary>
     public bool CompactWhenCovered { get; set; } = true;
+
+    public bool CollapseToHandle { get; set; } = true;
+
+    public bool ShowMediaWhenCollapsed { get; set; } = true;
+
+    void IJsonOnDeserialized.OnDeserialized()
+    {
+        if (!_backgroundStyleRead && (_legacyAcrylic is not null || _legacyOpacity is not null))
+        {
+            _backgroundStyle = NotchAppearance.StyleFromLegacy(_legacyAcrylic ?? true, _legacyOpacity ?? 60);
+        }
+
+        _legacyAcrylic = null;
+        _legacyOpacity = null;
+    }
 }

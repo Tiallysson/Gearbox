@@ -1,10 +1,11 @@
+using Gearbox.Core.Modules;
 using Gearbox.Views;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Gearbox.Services;
 
 /// <summary>Cria a janela principal sob demanda (o app começa só na bandeja) e a reaproveita depois.</summary>
-public sealed class MainWindowService(IServiceProvider services)
+public sealed class MainWindowService(IServiceProvider services) : IModuleSettingsOpener
 {
     private MainWindow? _window;
 
@@ -12,6 +13,12 @@ public sealed class MainWindowService(IServiceProvider services)
     {
         _window ??= services.GetRequiredService<MainWindow>();
         _window.ShowAndActivate();
+    }
+
+    public void Open(string moduleId)
+    {
+        Show();
+        _window?.SelectModule(moduleId);
     }
 
     /// <summary>Fecha de verdade (usado só ao sair do app).</summary>

@@ -10,4 +10,6 @@ public enum NotchPage
     Devices,
     Storage,
     System,
+    Clipboard,
+    Links,
 }
