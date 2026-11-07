@@ -80,7 +80,9 @@ O que o instalador faz:
 
 - instala por usuário, sem pedir administrador, em `%LocalAppData%\Programs\Gearbox`;
 - cria o atalho no Menu Iniciar e, opcionalmente, na Área de Trabalho;
-- oferece "Iniciar o Gearbox com o Windows", gravando o mesmo valor `Run` que a página Geral usa;
+- oferece "Iniciar o Gearbox com o Windows" **só na primeira instalação**, gravando o mesmo valor `Run` que a
+  página Geral usa. Depois a escolha fica com a página Geral: atualizações (pelo assistente, silenciosas ou pelo
+  próprio app) não mexem nela, e `/TASKS=startup` só vale numa instalação nova;
 - registra o Gearbox em "Aplicativos instalados", com desinstalador;
 - **antes de atualizar ou desinstalar**, encerra o Gearbox instalado com `Gearbox.exe --exit`. É o mesmo caminho
   do "Sair" da bandeja, que devolve as janelas pseudo-maximizadas ao normal. Matar o processo deixaria as
