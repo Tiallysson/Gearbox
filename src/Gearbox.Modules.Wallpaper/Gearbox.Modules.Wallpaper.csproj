@@ -19,11 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Wallpaper embutido: vai para Assets\Wallpapers ao lado do Gearbox.exe. -->
-    <Content Include="Assets\Wallpapers\**" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
     <InternalsVisibleTo Include="Gearbox.Modules.Wallpaper.Tests" />
   </ItemGroup>
 

@@ -15,6 +15,7 @@
 
 #define AppName "Gearbox"
 #define AppExe "Gearbox.exe"
+#define AppIdValue "E4A7C2B1-5D3F-4C8E-9A61-2F0B7D9C3E54"
 #define AppVersion GetVersionNumbersString(AddBackslash(SourceDir) + AppExe)
 #if AppVersion == ""
   #error Gearbox.exe não encontrado em SourceDir
@@ -22,7 +23,7 @@
 
 [Setup]
 ; Nunca mude o AppId: é ele que liga atualizações e desinstalação à instalação existente.
-AppId={{E4A7C2B1-5D3F-4C8E-9A61-2F0B7D9C3E54}
+AppId={{{#AppIdValue}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
@@ -69,7 +70,7 @@ brazilianportuguese.CloseFailed=Não foi possível encerrar o Gearbox. Saia dele
 brazilianportuguese.RemoveUserData=Remover também as configurações e os logs do Gearbox?
 
 [Tasks]
-Name: "startup"; Description: "{cm:StartupTask}"
+Name: "startup"; Description: "{cm:StartupTask}"; Check: IsFreshInstall
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
@@ -89,12 +90,29 @@ Type: files; Name: "{app}\Darwin*"
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchAfterInstall}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: ShouldRelaunch
 
 [Code]
 const
   RunKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
   { Nome anterior do app: usado só para migrar instalações antigas. }
   LegacyName = 'Darwin';
+  UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{#AppIdValue}}_is1';
+
+var
+  IsUpgrade: Boolean;
+
+function InitializeSetup(): Boolean;
+begin
+  IsUpgrade := RegKeyExists(HKCU, UninstallKey);
+  Log('Instalação existente encontrada: ' + IntToStr(Ord(IsUpgrade)));
+  Result := True;
+end;
+
+function IsFreshInstall(): Boolean;
+begin
+  Result := not IsUpgrade;
+end;
 
 { Há algum processo rodando a partir deste caminho? (WMI, não precisa de administrador) }
 function IsRunningFrom(const ExePath: String): Boolean;
@@ -139,6 +157,11 @@ begin
   end;
 
   Result := False;
+end;
+
+function ShouldRelaunch(): Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:relaunch|0}') = '1');
 end;
 
 function CloseGearbox(const AppDir: String): Boolean;

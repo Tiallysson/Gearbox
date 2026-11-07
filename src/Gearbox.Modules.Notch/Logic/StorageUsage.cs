@@ -30,7 +30,6 @@ public static class ByteFormat
             unit++;
         }
 
-        // Uma casa decimal só abaixo de 10 ("1,8 TB", "9,5 GB"); acima, inteiro ("931 GB").
         var format = unit == 0 || value >= 10 ? "{0:0} {1}" : "{0:0.#} {1}";
         return string.Format(culture, format, value, s_units[unit]);
     }

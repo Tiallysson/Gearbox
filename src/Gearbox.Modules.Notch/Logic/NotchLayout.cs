@@ -27,7 +27,35 @@ public static class NotchLayout
     /// <summary>Aberta com as abas "Mídia" / "Controles": a linha das abas e os três controles precisam de altura.</summary>
     public static readonly NotchShape ExpandedTabbedShape = new(new DipSize(420, 204), 28, 14);
 
+    public static readonly NotchShape ExpandedTallShape = new(new DipSize(420, 260), 28, 14);
+
+    public static DipSize MaxWindowSize
+    {
+        get
+        {
+            var largest = WindowSize(WithRoundness(ExpandedTallShape, NotchAppearance.MaxRoundnessFactor));
+            var headroom = 1 + SpringMotion.MaxOvershoot;
+            return new DipSize(Math.Ceiling(largest.Width * headroom), Math.Ceiling(largest.Height * headroom));
+        }
+    }
+
+    public static NotchShape WithRoundness(NotchShape shape, double factor)
+    {
+        var scale = Math.Max(0, factor);
+        return shape with
+        {
+            CornerRadius = Math.Min(shape.CornerRadius * scale, shape.Size.Height),
+            EarRadius = shape.EarRadius * scale,
+        };
+    }
+
     /// <summary>Tamanho da janela para um corpo de <paramref name="size"/> com orelhas de <paramref name="earRadius"/>.</summary>
+    public static bool ShowsCollapsedMedia(bool isPlaying, bool showMediaWhenCollapsed) =>
+        isPlaying && showMediaWhenCollapsed;
+
+    public static bool IsCompact(NotchVisibility visibility, bool collapseToHandle, bool showsCollapsedMedia) =>
+        visibility == NotchVisibility.Compact || (collapseToHandle && !showsCollapsedMedia);
+
     public static DipSize WindowSize(DipSize size, double earRadius) =>
         new(size.Width + (2 * Math.Max(0, earRadius)), size.Height);
 
@@ -38,8 +66,9 @@ public static class NotchLayout
     /// para não cobrir abas e botões (os avisos e a ilha aberta continuam no tamanho normal).
     /// <paramref name="withTabs"/> = a ilha aberta mostra as abas (algum controle rápido ligado).
     /// </summary>
-    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false) => mode switch
+    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false, bool tall = false) => mode switch
     {
+        NotchMode.Expanded when tall => ExpandedTallShape,
         NotchMode.Expanded => withTabs ? ExpandedTabbedShape : ExpandedShape,
         NotchMode.Peek => PeekShape,
         _ when compact => Handle,

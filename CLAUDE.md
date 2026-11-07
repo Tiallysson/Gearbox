@@ -3,9 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 Gearbox is a PowerToys-style Windows utility: .NET 10 + WinUI 3 (Windows App SDK), unpackaged, living in the
-system tray. Each tool is an independently toggleable **module**. The README (in Portuguese) has the full
-step-by-step guide for creating a module; `docs/ARCHITECTURE.md` has the startup flow, fault isolation table and
-per-module internals. Code identifiers are English; UI strings, test names and docs are pt-BR — keep it that way.
+system tray. Each tool is an independently toggleable **module**. The README (in Portuguese) is for end users;
+`docs/DEVELOPMENT.md` has build, installer, release and the full step-by-step guide for creating a module;
+`docs/ARCHITECTURE.md` has the startup flow, fault isolation table and per-module internals. Code identifiers are English; UI strings, test names and docs are pt-BR — keep it that way.
 
 ## Conventions
 
@@ -53,7 +53,7 @@ Layered, dependencies point down only:
   (`Gearbox.Interop.<Folder>`): `Geometry/` (`PixelRect`, `FrameInsets`), `Windowing/` (`NativeWindow`,
   `WindowPlacement`, `TransparentWindow`, `WinEventHookManager`), `Desktop/` (`DesktopLayer`, `DesktopWallpaper`),
   `Audio/` (Core Audio), `Metrics/` (PDH, DXGI, memory), `Session/` (`SystemStateMonitor`: lock, display
-  power/topology, Explorer restart). `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
+  power/topology, Explorer restart), `Shell/` (`InstalledApps`: Start menu apps and their icons), `Clipboard/`. `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
   `Gearbox.Interop.*` it would shadow `Windows.Win32` (CsWin32) / `System.*` and break name resolution.
 - `src/Gearbox.Modules.*` — one project per tool, layout: `XxxModule.cs` (implements `IGearboxModule`),
   `XxxSettings.cs` (POCO → `settings\{ModuleId}.json`), `ServiceCollectionExtensions.cs`

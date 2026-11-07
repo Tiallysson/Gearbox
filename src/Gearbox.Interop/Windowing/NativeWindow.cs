@@ -85,6 +85,15 @@ public static class NativeWindow
 
     public static bool AllowSetForegroundWindow(uint processId) => PInvoke.AllowSetForegroundWindow(processId);
 
+    public static void BringToFront(nint hwnd)
+    {
+        var window = new HWND(hwnd);
+        const SET_WINDOW_POS_FLAGS flags = SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_SHOWWINDOW;
+        PInvoke.SetWindowPos(window, new HWND(-1), 0, 0, 0, 0, flags);
+        PInvoke.SetWindowPos(window, new HWND(-2), 0, 0, 0, 0, flags);
+        PInvoke.SetForegroundWindow(window);
+    }
+
     /// <summary>Escala de DPI da janela (1.0 = 96 DPI).</summary>
     public static double GetDpiScale(nint hwnd)
     {
@@ -346,7 +355,63 @@ public static class NativeWindow
             Math.Max(0, window.Bottom - frame.bottom));
     }
 
-    /// <summary>Move/redimensiona sem mudar a ordem Z nem ativar a janela.</summary>
+    public static bool TrySetRegion(nint hwnd, PixelRect windowRelativeRect) => TrySetRegion(hwnd, windowRelativeRect, [], []);
+
+    public static bool TrySetRegion(nint hwnd, PixelRect windowRelativeRect, ReadOnlySpan<PixelCircle> cutouts, ReadOnlySpan<PixelRect> rectCutouts)
+    {
+        var region = PInvoke.CreateRectRgn(windowRelativeRect.Left, windowRelativeRect.Top, windowRelativeRect.Right, windowRelativeRect.Bottom);
+        if (region.IsNull)
+        {
+            return false;
+        }
+
+        foreach (var cutout in cutouts)
+        {
+            if (cutout.IsEmpty)
+            {
+                continue;
+            }
+
+            var hole = PInvoke.CreateEllipticRgn(
+                cutout.CenterX - cutout.Radius,
+                cutout.CenterY - cutout.Radius,
+                cutout.CenterX + cutout.Radius,
+                cutout.CenterY + cutout.Radius);
+            if (hole.IsNull)
+            {
+                continue;
+            }
+
+            PInvoke.CombineRgn(region, region, hole, RGN_COMBINE_MODE.RGN_DIFF);
+            PInvoke.DeleteObject(hole);
+        }
+
+        foreach (var cutout in rectCutouts)
+        {
+            if (cutout.IsEmpty)
+            {
+                continue;
+            }
+
+            var hole = PInvoke.CreateRectRgn(cutout.Left, cutout.Top, cutout.Right, cutout.Bottom);
+            if (hole.IsNull)
+            {
+                continue;
+            }
+
+            PInvoke.CombineRgn(region, region, hole, RGN_COMBINE_MODE.RGN_DIFF);
+            PInvoke.DeleteObject(hole);
+        }
+
+        if (PInvoke.SetWindowRgn(new HWND(hwnd), region, true) != 0)
+        {
+            return true;
+        }
+
+        PInvoke.DeleteObject(region);
+        return false;
+    }
+
     public static bool TrySetBounds(nint hwnd, PixelRect bounds) =>
         PInvoke.SetWindowPos(
             new HWND(hwnd),

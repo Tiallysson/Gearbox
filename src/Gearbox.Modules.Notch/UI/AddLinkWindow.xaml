@@ -1,0 +1,68 @@
+<Window
+    x:Class="Gearbox.Modules.Notch.UI.AddLinkWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Gearbox.Modules.Notch.UI">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Padding="24,16,24,24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Uid="AddLinkHeading" Style="{ThemeResource SubtitleTextBlockStyle}" />
+
+        <SelectorBar x:Name="KindSelector" Grid.Row="1" SelectionChanged="OnKindChanged">
+            <SelectorBarItem x:Name="WebKind" x:Uid="AddLinkWebKind" IsSelected="True" />
+            <SelectorBarItem x:Name="AppKind" x:Uid="AddLinkAppKind" />
+        </SelectorBar>
+
+        <StackPanel x:Name="WebPanel" Grid.Row="2" Spacing="12">
+            <TextBox x:Name="AddressBox" x:Uid="AddLinkAddress" InputScope="Url" KeyDown="OnAddressKeyDown" />
+            <TextBox x:Name="NameBox" x:Uid="AddLinkName" KeyDown="OnAddressKeyDown" />
+        </StackPanel>
+
+        <Grid x:Name="AppPanel" Grid.Row="2" RowSpacing="8" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBox x:Name="SearchBox" x:Uid="AddLinkSearch" TextChanged="OnSearchChanged" />
+            <ProgressRing x:Name="AppsLoading" Grid.Row="1" Width="32" Height="32" IsActive="False" />
+            <ListView
+                x:Name="AppList"
+                Grid.Row="1"
+                ContainerContentChanging="OnAppContainerChanging"
+                DoubleTapped="OnAppDoubleTapped"
+                SelectionChanged="OnAppSelectionChanged"
+                SelectionMode="Single">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:AppChoice">
+                        <Grid Height="40" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="24" Height="24" Source="{x:Bind Icon, Mode=OneWay}" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+
+        <InfoBar x:Name="ErrorBar" Grid.Row="3" IsClosable="False" Severity="Error" />
+
+        <StackPanel Grid.Row="4" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+            <Button x:Uid="AddLinkCancel" MinWidth="96" Click="OnCancelClick" />
+            <Button x:Name="AddButton" x:Uid="AddLinkConfirm" MinWidth="96" Click="OnAddClick" Style="{ThemeResource AccentButtonStyle}" />
+        </StackPanel>
+    </Grid>
+</Window>

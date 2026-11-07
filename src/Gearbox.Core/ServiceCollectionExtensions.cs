@@ -1,6 +1,7 @@
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
 using Gearbox.Core.Startup;
+using Gearbox.Core.Updates;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,8 @@ namespace Gearbox.Core;
 
 public static class ServiceCollectionExtensions
 {
+    private const string UpdatesHttpClientKey = "Gearbox.Updates";
+
     /// <summary>Serviços compartilhados: caminhos, configurações, inicialização com o Windows e módulos.</summary>
     public static IServiceCollection AddGearboxCore(this IServiceCollection services, GearboxPaths? paths = null)
     {
@@ -21,7 +24,26 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IModuleFaultReporter>(sp => sp.GetRequiredService<ModuleFaultHub>());
         services.TryAddSingleton<ModuleManager>();
         services.AddGearboxSettings<ModuleStateSettings>("modules");
+        services.AddGearboxUpdates();
         return services;
+    }
+
+    private static IServiceCollection AddGearboxUpdates(this IServiceCollection services)
+    {
+        services.TryAddKeyedSingleton(UpdatesHttpClientKey, (_, _) => CreateUpdatesHttpClient());
+        services.TryAddSingleton<IReleaseSource>(sp => new GitHubReleaseSource(sp.GetRequiredKeyedService<HttpClient>(UpdatesHttpClientKey)));
+        services.TryAddSingleton(sp => new UpdateDownloader(
+            sp.GetRequiredKeyedService<HttpClient>(UpdatesHttpClientKey),
+            sp.GetRequiredService<GearboxPaths>(),
+            sp.GetRequiredService<ILogger<UpdateDownloader>>()));
+        return services;
+    }
+
+    private static HttpClient CreateUpdatesHttpClient()
+    {
+        var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("Gearbox");
+        return http;
     }
 
     /// <summary>Registra <see cref="ISettingsService{T}"/> gravando em <c>settings\{id}.json</c>.</summary>

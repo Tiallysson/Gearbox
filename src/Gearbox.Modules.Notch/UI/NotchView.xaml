@@ -75,10 +75,12 @@
             da ilha; o traço continua a borda de vidro pela curva. Geometria em 10x10, esticada para o raio atual.
         -->
         <Grid x:Name="LeftEar" Width="0" Height="0" HorizontalAlignment="Right" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed">
+            <SystemBackdropElement x:Name="LeftEarBackdrop" Visibility="Collapsed" />
             <Path Data="M0,0 L10,0 L10,10 A10,10 0 0 0 0,0 Z" Fill="{StaticResource IslandBrush}" Stretch="Fill" />
             <Path x:Name="LeftEarEdge" Data="M10,10 A10,10 0 0 0 0,0" Stretch="Fill" Stroke="{StaticResource GlassEdgeStartBrush}" StrokeThickness="1" />
         </Grid>
         <Grid x:Name="RightEar" Grid.Column="2" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed">
+            <SystemBackdropElement x:Name="RightEarBackdrop" Visibility="Collapsed" />
             <Path Data="M10,0 L0,0 L0,10 A10,10 0 0 1 10,0 Z" Fill="{StaticResource IslandBrush}" Stretch="Fill" />
             <Path x:Name="RightEarEdge" Data="M0,10 A10,10 0 0 1 10,0" Stretch="Fill" Stroke="{StaticResource GlassEdgeEndBrush}" StrokeThickness="1" />
         </Grid>
@@ -95,9 +97,7 @@
             PointerEntered="OnIslandPointerEntered"
             PointerExited="OnIslandPointerExited">
             <Grid>
-
-                <!-- Fundo em duas camadas: acrílico (desfoca o que está atrás da ilha) e, por cima, o tom preto. -->
-                <SystemBackdropElement x:Name="Acrylic" CornerRadius="0,0,12,12" Visibility="Collapsed" />
+                <SystemBackdropElement x:Name="Backdrop" CornerRadius="0,0,12,12" Visibility="Collapsed" />
                 <Border x:Name="Tint" Background="{StaticResource IslandBrush}" CornerRadius="0,0,12,12" />
 
                 <!--
@@ -124,27 +124,51 @@
                         <Image x:Name="SmallArt" Stretch="UniformToFill" />
                     </Border>
                     <StackPanel
-                        x:Name="Bars"
-                        Height="14"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
-                        Spacing="2">
-                        <Rectangle x:Name="Bar1" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
-                            <Rectangle.RenderTransform>
-                                <ScaleTransform ScaleY="0.4" />
-                            </Rectangle.RenderTransform>
-                        </Rectangle>
-                        <Rectangle x:Name="Bar2" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
-                            <Rectangle.RenderTransform>
-                                <ScaleTransform ScaleY="0.8" />
-                            </Rectangle.RenderTransform>
-                        </Rectangle>
-                        <Rectangle x:Name="Bar3" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
-                            <Rectangle.RenderTransform>
-                                <ScaleTransform ScaleY="0.6" />
-                            </Rectangle.RenderTransform>
-                        </Rectangle>
+                        Spacing="8">
+                        <StackPanel
+                            x:Name="CollapsedControls"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            Orientation="Horizontal"
+                            PointerEntered="OnCollapsedControlsPointerEntered"
+                            PointerExited="OnCollapsedControlsPointerExited"
+                            Spacing="2"
+                            Visibility="Collapsed">
+                            <Button x:Name="CollapsedPreviousButton" x:Uid="CollapsedPreviousButton" Width="22" Height="22" Click="OnPreviousClick" Style="{StaticResource MediaButtonStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="11" Glyph="&#xE5A4;" />
+                            </Button>
+                            <Button x:Uid="CollapsedPauseButton" Width="22" Height="22" Click="OnPlayPauseClick" Style="{StaticResource MediaButtonStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="&#xE39E;" />
+                            </Button>
+                            <Button x:Name="CollapsedNextButton" x:Uid="CollapsedNextButton" Width="22" Height="22" Click="OnNextClick" Style="{StaticResource MediaButtonStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="11" Glyph="&#xE5A6;" />
+                            </Button>
+                        </StackPanel>
+                        <StackPanel
+                            x:Name="Bars"
+                            Height="14"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="2">
+                            <Rectangle x:Name="Bar1" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                                <Rectangle.RenderTransform>
+                                    <ScaleTransform ScaleY="0.4" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                            <Rectangle x:Name="Bar2" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                                <Rectangle.RenderTransform>
+                                    <ScaleTransform ScaleY="0.8" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                            <Rectangle x:Name="Bar3" Width="3" Height="14" Fill="{StaticResource ForegroundBrush}" RadiusX="1.5" RadiusY="1.5" RenderTransformOrigin="0.5,1">
+                                <Rectangle.RenderTransform>
+                                    <ScaleTransform ScaleY="0.6" />
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
 
@@ -219,6 +243,12 @@
                             <!-- cpu -->
                             <ToggleButton x:Name="SystemTab" x:Uid="SystemTab" Click="OnSystemTabClick" Style="{StaticResource TabStyle}">
                                 <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE610;" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="ClipboardTab" x:Uid="ClipboardTab" Click="OnClipboardTabClick" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE198;" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="LinksTab" x:Uid="LinksTab" Click="OnLinksTabClick" Style="{StaticResource TabStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE2E2;" />
                             </ToggleButton>
                         </StackPanel>
                     </Border>
@@ -551,20 +581,223 @@
                         </Grid>
                     </StackPanel>
 
+                    <Grid x:Name="ClipboardPage" Grid.Row="1" RowSpacing="4" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            x:Name="NoClipboardText"
+                            x:Uid="NoClipboardText"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{StaticResource MutedForegroundBrush}" />
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Spacing="6">
+                                <ItemsRepeater x:Name="ClipboardMediaList">
+                                    <ItemsRepeater.Layout>
+                                        <UniformGridLayout
+                                            ItemsStretch="Fill"
+                                            MinColumnSpacing="6"
+                                            MinItemHeight="64"
+                                            MinItemWidth="84"
+                                            MinRowSpacing="6" />
+                                    </ItemsRepeater.Layout>
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="local:ClipboardEntry">
+                                            <Grid Height="64">
+                                                <Button
+                                                    Padding="0"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    VerticalContentAlignment="Stretch"
+                                                    Click="OnClipboardItemClick"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind Preview}"
+                                                    AutomationProperties.Name="{x:Bind CopyLabel}">
+                                                    <Border Background="{StaticResource ArtPlaceholderBrush}" CornerRadius="6">
+                                                        <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
+                                                    </Border>
+                                                </Button>
+                                                <Button
+                                                    Width="20"
+                                                    Height="20"
+                                                    Margin="0,3,3,0"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Click="OnClipboardRemoveClick"
+                                                    Style="{StaticResource MediaButtonStyle}"
+                                                    Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind RemoveLabel}"
+                                                    AutomationProperties.Name="{x:Bind RemoveLabel}">
+                                                    <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="10" Glyph="&#xE4F6;" />
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                                <ItemsControl x:Name="ClipboardTextList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="local:ClipboardEntry">
+                                            <Grid ColumnSpacing="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button
+                                                    Padding="6,3"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    Click="OnClipboardItemClick"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Tag="{x:Bind Id}"
+                                                    AutomationProperties.Name="{x:Bind CopyLabel}">
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock
+                                                            VerticalAlignment="Center"
+                                                            FontSize="12"
+                                                            MaxLines="2"
+                                                            Text="{x:Bind Preview}"
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="Wrap" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            FontSize="11"
+                                                            Foreground="{StaticResource MutedForegroundBrush}"
+                                                            Text="{x:Bind Time}" />
+                                                    </Grid>
+                                                </Button>
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Width="24"
+                                                    Height="24"
+                                                    VerticalAlignment="Center"
+                                                    Click="OnClipboardRemoveClick"
+                                                    Style="{StaticResource MediaButtonStyle}"
+                                                    Tag="{x:Bind Id}"
+                                                    ToolTipService.ToolTip="{x:Bind RemoveLabel}"
+                                                    AutomationProperties.Name="{x:Bind RemoveLabel}">
+                                                    <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="11" Glyph="&#xE4F6;" />
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Grid Grid.Row="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                x:Name="ClipboardCopiedText"
+                                x:Uid="ClipboardCopiedText"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{StaticResource MutedForegroundBrush}"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="ClipboardClearButton"
+                                x:Uid="ClipboardClearButton"
+                                Grid.Column="1"
+                                Padding="8,2"
+                                Click="OnClipboardClearClick"
+                                FontSize="12"
+                                Style="{StaticResource GhostButtonStyle}" />
+                        </Grid>
+                    </Grid>
+
+                    <ScrollViewer
+                        x:Name="LinksPage"
+                        Grid.Row="1"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="6">
+                            <TextBlock
+                                x:Name="NoLinksText"
+                                x:Uid="NoLinksText"
+                                FontSize="12"
+                                Foreground="{StaticResource MutedForegroundBrush}"
+                                TextWrapping="Wrap" />
+                            <ItemsRepeater x:Name="LinkList">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout
+                                        ItemsStretch="Fill"
+                                        MinColumnSpacing="4"
+                                        MinItemHeight="70"
+                                        MinItemWidth="64"
+                                        MinRowSpacing="4" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="local:LinkTile">
+                                        <Button
+                                            Padding="2,6"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            Click="OnLinkClick"
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Tag="{x:Bind Id}"
+                                            ToolTipService.ToolTip="{x:Bind ToolTip}"
+                                            AutomationProperties.Name="{x:Bind ToolTip}">
+                                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                                <Border
+                                                    Width="36"
+                                                    Height="36"
+                                                    HorizontalAlignment="Center"
+                                                    Background="{StaticResource ArtPlaceholderBrush}"
+                                                    CornerRadius="9">
+                                                    <Grid>
+                                                        <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="18" Glyph="{x:Bind Glyph, Mode=OneWay}" />
+                                                        <Image Margin="4" Source="{x:Bind Icon, Mode=OneWay}" Stretch="Uniform" />
+                                                    </Grid>
+                                                </Border>
+                                                <TextBlock
+                                                    MaxWidth="64"
+                                                    HorizontalAlignment="Center"
+                                                    FontSize="11"
+                                                    MaxLines="1"
+                                                    Text="{x:Bind Name}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </StackPanel>
+                    </ScrollViewer>
+
                     <Grid Grid.Row="2" Margin="0,8,0,0">
                         <TextBlock
                             x:Name="DateText"
                             VerticalAlignment="Center"
                             FontSize="12"
                             Foreground="{StaticResource MutedForegroundBrush}" />
-                        <StackPanel
-                            x:Name="BatteryPanel"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal"
-                            Spacing="6">
-                            <FontIcon x:Name="BatteryIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
-                            <TextBlock x:Name="BatteryText" FontSize="12" />
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                            <StackPanel
+                                x:Name="BatteryPanel"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <FontIcon x:Name="BatteryIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                                <TextBlock x:Name="BatteryText" FontSize="12" />
+                            </StackPanel>
+                            <Button
+                                x:Uid="SettingsButton"
+                                Width="24"
+                                Height="24"
+                                Click="OnSettingsClick"
+                                Style="{StaticResource MediaButtonStyle}">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="13" Glyph="&#xE270;" />
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </Grid>

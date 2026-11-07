@@ -1,7 +1,9 @@
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Globalization;
 using Gearbox.Interop.Audio;
 using Gearbox.Modules.Notch.Logic;
 using Gearbox.Modules.Notch.Native;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -10,6 +12,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Storage.Streams;
 
 namespace Gearbox.Modules.Notch.UI;
 
@@ -18,9 +21,19 @@ public sealed partial class NotchView : UserControl
 {
     private static readonly Duration ShapeDuration = new(TimeSpan.FromMilliseconds(340));
     private static readonly Duration FadeDuration = new(TimeSpan.FromMilliseconds(180));
+    private static readonly Duration FadeOutDuration = new(TimeSpan.FromMilliseconds(100));
+
+    private const double ContentStartScale = 0.96;
+    private const double ContentStartOffset = -6;
 
     private readonly Storyboard _bars;
+    private readonly SpringAnimator _shapeSpring = new();
+    private readonly SpringAnimator _contentSpring = new();
     private Storyboard? _shape;
+    private bool _springEnabled = true;
+    private SpringMotion _springMotion = SpringMotion.For(SpringIntensity.Normal);
+    private bool? _blur;
+    private TintColor _tint;
     private UIElement? _visiblePanel;
     private MediaSnapshot? _media;
     private BatteryInfo? _battery;
@@ -29,10 +42,17 @@ public sealed partial class NotchView : UserControl
     private int _artworkVersion = -1;
     private int _artworkLoad;
     private bool _barsRunning;
+    private bool _showsCollapsedMedia;
+    private bool _pointerOverCollapsedControls;
     private bool _hasConnectivity;
     private bool _hasAudioControls;
     private bool _hasStorage;
     private bool _hasSystem;
+    private bool _hasClipboard;
+    private bool _hasLinks;
+    private readonly Dictionary<string, (DateTime Stamp, ImageSource Image)> _linkIcons = [];
+    private readonly Dictionary<long, ClipboardEntry> _clipboardEntries = [];
+    private DispatcherQueueTimer? _clipboardCopiedTimer;
     private RadioInfo _wifi = RadioInfo.Unavailable;
     private RadioInfo _bluetooth = RadioInfo.Unavailable;
     private NetworkLink _link = NetworkLink.None;
@@ -73,31 +93,50 @@ public sealed partial class NotchView : UserControl
     /// <summary>Clique num disco da aba "Armazenamento": a raiz (<c>C:\</c>) a abrir no Explorer.</summary>
     public event EventHandler<string>? DriveOpenRequested;
 
+    public event EventHandler<long>? ClipboardCopyRequested;
+
+    public event EventHandler<long>? ClipboardRemoveRequested;
+
+    public event EventHandler? ClipboardClearRequested;
+
+    public event EventHandler? SettingsRequested;
+
+    public event EventHandler<string>? LinkOpenRequested;
+
+    public event EventHandler? LinkAddRequested;
+
+    public event EventHandler<NotchShape>? ShapeFrame;
+
     /// <summary>A ilha aberta mostra as abas (alguma aba além de "Mídia" ligada): usa a forma mais alta.</summary>
-    public bool HasTabs => _hasConnectivity || _hasAudioControls || _hasStorage || _hasSystem;
+    public bool HasTabs => _hasConnectivity || _hasAudioControls || _hasStorage || _hasSystem || _hasClipboard || _hasLinks;
 
     public NotchPage CurrentPage => _page;
 
     /// <summary>Tamanho atual da forma (durante uma animação, o do quadro atual).</summary>
-    public DipSize CurrentSize => new(Island.ActualWidth > 0 ? Island.ActualWidth : Island.Width, Island.ActualHeight > 0 ? Island.ActualHeight : Island.Height);
+    public DipSize CurrentSize => new(AppliedLength(Island.Width, Island.ActualWidth), AppliedLength(Island.Height, Island.ActualHeight));
 
     /// <summary>Raio atual das orelhas (durante uma animação, o do quadro atual).</summary>
-    public double CurrentEarRadius => LeftEar.ActualWidth > 0 ? LeftEar.ActualWidth : LeftEar.Width;
+    public double CurrentEarRadius => AppliedLength(LeftEar.Width, LeftEar.ActualWidth);
+
+    private static double AppliedLength(double length, double actual) => double.IsNaN(length) ? actual : length;
 
     /// <summary>Tamanho que a janela precisa agora: o corpo mais as duas orelhas.</summary>
     public DipSize CurrentWindowSize => NotchLayout.WindowSize(CurrentSize, CurrentEarRadius);
 
-    /// <summary>Anima a forma até <paramref name="shape"/>; <paramref name="completed"/> só roda se não for interrompida.</summary>
+    public bool IsAnimatingShape => _shape is not null || _shapeSpring.IsRunning;
+
+    public bool IsPointerOverCollapsedControls =>
+        _pointerOverCollapsedControls && _visiblePanel == CollapsedPanel && CollapsedControls.Visibility == Visibility.Visible;
+
     public void SetShape(NotchShape shape, bool animate, Action? completed = null)
     {
         var from = CurrentSize;
         var fromEar = CurrentEarRadius;
-        _shape?.Stop();
-        _shape = null;
+        StopShapeAnimation();
 
         var corners = new CornerRadius(0, 0, shape.CornerRadius, shape.CornerRadius);
         Island.CornerRadius = corners;
-        Acrylic.CornerRadius = corners;
+        Backdrop.CornerRadius = corners;
         Tint.CornerRadius = corners;
         GlassEdge.CornerRadius = corners;
         GlassEdge.Margin = new Thickness(0, shape.EarRadius, 0, 0);
@@ -108,11 +147,29 @@ public sealed partial class NotchView : UserControl
             return;
         }
 
-        // Começa do tamanho atual: uma animação interrompida continua de onde parou, sem salto.
         Island.Width = from.Width;
         Island.Height = from.Height;
-        LeftEar.Width = LeftEar.Height = RightEar.Width = RightEar.Height = fromEar;
-        SetEarsVisible(fromEar > 0 || shape.EarRadius > 0); // Crescendo ou encolhendo até sumir: aparecem na animação.
+        SetEarRadius(fromEar);
+        SetEarsVisible(fromEar > 0 || shape.EarRadius > 0);
+
+        if (_springEnabled)
+        {
+            _shapeSpring.Start(
+                _springMotion,
+                [
+                    new SpringChannel(from.Width, shape.Size.Width, value => Island.Width = Math.Max(0, value)),
+                    new SpringChannel(from.Height, shape.Size.Height, value => Island.Height = Math.Max(0, value)),
+                    new SpringChannel(fromEar, shape.EarRadius, value => SetEarRadius(Math.Max(0, value))),
+                ],
+                RaiseSpringFrame,
+                () =>
+                {
+                    ApplySize(shape);
+                    RaiseSpringFrame();
+                    completed?.Invoke();
+                });
+            return;
+        }
 
         var storyboard = new Storyboard();
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -131,20 +188,64 @@ public sealed partial class NotchView : UserControl
                 return;
             }
 
-            _shape = null;
+            StopShapeAnimation();
             ApplySize(shape);
             completed?.Invoke();
         };
 
         _shape = storyboard;
+        CompositionTarget.Rendering += OnStoryboardFrame;
         storyboard.Begin();
     }
+
+    public void SetAnimation(bool spring, SpringIntensity intensity)
+    {
+        _springEnabled = spring;
+        _springMotion = SpringMotion.For(intensity);
+        if (spring)
+        {
+            return;
+        }
+
+        _contentSpring.Stop();
+        foreach (var panel in new UIElement[] { CollapsedPanel, PeekPanel, ExpandedPanel })
+        {
+            if (panel.RenderTransform is CompositeTransform transform)
+            {
+                transform.ScaleX = transform.ScaleY = 1;
+                transform.TranslateY = 0;
+            }
+        }
+    }
+
+    public void StopAnimations()
+    {
+        StopShapeAnimation();
+        _contentSpring.Stop();
+    }
+
+    private void StopShapeAnimation()
+    {
+        CompositionTarget.Rendering -= OnStoryboardFrame;
+        _shape?.Stop();
+        _shape = null;
+        _shapeSpring.Stop();
+    }
+
+    private void OnStoryboardFrame(object? sender, object e) =>
+        ShapeFrame?.Invoke(this, new NotchShape(CurrentSize, 0, CurrentEarRadius));
+
+    private void RaiseSpringFrame() =>
+        ShapeFrame?.Invoke(this, new NotchShape(new DipSize(Island.Width, Island.Height), 0, LeftEar.Width));
+
+    private void SetEarRadius(double radius) =>
+        LeftEar.Width = LeftEar.Height = RightEar.Width = RightEar.Height = radius;
 
     private void ApplySize(NotchShape shape)
     {
         Island.Width = shape.Size.Width;
         Island.Height = shape.Size.Height;
-        LeftEar.Width = LeftEar.Height = RightEar.Width = RightEar.Height = shape.EarRadius;
+        SetEarRadius(shape.EarRadius);
         SetEarsVisible(shape.EarRadius > 0);
     }
 
@@ -153,8 +254,11 @@ public sealed partial class NotchView : UserControl
         LeftEar.Visibility = RightEar.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>Troca o conteúdo da ilha para o modo atual.</summary>
-    public void SetMode(NotchMode mode, PeekKind peek, bool compact)
+    public void SetMode(NotchMode mode, PeekKind peek, bool compact, bool showsCollapsedMedia)
     {
+        _showsCollapsedMedia = showsCollapsedMedia;
+        UpdateCollapsedMedia();
+
         UIElement? panel = mode switch
         {
             NotchMode.Expanded => ExpandedPanel,
@@ -174,7 +278,7 @@ public sealed partial class NotchView : UserControl
             ShowPage(NotchPage.Controls);
         }
 
-        UpdateBars(panel == CollapsedPanel && _media?.IsPlaying == true);
+        UpdateBars(panel == CollapsedPanel && ShowsCollapsedMedia);
 
         if (panel == _visiblePanel)
         {
@@ -183,20 +287,57 @@ public sealed partial class NotchView : UserControl
 
         if (_visiblePanel is not null)
         {
-            _visiblePanel.Visibility = Visibility.Collapsed;
+            FadeOut(_visiblePanel);
         }
 
         _visiblePanel = panel;
         if (panel is not null)
         {
             panel.Opacity = 0;
+            panel.IsHitTestVisible = true;
             panel.Visibility = Visibility.Visible;
             var fade = new Storyboard();
             var animation = CreateAnimation(panel, "Opacity", 1, null, FadeDuration);
-            animation.BeginTime = TimeSpan.FromMilliseconds(90); // Deixa a forma crescer um pouco antes.
+            animation.BeginTime = TimeSpan.FromMilliseconds(90);
             fade.Children.Add(animation);
             fade.Begin();
+            if (_springEnabled)
+            {
+                StartContentSpring(panel);
+            }
         }
+    }
+
+    private void StartContentSpring(UIElement panel)
+    {
+        if (panel.RenderTransform is not CompositeTransform transform)
+        {
+            transform = new CompositeTransform();
+            panel.RenderTransform = transform;
+            panel.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0);
+        }
+
+        _contentSpring.Start(
+            _springMotion,
+            [
+                new SpringChannel(ContentStartScale, 1, value => transform.ScaleX = transform.ScaleY = value),
+                new SpringChannel(ContentStartOffset, 0, value => transform.TranslateY = value),
+            ]);
+    }
+
+    private void FadeOut(UIElement panel)
+    {
+        panel.IsHitTestVisible = false;
+        var fade = new Storyboard();
+        fade.Children.Add(CreateAnimation(panel, "Opacity", 0, null, FadeOutDuration));
+        fade.Completed += (_, _) =>
+        {
+            if (panel != _visiblePanel)
+            {
+                panel.Visibility = Visibility.Collapsed;
+            }
+        };
+        fade.Begin();
     }
 
     public void SetMedia(MediaSnapshot? media)
@@ -209,12 +350,11 @@ public sealed partial class NotchView : UserControl
         TitleText.Text = media?.Title ?? string.Empty;
         ArtistText.Text = media?.Artist ?? string.Empty;
         PlayPauseIcon.Glyph = media?.IsPlaying == true ? NotchGlyphs.Pause : NotchGlyphs.Play;
-        PreviousButton.IsEnabled = media?.CanGoPrevious == true;
-        NextButton.IsEnabled = media?.CanGoNext == true;
+        PreviousButton.IsEnabled = CollapsedPreviousButton.IsEnabled = media?.CanGoPrevious == true;
+        NextButton.IsEnabled = CollapsedNextButton.IsEnabled = media?.CanGoNext == true;
 
-        var showBars = media?.IsPlaying == true;
-        SmallArtFrame.Visibility = Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
-        UpdateBars(showBars && _visiblePanel == CollapsedPanel);
+        UpdateCollapsedMedia();
+        UpdateBars(ShowsCollapsedMedia && _visiblePanel == CollapsedPanel);
 
         if (media is null)
         {
@@ -257,12 +397,16 @@ public sealed partial class NotchView : UserControl
     /// Quais abas e grupos aparecem. "Controles" existe com rádios ou áudio; sem nenhuma aba além de "Mídia", a ilha
     /// aberta fica sem a linha das abas. Se a aba visível sumiu, volta para "Mídia".
     /// </summary>
-    public void SetTabs(bool connectivity, bool audio, bool storage, bool system)
+    public void SetTabs(bool connectivity, bool audio, bool storage, bool system, bool clipboard, bool links)
     {
+        _hasLinks = links;
+        LinksTab.Visibility = links ? Visibility.Visible : Visibility.Collapsed;
         _hasConnectivity = connectivity;
         _hasAudioControls = audio;
         _hasStorage = storage;
         _hasSystem = system;
+        _hasClipboard = clipboard;
+        ClipboardTab.Visibility = clipboard ? Visibility.Visible : Visibility.Collapsed;
         RadiosRow.Visibility = connectivity ? Visibility.Visible : Visibility.Collapsed;
         VolumeRow.Visibility = OutputButton.Visibility = audio ? Visibility.Visible : Visibility.Collapsed;
         ControlsTab.Visibility = connectivity || audio ? Visibility.Visible : Visibility.Collapsed;
@@ -276,6 +420,8 @@ public sealed partial class NotchView : UserControl
             NotchPage.Devices => !audio,
             NotchPage.Storage => !storage,
             NotchPage.System => !system,
+            NotchPage.Clipboard => !clipboard,
+            NotchPage.Links => !links,
             _ => false,
         };
         if (pageGone)
@@ -319,6 +465,50 @@ public sealed partial class NotchView : UserControl
         BluetoothIcon.Glyph = NotchGlyphs.Bluetooth(bluetooth.Power);
         BluetoothButton.IsEnabled = bluetooth.Power != RadioPower.Unavailable;
         BluetoothButton.IsChecked = bluetooth.Power == RadioPower.On;
+    }
+
+    public void SetClipboard(IReadOnlyList<ClipboardItem> items, Func<long, IRandomAccessStream?> openImage, Action<long, Exception> thumbnailFailed)
+    {
+        var entries = new List<ClipboardEntry>(items.Count);
+        foreach (var item in items)
+        {
+            if (!_clipboardEntries.TryGetValue(item.Id, out var entry))
+            {
+                entry = ClipboardEntry.Create(item, item.Kind == ClipboardItemKind.Text ? null : openImage(item.Id), thumbnailFailed);
+            }
+
+            entries.Add(entry);
+        }
+
+        _clipboardEntries.Clear();
+        foreach (var entry in entries)
+        {
+            _clipboardEntries[entry.Id] = entry;
+        }
+
+        var media = entries.Where(entry => entry.IsMedia).ToList();
+        var texts = entries.Where(entry => !entry.IsMedia).ToList();
+        ClipboardMediaList.ItemsSource = media;
+        ClipboardMediaList.Visibility = media.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ClipboardTextList.ItemsSource = texts;
+        ClipboardTextList.Visibility = texts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        NoClipboardText.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ClipboardClearButton.IsEnabled = entries.Count > 0;
+    }
+
+    public void ShowClipboardCopied()
+    {
+        if (_clipboardCopiedTimer is null)
+        {
+            _clipboardCopiedTimer = DispatcherQueue.CreateTimer();
+            _clipboardCopiedTimer.Interval = TimeSpan.FromSeconds(1.5);
+            _clipboardCopiedTimer.IsRepeating = false;
+            _clipboardCopiedTimer.Tick += (_, _) => ClipboardCopiedText.Visibility = Visibility.Collapsed;
+        }
+
+        ClipboardCopiedText.Visibility = Visibility.Visible;
+        _clipboardCopiedTimer.Stop();
+        _clipboardCopiedTimer.Start();
     }
 
     public void SetDrives(List<DriveUsage> drives)
@@ -388,26 +578,45 @@ public sealed partial class NotchView : UserControl
         }
     }
 
-    /// <summary>
-    /// Fundo da ilha: acrílico (desfoque do que está atrás) ou não, com o tom preto por cima na opacidade
-    /// <paramref name="opacity"/> (0–1). Texto, capa e ícones continuam opacos.
-    /// </summary>
-    public void SetBackground(bool acrylic, double opacity)
+    public void SetBackground(bool blur, TintColor tint, double opacity)
     {
-        if (acrylic && Acrylic.SystemBackdrop is null)
+        var island = (SolidColorBrush)Resources["IslandBrush"];
+        if (blur != _blur || tint != _tint)
         {
-            Acrylic.SystemBackdrop = new AcrylicBackdrop();
-            Acrylic.Visibility = Visibility.Visible;
-        }
-        else if (!acrylic && Acrylic.SystemBackdrop is not null)
-        {
-            Acrylic.SystemBackdrop = null;
-            Acrylic.Visibility = Visibility.Collapsed;
+            _blur = blur;
+            _tint = tint;
+            var color = Windows.UI.Color.FromArgb(255, tint.R, tint.G, tint.B);
+            var visible = blur;
+            foreach (var element in new[] { Backdrop, LeftEarBackdrop, RightEarBackdrop })
+            {
+                if (element.SystemBackdrop is not IslandBackdrop backdrop)
+                {
+                    backdrop = new IslandBackdrop();
+                    element.SystemBackdrop = backdrop;
+                }
+
+                backdrop.Configure(blur, color);
+                element.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            island.Color = color;
         }
 
-        ((SolidColorBrush)Resources["IslandBrush"]).Opacity = opacity;
+        island.Opacity = opacity;
         ((SolidColorBrush)Resources["ArtPlaceholderBrush"]).Opacity = opacity;
     }
+
+    public void ReleaseBackdrops()
+    {
+        foreach (var element in new[] { Backdrop, LeftEarBackdrop, RightEarBackdrop })
+        {
+            element.SystemBackdrop = null;
+        }
+
+        _blur = null;
+    }
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e) => SettingsRequested?.Invoke(this, EventArgs.Empty);
 
     public void SetGlassBorder(bool visible) =>
         GlassEdge.Visibility = LeftEarEdge.Visibility = RightEarEdge.Visibility =
@@ -496,6 +705,18 @@ public sealed partial class NotchView : UserControl
         ArtPlaceholder.Visibility = source is null ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    private bool ShowsCollapsedMedia => _showsCollapsedMedia && _media?.IsPlaying == true;
+
+    private void UpdateCollapsedMedia()
+    {
+        var visible = ShowsCollapsedMedia;
+        SmallArtFrame.Visibility = CollapsedControls.Visibility = Bars.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (!visible)
+        {
+            _pointerOverCollapsedControls = false;
+        }
+    }
+
     private void UpdateBars(bool run)
     {
         if (run == _barsRunning)
@@ -559,11 +780,34 @@ public sealed partial class NotchView : UserControl
 
     private void OnIslandPointerEntered(object sender, PointerRoutedEventArgs e) => HoverChanged?.Invoke(this, true);
 
-    private void OnIslandPointerExited(object sender, PointerRoutedEventArgs e) => HoverChanged?.Invoke(this, false);
+    private void OnIslandPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (IsPointerInside(Island, e))
+        {
+            return;
+        }
+
+        _pointerOverCollapsedControls = false;
+        HoverChanged?.Invoke(this, false);
+    }
+
+    private static bool IsPointerInside(FrameworkElement element, PointerRoutedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(element).Position;
+        return point.X >= 0 && point.Y >= 0 && point.X < element.ActualWidth && point.Y < element.ActualHeight;
+    }
 
     private void OnPreviousClick(object sender, RoutedEventArgs e) => MediaCommandRequested?.Invoke(this, MediaCommand.Previous);
 
     private void OnPlayPauseClick(object sender, RoutedEventArgs e) => MediaCommandRequested?.Invoke(this, MediaCommand.TogglePlayPause);
+
+    private void OnCollapsedControlsPointerEntered(object sender, PointerRoutedEventArgs e) => _pointerOverCollapsedControls = true;
+
+    private void OnCollapsedControlsPointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        _pointerOverCollapsedControls = false;
+        HoverChanged?.Invoke(this, true);
+    }
 
     private void OnNextClick(object sender, RoutedEventArgs e) => MediaCommandRequested?.Invoke(this, MediaCommand.Next);
 
@@ -574,12 +818,16 @@ public sealed partial class NotchView : UserControl
         DevicesPage.Visibility = Visible(page == NotchPage.Devices);
         StoragePage.Visibility = Visible(page == NotchPage.Storage);
         SystemPage.Visibility = Visible(page == NotchPage.System);
+        ClipboardPage.Visibility = Visible(page == NotchPage.Clipboard);
+        LinksPage.Visibility = Visible(page == NotchPage.Links);
 
         // O ToggleButton se inverte sozinho no clique: aqui todas as abas ficam no estado da página real.
         MediaTab.IsChecked = page == NotchPage.Media;
         ControlsTab.IsChecked = page is NotchPage.Controls or NotchPage.Devices;
         StorageTab.IsChecked = page == NotchPage.Storage;
         SystemTab.IsChecked = page == NotchPage.System;
+        ClipboardTab.IsChecked = page == NotchPage.Clipboard;
+        LinksTab.IsChecked = page == NotchPage.Links;
 
         if (page != _page)
         {
@@ -597,6 +845,100 @@ public sealed partial class NotchView : UserControl
     private void OnStorageTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Storage);
 
     private void OnSystemTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.System);
+
+    private void OnClipboardTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Clipboard);
+
+    private void OnLinksTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Links);
+
+    private void OnLinkClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string id })
+        {
+            return;
+        }
+
+        if (id.Length == 0)
+        {
+            LinkAddRequested?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            LinkOpenRequested?.Invoke(this, id);
+        }
+    }
+
+    public void SetLinks(IReadOnlyList<QuickLink> links, Func<string, string?> iconPath)
+    {
+        var tiles = new List<LinkTile>(links.Count + 1);
+        var alive = new HashSet<string>();
+        foreach (var link in links)
+        {
+            var tile = LinkTile.For(link);
+            tiles.Add(tile);
+            if (iconPath(link.Id) is { } path)
+            {
+                alive.Add(path);
+                _ = ShowLinkIconAsync(tile, path);
+            }
+        }
+
+        foreach (var stale in _linkIcons.Keys.Where(k => !alive.Contains(k)).ToList())
+        {
+            _linkIcons.Remove(stale);
+        }
+
+        if (links.Count < QuickLinkList.MaxLinks)
+        {
+            tiles.Add(LinkTile.Add());
+        }
+
+        LinkList.ItemsSource = tiles;
+        NoLinksText.Visibility = links.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async Task ShowLinkIconAsync(LinkTile tile, string path)
+    {
+        try
+        {
+            var stamp = File.GetLastWriteTimeUtc(path);
+            if (_linkIcons.TryGetValue(path, out var cached) && cached.Stamp == stamp)
+            {
+                tile.ShowIcon(cached.Image);
+                return;
+            }
+
+            if (await LinkIconLoader.LoadAsync(path, 64) is not { } image)
+            {
+                _linkIcons.Remove(path);
+                return;
+            }
+
+            _linkIcons[path] = (stamp, image);
+            tile.ShowIcon(image);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _linkIcons.Remove(path);
+        }
+    }
+
+    private void OnClipboardItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: long id })
+        {
+            ClipboardCopyRequested?.Invoke(this, id);
+        }
+    }
+
+    private void OnClipboardRemoveClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: long id })
+        {
+            ClipboardRemoveRequested?.Invoke(this, id);
+        }
+    }
+
+    private void OnClipboardClearClick(object sender, RoutedEventArgs e) => ClipboardClearRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnDriveClick(object sender, RoutedEventArgs e)
     {

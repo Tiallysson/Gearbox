@@ -53,6 +53,16 @@ public sealed partial class MainWindow : Window
 
         AppWindow.Show();
         Activate();
+        NativeWindow.BringToFront(WinRT.Interop.WindowNative.GetWindowHandle(this));
+    }
+
+    public void SelectModule(string moduleId)
+    {
+        var item = NavView.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => i.Tag as string == moduleId);
+        if (item is not null)
+        {
+            NavView.SelectedItem = item;
+        }
     }
 
     private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)

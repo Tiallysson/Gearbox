@@ -66,22 +66,195 @@
             Message="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
             Severity="{x:Bind ViewModel.StatusSeverity, Mode=OneWay}" />
 
-        <!-- Wallpaper -->
-        <TextBlock x:Uid="WallpaperHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,8,0,4" />
+        <InfoBar
+            x:Uid="ModuleOffInfo"
+            IsClosable="False"
+            IsOpen="{x:Bind ViewModel.IsModuleOff, Mode=OneWay}"
+            Severity="Informational" />
 
-        <Border Style="{StaticResource CardStyle}">
+        <TextBlock x:Uid="GalleryHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,8,0,4" />
+
+        <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasNoActive, Mode=OneWay}">
             <Grid ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border
+                    Width="56"
+                    Height="56"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    CornerRadius="28">
+                    <FontIcon FontSize="24" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Glyph="&#xE91B;" />
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.EmptyTitle, Mode=OneWay}" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.EmptyDescription, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasActive, Mode=OneWay}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Uid="UseGearboxTitle" />
-                    <TextBlock x:Uid="UseGearboxDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <Border
+                    Width="112"
+                    Height="63"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                    CornerRadius="6">
+                    <Grid>
+                        <Image Source="{x:Bind ViewModel.ActiveCard.Thumbnail, Mode=OneWay}" Stretch="UniformToFill" />
+                        <ui:ScenePreview IsAnimating="{x:Bind ViewModel.IsPageVisible, Mode=OneWay}" SceneId="{x:Bind ViewModel.ActiveCard.SceneId, Mode=OneWay, FallbackValue=''}" />
+                    </Grid>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock x:Uid="GalleryInUse" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                    <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.ActiveCard.Name, Mode=OneWay, FallbackValue=''}" />
+                    <TextBlock
+                        Style="{ThemeResource CaptionTextBlockStyle}"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.ActiveCard.KindLabel, Mode=OneWay, FallbackValue=''}" />
                 </StackPanel>
-                <ToggleSwitch x:Uid="UseGearboxToggle" Grid.Column="1" MinWidth="0" IsOn="{x:Bind ViewModel.UseGearboxWallpaper, Mode=TwoWay}" />
+                <Button x:Uid="GalleryDeactivateButton" Grid.Column="2" VerticalAlignment="Center" Click="OnDeactivateClick" />
             </Grid>
         </Border>
+
+        <SelectorBar x:Name="FilterBar" Margin="0,8,0,0" SelectionChanged="OnFilterChanged">
+            <SelectorBarItem x:Uid="GalleryFilterAll" IsSelected="True" />
+            <SelectorBarItem x:Uid="GalleryFilterStatic" />
+            <SelectorBarItem x:Uid="GalleryFilterInteractive" />
+        </SelectorBar>
+
+        <GridView
+            x:Uid="GalleryGrid"
+            Margin="-4,4,-4,0"
+            IsItemClickEnabled="True"
+            ItemClick="OnCardClick"
+            ItemsSource="{x:Bind ViewModel.VisibleCards}"
+            SelectionMode="None">
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem" BasedOn="{StaticResource DefaultGridViewItemStyle}">
+                    <Setter Property="Margin" Value="4" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </GridView.ItemContainerStyle>
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="ui:GalleryCardViewModel">
+                    <StackPanel
+                        Width="208"
+                        Padding="0,0,0,8"
+                        AutomationProperties.Name="{x:Bind AutomationName}"
+                        Background="Transparent"
+                        PointerCanceled="OnCardPointerExited"
+                        PointerCaptureLost="OnCardPointerExited"
+                        PointerEntered="OnCardPointerEntered"
+                        PointerExited="OnCardPointerExited"
+                        Spacing="8">
+                        <Border Height="117" Background="{ThemeResource ControlFillColorSecondaryBrush}" CornerRadius="6">
+                            <Grid>
+                                <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="UniformToFill" Visibility="{x:Bind IsStatic}" />
+                                <ui:ScenePreview IsAnimating="{x:Bind IsHovered, Mode=OneWay}" SceneId="{x:Bind SceneId}" Visibility="{x:Bind IsInteractive}" />
+                                <Border
+                                    Margin="8"
+                                    Padding="8,3"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="#99000000"
+                                    CornerRadius="10"
+                                    Visibility="{x:Bind IsInteractive}">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon FontSize="10" Foreground="White" Glyph="&#xE945;" />
+                                        <TextBlock x:Uid="GalleryInteractiveBadge" FontSize="11" Foreground="White" />
+                                    </StackPanel>
+                                </Border>
+                                <Border
+                                    Width="24"
+                                    Height="24"
+                                    Margin="8"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                    CornerRadius="12"
+                                    Visibility="{x:Bind IsActive, Mode=OneWay}">
+                                    <FontIcon FontSize="12" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Glyph="&#xE73E;" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <StackPanel Padding="4,0" Spacing="1">
+                            <TextBlock Style="{ThemeResource BodyStrongTextBlockStyle}" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind KindLabel}" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <ContentDialog x:Name="DetailDialog" x:Uid="GalleryDetailDialog" DefaultButton="Close">
+            <ContentDialog.Resources>
+                <x:Double x:Key="ContentDialogMaxWidth">760</x:Double>
+            </ContentDialog.Resources>
+            <StackPanel Width="680" Spacing="12">
+                <Border Height="383" Background="{ThemeResource ControlFillColorSecondaryBrush}" CornerRadius="8">
+                    <Grid>
+                        <Image Source="{x:Bind ViewModel.SelectedCard.Preview, Mode=OneWay, FallbackValue={x:Null}}" Stretch="UniformToFill" />
+                        <ui:ScenePreview IsAnimating="True" SceneId="{x:Bind ViewModel.SelectedCard.SceneId, Mode=OneWay, FallbackValue=''}" />
+                    </Grid>
+                </Border>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.SelectedCard.Name, Mode=OneWay, FallbackValue=''}" />
+                            <Border
+                                Padding="8,2"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                CornerRadius="10"
+                                Visibility="{x:Bind ViewModel.SelectedCard.IsActive, Mode=OneWay, FallbackValue=Collapsed}">
+                                <TextBlock x:Uid="GalleryActiveBadge" FontSize="11" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Text="{x:Bind ViewModel.SelectedCard.KindLabel, Mode=OneWay, FallbackValue=''}" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind ViewModel.SelectedCard.Description, Mode=OneWay, FallbackValue=''}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                        <Button
+                            x:Uid="GalleryActivateButton"
+                            Click="OnActivateClick"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Visibility="{x:Bind ViewModel.SelectedCard.IsInactive, Mode=OneWay, FallbackValue=Collapsed}" />
+                        <Button
+                            x:Uid="GalleryDeactivateSelected"
+                            Click="OnDeactivateClick"
+                            Visibility="{x:Bind ViewModel.SelectedCard.IsActive, Mode=OneWay, FallbackValue=Collapsed}" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ContentDialog>
+
+        <TextBlock x:Uid="OwnFilesHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,0" />
+        <TextBlock
+            x:Uid="OwnFilesDescription"
+            Margin="1,0,0,4"
+            Style="{ThemeResource CaptionTextBlockStyle}"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="Wrap" />
 
         <Border Style="{StaticResource CardStyle}">
             <Grid ColumnSpacing="16">

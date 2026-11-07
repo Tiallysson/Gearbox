@@ -6,13 +6,12 @@ using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace Gearbox.Modules.Wallpaper.UI;
 
-/// <summary>Um arquivo escolhido: o geral ("todos os monitores") ou o de um monitor.</summary>
 public sealed partial class WallpaperChoiceViewModel : ObservableObject
 {
     private readonly Func<Task<string?>> _pickFile;
-    private readonly Action _changed;
+    private readonly Action<WallpaperChoiceViewModel> _changed;
 
-    public WallpaperChoiceViewModel(string? devicePath, string title, string? path, Func<Task<string?>> pickFile, Action changed)
+    public WallpaperChoiceViewModel(string? devicePath, string title, string? path, Func<Task<string?>> pickFile, Action<WallpaperChoiceViewModel> changed)
     {
         DevicePath = devicePath;
         Title = title;
@@ -44,9 +43,9 @@ public sealed partial class WallpaperChoiceViewModel : ObservableObject
 
     public string KindGlyph => MediaKinds.Detect(Path) switch
     {
-        MediaKind.Video => "", // Video
-        MediaKind.Image => "", // Photo2
-        _ => "", // Photo (wallpaper do Gearbox)
+        MediaKind.Video => "",
+        MediaKind.Image => "",
+        _ => "",
     };
 
     partial void OnPathChanged(string? value)
@@ -54,7 +53,7 @@ public sealed partial class WallpaperChoiceViewModel : ObservableObject
         Thumbnail = HasFile && MediaKinds.Detect(value) == MediaKind.Image && File.Exists(value)
             ? new BitmapImage(new Uri(value!)) { DecodePixelWidth = 192 }
             : null;
-        _changed();
+        _changed(this);
     }
 
     [RelayCommand]

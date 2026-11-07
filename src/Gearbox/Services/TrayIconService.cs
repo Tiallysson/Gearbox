@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Gearbox.Core.Modules;
+using Gearbox.Core.Updates;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
 using Microsoft.Extensions.Logging;
@@ -10,10 +11,12 @@ namespace Gearbox.Services;
 /// <summary>
 /// Ícone na bandeja. Clique esquerdo abre a janela; o menu tem "Abrir Gearbox", um toggle por módulo e "Sair".
 /// </summary>
-public sealed class TrayIconService(ModuleManager modules, MainWindowService mainWindow, ILogger<TrayIconService> logger) : IDisposable
+public sealed class TrayIconService(ModuleManager modules, MainWindowService mainWindow, UpdateService updates, ILogger<TrayIconService> logger) : IDisposable
 {
     private readonly Dictionary<string, ToggleMenuFlyoutItem> _toggles = new(StringComparer.OrdinalIgnoreCase);
     private TaskbarIcon? _icon;
+    private MenuFlyout? _menu;
+    private MenuFlyoutItem? _updateItem;
     private System.Drawing.Icon? _iconImage;
 
     /// <summary>O usuário escolheu "Sair" no menu.</summary>
@@ -21,7 +24,7 @@ public sealed class TrayIconService(ModuleManager modules, MainWindowService mai
 
     public void Initialize()
     {
-        var menu = new MenuFlyout();
+        var menu = _menu = new MenuFlyout();
         menu.Items.Add(new MenuFlyoutItem { Text = AppStrings.Get("TrayOpen"), Command = new RelayCommand(ShowWindow) });
 
         if (modules.Modules.Count > 0)
@@ -62,12 +65,14 @@ public sealed class TrayIconService(ModuleManager modules, MainWindowService mai
         _icon.ForceCreate(enablesEfficiencyMode: false);
 
         modules.ModuleStateChanged += OnModuleStateChanged;
+        updates.UpdateFound += OnUpdateFound;
         logger.LogDebug("Ícone da bandeja criado");
     }
 
     public void Dispose()
     {
         modules.ModuleStateChanged -= OnModuleStateChanged;
+        updates.UpdateFound -= OnUpdateFound;
         _icon?.Dispose();
         _icon = null;
         _iconImage?.Dispose();
@@ -93,6 +98,39 @@ public sealed class TrayIconService(ModuleManager modules, MainWindowService mai
         if (_toggles.TryGetValue(module.Id, out var item))
         {
             item.IsChecked = enabled;
+        }
+    }
+
+    private void OnUpdateFound(object? sender, UpdateCandidate candidate)
+    {
+        if (_menu is null || _icon is null)
+        {
+            return;
+        }
+
+        var text = AppStrings.Format("TrayInstallUpdateFormat", candidate.Release.Version);
+        if (_updateItem is null)
+        {
+            _updateItem = new MenuFlyoutItem { Command = new RelayCommand(InstallUpdate) };
+            _menu.Items.Insert(1, _updateItem);
+        }
+
+        _updateItem.Text = text;
+        _icon.ShowNotification(
+            AppStrings.Get("UpdateAvailableTitle"),
+            AppStrings.Format("UpdateAvailableMessageFormat", candidate.Release.Version),
+            NotificationIcon.Info);
+    }
+
+    private async void InstallUpdate()
+    {
+        try
+        {
+            await updates.InstallAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Falha ao instalar a atualização pela bandeja");
         }
     }
 
