@@ -27,6 +27,9 @@ public sealed class NotchModule(
     WinEventHookManager hooks,
     ISettingsService<NotchSettings> settings,
     IModuleFaultReporter faults,
+    IModuleSettingsOpener settingsOpener,
+    LinkCatalog links,
+    LinkEditor linkEditor,
     ILogger<NotchModule> logger) : IGearboxModule
 {
     public const string ModuleId = "Notch";
@@ -54,6 +57,9 @@ public sealed class NotchModule(
     private MediaSessionWatcher? _media;
     private ConnectivityWatcher? _connectivity;
     private SystemMonitor? _system;
+    private ClipboardWatcher? _clipboard;
+    private AccentColorSource? _accent;
+    private bool _loggedUnsupportedBlur;
     private IDisposable? _subscription;
     private bool _storageVisible;
     private int _driveScan;
@@ -107,6 +113,13 @@ public sealed class NotchModule(
             _window.View.OutputDeviceSelected += OnOutputDeviceSelected;
             _window.View.PageChanged += OnPageChanged;
             _window.View.DriveOpenRequested += OnDriveOpenRequested;
+            _window.View.ClipboardCopyRequested += OnClipboardCopyRequested;
+            _window.View.ClipboardRemoveRequested += OnClipboardRemoveRequested;
+            _window.View.ClipboardClearRequested += OnClipboardClearRequested;
+            _window.View.SettingsRequested += OnSettingsRequested;
+            _window.View.LinkOpenRequested += OnLinkOpenRequested;
+            _window.View.LinkAddRequested += OnLinkAddRequested;
+            links.Changed += OnLinksChanged;
             ApplyAppearance();
 
             _systemState = new SystemStateMonitor(logger);
@@ -174,11 +187,22 @@ public sealed class NotchModule(
         StopMedia();
         StopConnectivity();
         StopSystem();
+        StopClipboard();
+        StopAccent();
+        _loggedUnsupportedBlur = false;
+        links.Changed -= OnLinksChanged;
+        linkEditor.Close();
 
         if (_window is not null)
         {
             _window.View.PageChanged -= OnPageChanged;
             _window.View.DriveOpenRequested -= OnDriveOpenRequested;
+            _window.View.ClipboardCopyRequested -= OnClipboardCopyRequested;
+            _window.View.ClipboardRemoveRequested -= OnClipboardRemoveRequested;
+            _window.View.ClipboardClearRequested -= OnClipboardClearRequested;
+            _window.View.SettingsRequested -= OnSettingsRequested;
+            _window.View.LinkOpenRequested -= OnLinkOpenRequested;
+            _window.View.LinkAddRequested -= OnLinkAddRequested;
             _window.View.HoverChanged -= OnHoverChanged;
             _window.View.MediaCommandRequested -= OnMediaCommandRequested;
             _window.View.QuickActionRequested -= OnQuickActionRequested;
@@ -247,7 +271,23 @@ public sealed class NotchModule(
             StopSystem();
         }
 
-        _window?.View.SetTabs(_current.ShowConnectivity, _current.ShowAudioControls, _current.ShowStorage, _current.ShowSystemInfo);
+        if (_current.ShowClipboard && _clipboard is null)
+        {
+            _clipboard = new ClipboardWatcher(logger);
+            _clipboard.Changed += OnClipboardChanged;
+            PushClipboard();
+        }
+        else if (!_current.ShowClipboard)
+        {
+            StopClipboard();
+        }
+
+        _window?.View.SetTabs(_current.ShowConnectivity, _current.ShowAudioControls, _current.ShowStorage, _current.ShowSystemInfo, _current.ShowClipboard, _current.ShowLinks);
+        if (_current.ShowLinks)
+        {
+            PushLinks();
+            links.EnsureIcons();
+        }
         RefreshOutputDevices();
         UpdatePageSources();
 
@@ -299,6 +339,45 @@ public sealed class NotchModule(
         _connectivity = null;
         _window?.View.SetConnectivity(RadioInfo.Unavailable, RadioInfo.Unavailable, NetworkLink.None);
     }
+
+    private void StopClipboard()
+    {
+        if (_clipboard is null)
+        {
+            return;
+        }
+
+        _clipboard.Changed -= OnClipboardChanged;
+        _clipboard.Dispose();
+        _clipboard = null;
+        PushClipboard();
+    }
+
+    private void PushClipboard() =>
+        _window?.View.SetClipboard(
+            _clipboard?.Items ?? [],
+            id => _clipboard?.OpenImage(id),
+            (id, ex) => logger.LogWarning(ex, "Não foi possível mostrar a miniatura do item {Id} da área de transferência", id));
+
+    private void OnClipboardChanged(object? sender, EventArgs e) => Guard(PushClipboard);
+
+    private async void OnClipboardCopyRequested(object? sender, long id)
+    {
+        if (_clipboard is not { } clipboard)
+        {
+            return;
+        }
+
+        var copied = await clipboard.CopyBackAsync(id);
+        if (copied)
+        {
+            Guard(() => _window?.View.ShowClipboardCopied());
+        }
+    }
+
+    private void OnClipboardRemoveRequested(object? sender, long id) => Guard(() => _clipboard?.Remove(id));
+
+    private void OnClipboardClearRequested(object? sender, EventArgs e) => Guard(() => _clipboard?.Clear());
 
     private void StopSystem()
     {
@@ -371,9 +450,97 @@ public sealed class NotchModule(
 
     private void ApplyAppearance()
     {
-        _window?.View.SetBackground(_current.AcrylicBackground, NotchAppearance.ToBrushOpacity(_current.BackgroundOpacity));
-        _window?.View.SetGlassBorder(_current.GlassBorder);
+        if (_window is null)
+        {
+            return;
+        }
+
+        var look = NotchAppearance.Look(_current.BackgroundStyle);
+        if (look.Blur && !_loggedUnsupportedBlur && !IslandBackdrop.IsSupported())
+        {
+            _loggedUnsupportedBlur = true;
+            logger.LogInformation("O acrílico não é suportado neste sistema; o estilo Vidro usa só a cor");
+        }
+
+        _window.View.SetBackground(look.Blur, NotchAppearance.Readable(ResolveColor()), look.Opacity);
+        _window.View.SetGlassBorder(_current.GlassBorder);
+        _window.View.SetAnimation(_current.SpringAnimation, _current.SpringIntensity);
     }
+
+    private TintColor ResolveColor()
+    {
+        if (!_current.UseAccentColor)
+        {
+            StopAccent();
+            return NotchAppearance.ParseOrDefault(_current.BackgroundColor);
+        }
+
+        if (_accent is null && _dispatcher is not null)
+        {
+            _accent = new AccentColorSource(_dispatcher);
+            _accent.Changed += OnAccentChanged;
+        }
+
+        return _accent?.Current ?? NotchAppearance.Black;
+    }
+
+    private void StopAccent()
+    {
+        if (_accent is null)
+        {
+            return;
+        }
+
+        _accent.Changed -= OnAccentChanged;
+        _accent.Dispose();
+        _accent = null;
+    }
+
+    private void OnAccentChanged(object? sender, EventArgs e) => Guard(ApplyAppearance);
+
+    private void PushLinks() => _window?.View.SetLinks(links.Links, links.IconPath);
+
+    private void OnLinksChanged(object? sender, EventArgs e) => Guard(PushLinks);
+
+    private void OnLinkOpenRequested(object? sender, string id) => Guard(() =>
+    {
+        if (links.Links.FirstOrDefault(l => l.Id == id) is not { } link)
+        {
+            return;
+        }
+
+        CollapseNow();
+        try
+        {
+            LinkLauncher.Open(link);
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            logger.LogWarning(ex, "Não foi possível abrir o link {Target}", link.Target);
+        }
+    });
+
+    private void OnLinkAddRequested(object? sender, EventArgs e) => Guard(() =>
+    {
+        CollapseNow();
+        linkEditor.Open();
+    });
+
+    private void CollapseNow()
+    {
+        _expandTimer?.Stop();
+        _collapseTimer?.Stop();
+        if (_state.SetHovered(false))
+        {
+            Render();
+        }
+    }
+
+    private void OnSettingsRequested(object? sender, EventArgs e) => Guard(() =>
+    {
+        CollapseNow();
+        settingsOpener.Open(Id);
+    });
 
     /// <summary>Aplica o estado atual à janela: forma, conteúdo e visibilidade.</summary>
     private void Render(bool animate = true)
@@ -384,10 +551,12 @@ public sealed class NotchModule(
         }
 
         var mode = _state.Mode;
-        var compact = _visibility == NotchVisibility.Compact;
-        var isPlaying = _media?.Current?.IsPlaying == true;
-        _window.View.SetMode(mode, _state.Peek, compact);
-        _window.SetShape(NotchLayout.ShapeFor(mode, isPlaying, compact, _window.View.HasTabs), animate);
+        var showsMedia = NotchLayout.ShowsCollapsedMedia(_media?.Current?.IsPlaying == true, _current.ShowMediaWhenCollapsed);
+        var compact = NotchLayout.IsCompact(_visibility, _current.CollapseToHandle, showsMedia);
+        _window.View.SetMode(mode, _state.Peek, compact, showsMedia);
+        var tall = _window.View.CurrentPage is NotchPage.Clipboard or NotchPage.Links;
+        var shape = NotchLayout.ShapeFor(mode, showsMedia, compact, _window.View.HasTabs, tall);
+        _window.SetShape(NotchLayout.WithRoundness(shape, NotchAppearance.RoundnessFactor(_current.Roundness)), animate);
         UpdatePageSources();
         _window.SetVisible(_visibility != NotchVisibility.Hidden && !_sessionLocked && !_displayOff);
 
@@ -501,6 +670,11 @@ public sealed class NotchModule(
 
     private void OnExpandElapsed() => Guard(() =>
     {
+        if (_window?.View.IsPointerOverCollapsedControls == true)
+        {
+            return;
+        }
+
         _peekTimer?.Stop();
         if (_state.SetHovered(true))
         {
@@ -631,7 +805,7 @@ public sealed class NotchModule(
         }
     });
 
-    private void OnPageChanged(object? sender, NotchPage page) => Guard(UpdatePageSources);
+    private void OnPageChanged(object? sender, NotchPage page) => Guard(() => Render());
 
     private void OnHardwareChanged(object? sender, HardwareInfo hardware) => Guard(() => _window?.View.SetHardware(hardware));
 

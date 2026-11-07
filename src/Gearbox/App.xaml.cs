@@ -124,6 +124,7 @@ public partial class App : Application
         builder.Services.AddGearboxSettings<GeneralSettings>("general");
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<MainWindowService>();
+        builder.Services.AddSingleton<IModuleSettingsOpener>(sp => sp.GetRequiredService<MainWindowService>());
         builder.Services.AddSingleton<TrayIconService>();
         builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddTransient<MainWindow>();

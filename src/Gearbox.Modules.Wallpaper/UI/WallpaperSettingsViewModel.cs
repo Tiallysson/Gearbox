@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Gearbox.Core.Settings;
 using Gearbox.Interop.Desktop;
 using Gearbox.Modules.Wallpaper.Logic;
+using Gearbox.Modules.Wallpaper.Logic.Gallery;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -22,6 +23,8 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
     private readonly DispatcherQueueTimer? _saveTimer;
     private readonly Dictionary<string, MonitorWallpaper> _disconnectedMonitors = new(StringComparer.OrdinalIgnoreCase);
     private readonly bool _isLoading;
+    private readonly List<GalleryCardViewModel> _cards;
+    private string? _galleryId;
 
     public WallpaperSettingsViewModel(ISettingsService<WallpaperSettings> settings, WallpaperModule module, ILogger<WallpaperSettingsViewModel> logger)
     {
@@ -40,26 +43,169 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
 
         _isLoading = true;
         var current = settings.Load();
-        UseGearboxWallpaper = current.UseGearboxWallpaper;
+        _galleryId = GalleryCatalog.Find(current.GalleryWallpaperId)?.Id;
+        _cards = GalleryCatalog.All.Select(item => new GalleryCardViewModel(item) { IsActive = item.Id == _galleryId }).ToList();
+        foreach (var card in _cards)
+        {
+            VisibleCards.Add(card);
+        }
+
         SameForAllMonitors = current.SameForAllMonitors;
         FitIndex = Math.Max(0, Array.IndexOf(s_fits, current.Fit));
         PauseOnFullscreen = current.PauseOnFullscreen;
         PauseOnBattery = current.PauseOnBattery;
         PauseWhenLocked = current.PauseWhenLocked;
 
-        DefaultChoice = new WallpaperChoiceViewModel(null, ModuleStrings.Get("AllMonitorsTitle"), current.Default?.Path, PickFileAsync, ScheduleSave);
+        DefaultChoice = new WallpaperChoiceViewModel(null, ModuleStrings.Get("AllMonitorsTitle"), current.Default?.Path, PickFileAsync, OnChoiceChanged);
         Monitors = new ObservableCollection<WallpaperChoiceViewModel>(LoadMonitors(current));
         _isLoading = false;
 
         RefreshStatus();
+        RefreshActive();
         _module.StatusChanged += OnModuleStatusChanged;
+        _ = LoadThumbnailsAsync();
+    }
+
+    public ObservableCollection<GalleryCardViewModel> VisibleCards { get; } = [];
+
+    [ObservableProperty]
+    public partial int FilterIndex { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedCard))]
+    public partial object? SelectedItem { get; set; }
+
+    public GalleryCardViewModel? SelectedCard => SelectedItem as GalleryCardViewModel;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActive), nameof(HasNoActive), nameof(EmptyTitle), nameof(EmptyDescription))]
+    public partial GalleryCardViewModel? ActiveCard { get; set; }
+
+    public bool HasActive => ActiveCard is not null;
+
+    public bool HasNoActive => ActiveCard is null;
+
+    public bool UsesOwnFiles => DefaultChoice.HasFile || Monitors.Any(m => m.HasFile);
+
+    public string EmptyTitle => ModuleStrings.Get(UsesOwnFiles ? "GalleryEmptyFilesTitle" : "GalleryEmptyTitle");
+
+    public string EmptyDescription => ModuleStrings.Get(UsesOwnFiles ? "GalleryEmptyFilesDescription" : "GalleryEmptyDescription");
+
+    [ObservableProperty]
+    public partial bool IsModuleOff { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsPageVisible { get; set; } = true;
+
+    public void Activate(GalleryCardViewModel card)
+    {
+        _galleryId = card.Id;
+        RefreshActive();
+        Save();
+    }
+
+    public void Deactivate()
+    {
+        if (_galleryId is null)
+        {
+            return;
+        }
+
+        _galleryId = null;
+        RefreshActive();
+        Save();
+    }
+
+    partial void OnFilterIndexChanged(int value)
+    {
+        var filter = value switch
+        {
+            1 => GalleryFilter.Static,
+            2 => GalleryFilter.Interactive,
+            _ => GalleryFilter.All,
+        };
+        var visible = GalleryCatalog.Filter(filter).Select(i => i.Id).ToHashSet();
+        VisibleCards.Clear();
+        foreach (var card in _cards.Where(c => visible.Contains(c.Id)))
+        {
+            VisibleCards.Add(card);
+        }
+
+        if (SelectedCard is { } selected && !visible.Contains(selected.Id))
+        {
+            SelectedItem = null;
+        }
+    }
+
+    partial void OnSelectedItemChanged(object? value)
+    {
+        if (value is GalleryCardViewModel { IsStatic: true, Preview: null } card)
+        {
+            _ = LoadPreviewAsync(card);
+        }
+    }
+
+    private void RefreshActive()
+    {
+        foreach (var card in _cards)
+        {
+            card.IsActive = card.Id == _galleryId;
+        }
+
+        ActiveCard = _cards.FirstOrDefault(c => c.IsActive);
+        IsModuleOff = !_module.IsEnabled;
+        OnPropertyChanged(nameof(EmptyTitle));
+        OnPropertyChanged(nameof(EmptyDescription));
+    }
+
+    private void OnChoiceChanged(WallpaperChoiceViewModel choice)
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        if (choice.HasFile && _galleryId is not null)
+        {
+            _galleryId = null;
+            RefreshActive();
+        }
+
+        OnPropertyChanged(nameof(UsesOwnFiles));
+        OnPropertyChanged(nameof(EmptyTitle));
+        OnPropertyChanged(nameof(EmptyDescription));
+        ScheduleSave();
+    }
+
+    private async Task LoadThumbnailsAsync()
+    {
+        foreach (var card in _cards.Where(c => c.IsStatic))
+        {
+            try
+            {
+                card.Thumbnail = await GalleryThumbnails.RenderAsync(card.Item, 464, 261);
+            }
+            catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException)
+            {
+                _logger.LogWarning(ex, "Não foi possível gerar a miniatura de {Wallpaper}", card.Id);
+            }
+        }
+    }
+
+    private async Task LoadPreviewAsync(GalleryCardViewModel card)
+    {
+        try
+        {
+            card.Preview = await GalleryThumbnails.RenderAsync(card.Item, 1280, 720);
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException)
+        {
+            _logger.LogWarning(ex, "Não foi possível gerar a prévia de {Wallpaper}", card.Id);
+        }
     }
 
     /// <summary>Janela dona do seletor de arquivos (a página informa ao carregar).</summary>
     public WindowId OwnerWindow { get; set; }
-
-    [ObservableProperty]
-    public partial bool UseGearboxWallpaper { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPerMonitor))]
@@ -103,8 +249,6 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
         }
     }
 
-    partial void OnUseGearboxWallpaperChanged(bool value) => ScheduleSave();
-
     partial void OnSameForAllMonitorsChanged(bool value) => ScheduleSave();
 
     partial void OnFitIndexChanged(int value) => ScheduleSave();
@@ -145,7 +289,7 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
             var saved = current.Monitors
                 .FirstOrDefault(e => string.Equals(e.Key, monitor.DevicePath, StringComparison.OrdinalIgnoreCase)).Value;
             var title = ModuleStrings.Format("MonitorTitleFormat", i + 1, monitor.Bounds.Width, monitor.Bounds.Height);
-            yield return new WallpaperChoiceViewModel(monitor.DevicePath, title, saved?.Path, PickFileAsync, ScheduleSave);
+            yield return new WallpaperChoiceViewModel(monitor.DevicePath, title, saved?.Path, PickFileAsync, OnChoiceChanged);
         }
     }
 
@@ -174,7 +318,11 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
         }
     }
 
-    private void OnModuleStatusChanged(object? sender, EventArgs e) => RefreshStatus();
+    private void OnModuleStatusChanged(object? sender, EventArgs e)
+    {
+        RefreshStatus();
+        IsModuleOff = !_module.IsEnabled;
+    }
 
     /// <summary>Mostra os problemas da última aplicação (arquivo sumiu, vídeo não tocou...).</summary>
     private void RefreshStatus()
@@ -189,7 +337,7 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
         var lines = problems.Select(p =>
         {
             var monitor = Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, p.DevicePath, StringComparison.OrdinalIgnoreCase))?.Title ?? p.DevicePath;
-            var fallback = p.IsGearboxWallpaper ? ModuleStrings.Get("FallbackGearbox") : ModuleStrings.Get("FallbackOriginal");
+            var fallback = ModuleStrings.Get("FallbackOriginal");
             return ModuleStrings.Format("ProblemLineFormat", monitor, ModuleStrings.Get($"Problem{p.Problem}"), fallback);
         });
 
@@ -222,6 +370,7 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
 
     private void Save()
     {
+        _saveTimer?.Stop();
         var monitors = new Dictionary<string, MonitorWallpaper>(_disconnectedMonitors, StringComparer.OrdinalIgnoreCase);
         foreach (var choice in Monitors)
         {
@@ -233,7 +382,7 @@ public sealed partial class WallpaperSettingsViewModel : ObservableObject
 
         _settings.Save(new WallpaperSettings
         {
-            UseGearboxWallpaper = UseGearboxWallpaper,
+            GalleryWallpaperId = _galleryId,
             SameForAllMonitors = SameForAllMonitors,
             Default = new MonitorWallpaper { Path = DefaultChoice.HasFile ? DefaultChoice.Path : null },
             Monitors = monitors,

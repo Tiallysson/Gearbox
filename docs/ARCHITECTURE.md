@@ -116,17 +116,37 @@ EVENT_OBJECT_LOCATIONCHANGE (OBJID_WINDOW, CHILDID_SELF)
 ## Wallpaper, em detalhe
 
 ```
-WallpaperSettings + monitores (IDesktopWallpaper) + wallpaper embutido
-  └─► WallpaperResolver ─► por monitor: imagem | vídeo | manter o original (+ problema, se a escolha caiu)
+WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
+  └─► WallpaperResolver ─► por monitor: galeria (cena | imagem gerada) | imagem | vídeo | manter o original
         └─► WallpaperEngine
               ├─ imagem  → IDesktopWallpaper.SetWallpaper (API do próprio Windows)
-              ├─ vídeo   → wallpaper original por trás + VideoWallpaperWindow presa no WorkerW
+              ├─ vídeo   → wallpaper original por trás + VideoWallpaperWindow no WorkerW
+              ├─ cena    → wallpaper original por trás + SceneWallpaperWindow no WorkerW
               └─ original → devolve a imagem guardada no snapshot
 ```
 
-- **Vídeo atrás dos ícones**: `DesktopLayer` manda `0x052C` ao `Progman` e acha o `WorkerW` do wallpaper (filho do
-  `Progman` no Windows 11 24H2+, ou de topo no layout clássico). A `VideoWallpaperWindow` é uma janela WinUI sem
-  moldura com `MediaPlayerElement` (loop, sem som). Ela precisa **aparecer antes** de virar filha do WorkerW:
+- **Galeria** (`Logic/Gallery`): `GalleryCatalog` tem os 10 wallpapers (5 estáticos, 5 interativos), por id estável;
+  `WallpaperSettings.GalleryWallpaperId` é o ativo (nenhum por padrão). Com um ativo, ele vale para todos os
+  monitores e ganha dos arquivos; escolher um arquivo na página desativa o da galeria.
+  - **Estáticos**: desenhados por código em `StaticWallpaperRenderer` (ruído fractal, funções de distância,
+    gradientes com dithering contra faixas) na resolução exata de cada monitor. O `GalleryImageCache` gera em segundo
+    plano e grava em `%LocalAppData%\Gearbox\cache\wallpapers\{id}-{L}x{A}.png`; enquanto não existe, o monitor
+    fica com o fundo atual (atribuição `Pending`, que o motor não toca) e o módulo aplica quando termina. Se a
+    geração falhar, o monitor volta ao original com o problema `RenderFailed`; mudar as configurações tenta de novo.
+    A imagem vai pelo mesmo caminho dos arquivos (com snapshot para restaurar), sempre em "Preencher". A cada
+    aplicação o cache é podado: fica só a imagem em uso (e as que estão sendo geradas), e `.tmp` órfãos somem.
+  - **Interativos**: cenas em `UI/Scenes` (`WallpaperScene` + `SceneFactory`), árvores de visuais de Composition com
+    animações de quadros-chave em loop, que rodam no compositor (GPU), sem trabalho por quadro na thread de UI.
+    Pausam pelos `AnimationController` (mesma `PausePolicy` dos vídeos) e, paradas, servem de pôster. As animações
+    usam propriedades inteiras (`Translation`, `Offset`, `Scale`), não subcanais, para o controlador existir. Cada
+    objeto de Composition criado pela cena é registrado (`Own`) e liberado na thread de UI ao reconstruir ou
+    descartar, sem depender do coletor. A Aurora Flow
+    usa texturas de cortina geradas por `AuroraRibbonTexture`; o Digital Clock troca o texto uma vez por minuto.
+  - **Página**: cards com miniatura (estáticos gerados em 464x261) ou a cena parada, que anima com o mouse em cima
+    (`ScenePreview`); clicar abre um `ContentDialog` com a prévia grande e "Ativar".
+- **Janela atrás dos ícones** (`DesktopHostWindow`, usada por vídeos e cenas): `DesktopLayer` manda `0x052C` ao
+  `Progman` e acha o `WorkerW` do wallpaper (filho do `Progman` no Windows 11 24H2+, ou de topo no layout clássico).
+  É uma janela WinUI sem moldura. Ela precisa **aparecer antes** de virar filha do WorkerW:
   reparentar uma janela WinUI que ainda não foi exibida derruba o processo. Por isso nasce fora da tela, aparece
   sem ativar e é presa 300 ms depois.
 - **Snapshot do original**: antes da primeira mudança, o wallpaper e o ajuste de cada monitor vão para
@@ -142,9 +162,7 @@ WallpaperSettings + monitores (IDesktopWallpaper) + wallpaper embutido
   `WM_DISPLAYCHANGE` e `TaskbarCreated` são broadcasts) que recebe bloqueio de sessão, tela apagada, mudança de
   monitores e reinício do Explorer. Energia vem do `PowerManager` (WinRT).
 - **Falhas de mídia** (arquivo sumiu, formato não suportado, vídeo que não toca) não desligam o módulo: o
-  monitor cai no wallpaper do Gearbox (ou no original) e a página mostra o motivo.
-- **Wallpaper embutido**: `Assets\Wallpapers\Gearbox.jpg` (e `Gearbox.mp4`, opcional) do projeto do módulo. No build
-  ele vai para `Gearbox.Modules.Wallpaper\Assets\...` e no publish para `Assets\...`; o módulo procura nos dois.
+  monitor mantém o fundo original e a página mostra o motivo.
 
 ## Ilha dinâmica (Notch), em detalhe
 
@@ -167,25 +185,50 @@ NotchModule (orquestra, timers)
   transparente) e `TransparentBackdrop` tira o do XAML (`SystemBackdrop` com um pincel transparente do compositor
   do sistema, que exige um `Windows.System.DispatcherQueue` na thread de UI, criado por
   `TransparentWindow.EnsureSystemDispatcherQueue`).
-- **Fundo** em duas camadas dentro da forma: um `SystemBackdropElement` (Windows App SDK 2.0+) com acrílico, com os
-  mesmos cantos da ilha, e por cima o tom preto (`IslandBrush`), com a opacidade de `NotchSettings.BackgroundOpacity`
-  (20–100%, limitada por `NotchAppearance`). Texto, capa e ícones continuam opacos. O acrílico é o
-  `AcrylicBackdrop`, um `DesktopAcrylicController` com configuração fixa `IsInputActive = true` e tema escuro: o
-  `DesktopAcrylicBackdrop` do XAML acompanha a ativação da janela e, como a ilha nunca é ativada, ficaria sempre na
-  cor sólida de reserva. O acrílico **só desfoca**: `TintOpacity = 0`, `LuminosityOpacity = 0` e `FallbackColor`
-  transparente. Toda a escuridão vem do `IslandBrush`, que também pinta as orelhas. Sem isso, a tinta escura do próprio
-  acrílico (e, na reserva, uma cor sólida opaca) deixaria o corpo bem mais escuro que as orelhas.
-- **Orelhas** (cantos côncavos de cima, como o notch do MacBook): dois `Path` (quadrado menos um quarto de círculo)
-  nas colunas `*` do `Grid` raiz, encostados no corpo, que fica na coluna `Auto`. O raio vem de
-  `NotchShape.EarRadius` e anima junto com a forma. As formas recolhidas (`Idle`, `Playing`, `Handle`) têm raio 0,
-  sem orelhas, e a janela fica do tamanho exato do corpo, porque a ilha recolhida fica no topo o tempo todo. As
-  orelhas só aparecem no aviso e na ilha aberta, e crescem e somem com a animação. Elas têm só o tom (`IslandBrush`),
-  sem o acrílico, porque o `SystemBackdropElement` só recorta retângulos arredondados. A cor é a mesma do corpo
-  (veja "Fundo"); com o acrílico ligado, a única diferença é que atrás delas o desktop aparece nítido, e não
-  desfocado. O traço da borda de vidro continua pela curva (cores
-  `GlassEdgeStartColor`/`GlassEdgeEndColor`, as pontas do gradiente).
-- **Tamanho da janela = tamanho da forma** (corpo + `2 × EarRadius`, `NotchLayout.WindowSize`), para não bloquear cliques em volta. Para crescer, a janela aumenta antes
-  e a forma anima; para encolher, a forma anima e a janela diminui no fim da animação.
+- **Fundo** em duas camadas dentro da forma: um `SystemBackdropElement` (Windows App SDK 2.0+) com acrílico, com
+  os mesmos cantos da ilha, e por cima o tom (`IslandBrush`). O usuário escolhe um **estilo**
+  (`NotchSettings.BackgroundStyle`: Opaco, Pouco transparente, Transparente, Muito transparente ou Vidro) e uma
+  **cor** (`BackgroundColor` em hex, de uma paleta, do seletor de cores ou, com `UseAccentColor`, o destaque do
+  Windows lido por `AccentColorSource`). `NotchAppearance.Look` traduz o estilo em opacidade do tom e acrílico
+  ligado ou não (só o Vidro desfoca); `NotchAppearance.Readable` escurece cores claras para o texto branco continuar
+  legível. Texto, capa e ícones continuam opacos. O acrílico é o `IslandBackdrop`, um `DesktopAcrylicController` com
+  configuração fixa `IsInputActive = true` e tema escuro, porque a ilha nunca é ativada. Ele **só desfoca**:
+  `TintOpacity = 0` e `LuminosityOpacity = 0`; toda a cor vem do `IslandBrush`. A reserva (`FallbackColor`, sem
+  efeitos de transparência ou na economia de energia) é a cor do tom opaca. Um `IslandBackdrop` por elemento vive
+  enquanto a janela existir e é reconfigurado (`Configure`), e os objetos de ligação são soltos na thread de UI: soltos
+  pelo coletor, na thread do finalizador, derrubam o processo (`RPC_E_WRONG_THREAD` em `Microsoft.UI.Input.dll`).
+  Configurações da 0.3 (`acrylicBackground`/`backgroundOpacity`) viram o estilo mais próximo no `IJsonOnDeserialized`
+  de `NotchSettings`. Não há Mica: ele só usa o papel de parede, nunca o que está atrás da ilha.
+- **Orelhas** (cantos côncavos de cima, como o notch do MacBook): dois `Grid` (um `SystemBackdropElement` quadrado
+  com o mesmo material e, por cima, um `Path` com o tom: quadrado menos um quarto de círculo) nas colunas `*` do
+  `Grid` raiz, encostados no corpo, que fica na coluna `Auto`. O raio vem de `NotchShape.EarRadius` (escalado por
+  `NotchSettings.Roundness` via `NotchLayout.WithRoundness`) e anima junto com a forma. As formas recolhidas (`Idle`,
+  `Playing`, `Handle`) têm raio 0, sem orelhas. O `SystemBackdropElement` só recorta retângulos arredondados, então
+  quem tira o quarto de círculo do material é a **região da janela**: `NotchRegion` calcula o retângulo e os dois
+  círculos, e `NativeWindow.TrySetRegion` subtrai os círculos com `CombineRgn`. A curva externa fica sem antialiasing.
+  O traço da borda de vidro continua pela curva (cores `GlassEdgeStartColor`/`GlassEdgeEndColor`).
+- **Região da janela**: a janela tem o tamanho máximo (`NotchLayout.MaxWindowSize`: a maior forma com o maior
+  arredondamento, mais a folga do pico da mola) e a região recorta a forma atual, para não bloquear cliques em volta.
+  Durante a animação, a `NotchView` emite `ShapeFrame` a cada quadro e a `NotchWindow` atualiza a região.
+- **Animação com mola** (`NotchSettings.SpringAnimation`/`SpringIntensity`): `SpringMotion` (Logic) é um oscilador
+  amortecido com solução fechada; `SpringAnimator` (UI) aplica os valores em `CompositionTarget.Rendering`. A forma
+  (largura, altura e orelhas) e o painel que entra (escala 0,96→1 e deslocamento −6→0, junto do fade) usam a mola;
+  desligada, a forma volta ao `Storyboard` com `CubicEase`. Uma animação interrompida continua do tamanho atual.
+- **Botão de configurações**: a engrenagem no rodapé da ilha aberta recolhe a ilha e chama
+  `IModuleSettingsOpener.Open` (Core), implementado pelo `MainWindowService` do casco, que mostra a janela e seleciona
+  a página do módulo. O `MainWindow.ShowAndActivate` usa `NativeWindow.BringToFront` (topo por um instante e
+  `SetForegroundWindow`), porque o Windows não deixa um processo em segundo plano roubar o foco.
+- **Aba "Links"** (`NotchSettings.ShowLinks`): atalhos para sites e apps do Windows, numa grade com o ícone de cada um
+  e um "+" no fim. A lista fica em `settings\NotchLinks.json` (`LinksSettings`, separada para o ViewModel do Notch não
+  sobrescrevê-la) e pertence ao `LinkCatalog`, um singleton usado pelo módulo e pela página de configurações (lá dá
+  para reordenar e remover). Regras puras em `QuickLinkList` (sem destino repetido, máximo de 30), `WebAddress` (só
+  http/https, `https://` quando falta) e `FaviconParser`. A ilha não recebe teclado, então o "+" abre a
+  `AddLinkWindow`, uma janela comum (via `LinkEditor`, fechada no `Stop`), com duas abas: **Site** (endereço e nome) e
+  **App do Windows** (apps do Menu Iniciar, de `Gearbox.Interop.Shell.InstalledApps`, via `shell:AppsFolder`).
+  Ícones ficam em `%LocalAppData%\Gearbox\cache\link-icons\{id}.img`: de sites, o `FaviconFetcher` lê a página (até
+  512 KB), escolhe o maior `apple-touch-icon`/`icon` e cai para `/apple-touch-icon.png` e `/favicon.ico`, sempre no
+  próprio site; de apps, o `IShellItemImageFactory` vira PNG. Sites abrem no navegador padrão (`UseShellExecute`);
+  apps, com `explorer.exe shell:AppsFolder\{AUMID}`.
 - **Abrir/fechar**: abre 120 ms depois de o mouse entrar e fecha 350 ms depois de sair. Com a ilha aberta, um timer
   de 500 ms confere a posição do cursor (rede de segurança para um `PointerExited` perdido) e o fechamento é
   cancelado se o cursor ainda estiver em cima.

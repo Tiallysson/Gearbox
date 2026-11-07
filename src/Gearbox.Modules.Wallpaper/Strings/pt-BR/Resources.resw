@@ -18,7 +18,7 @@
     <value>Wallpaper</value>
   </data>
   <data name="ModuleDescription" xml:space="preserve">
-    <value>Vídeo ou imagem como wallpaper, um para cada monitor, com o wallpaper do Gearbox como padrão. Ao desligar, o wallpaper anterior volta.</value>
+    <value>Uma galeria de wallpapers do Gearbox, estáticos e interativos, ou uma imagem ou vídeo seu, por monitor. Ao desligar, o wallpaper anterior volta.</value>
   </data>
   <data name="AllMonitorsTitle" xml:space="preserve">
     <value>Todos os monitores</value>
@@ -49,25 +49,139 @@
   <data name="ProblemOriginalNotRestorable" xml:space="preserve">
     <value>O fundo atual foi preservado: cor sólida, apresentação de slides ou imagem original indisponível</value>
   </data>
-  <data name="FallbackGearbox" xml:space="preserve">
-    <value>o wallpaper do Gearbox</value>
+  <data name="ProblemRenderFailed" xml:space="preserve">
+    <value>não foi possível gerar o wallpaper da galeria para este monitor. Ative de novo para tentar outra vez.</value>
   </data>
   <data name="FallbackOriginal" xml:space="preserve">
     <value>o wallpaper do Windows</value>
   </data>
 
   <!-- Página: wallpaper -->
-  <data name="WallpaperHeader.Text" xml:space="preserve">
-    <value>Wallpaper</value>
+  <data name="Gallery_abstractgradient_Name" xml:space="preserve">
+    <value>Abstract Gradient</value>
   </data>
-  <data name="UseGearboxTitle.Text" xml:space="preserve">
-    <value>Usar o wallpaper do Gearbox</value>
+  <data name="Gallery_abstractgradient_Description" xml:space="preserve">
+    <value>Ondas de cor que se dissolvem umas nas outras: violeta profundo, coral e pêssego, com dobras de luz suaves como seda.</value>
   </data>
-  <data name="UseGearboxDescription.Text" xml:space="preserve">
-    <value>Monitores sem arquivo escolhido mostram o wallpaper do Gearbox. Desligado, eles mantêm o wallpaper do Windows.</value>
+  <data name="Gallery_darkminimal_Name" xml:space="preserve">
+    <value>Dark Minimal</value>
   </data>
-  <data name="UseGearboxToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Usar o wallpaper do Gearbox</value>
+  <data name="Gallery_darkminimal_Description" xml:space="preserve">
+    <value>Um horizonte escuro e silencioso. Um único arco de luz, como o nascer do sol visto do espaço.</value>
+  </data>
+  <data name="Gallery_aurora_Name" xml:space="preserve">
+    <value>Aurora</value>
+  </data>
+  <data name="Gallery_aurora_Description" xml:space="preserve">
+    <value>Cortinas de aurora boreal sobre montanhas, num céu estrelado de inverno.</value>
+  </data>
+  <data name="Gallery_geometric_Name" xml:space="preserve">
+    <value>Geometric</value>
+  </data>
+  <data name="Gallery_geometric_Description" xml:space="preserve">
+    <value>Formas simples em equilíbrio: círculo, quadrado e triângulo com sombras suaves sobre uma grade discreta.</value>
+  </data>
+  <data name="Gallery_nature_Name" xml:space="preserve">
+    <value>Nature</value>
+  </data>
+  <data name="Gallery_nature_Description" xml:space="preserve">
+    <value>Cordilheiras em camadas ao pôr do sol, com névoa entre os vales e a luz dourada no horizonte.</value>
+  </data>
+  <data name="Gallery_livinggradient_Name" xml:space="preserve">
+    <value>Living Gradient</value>
+  </data>
+  <data name="Gallery_livinggradient_Description" xml:space="preserve">
+    <value>Um gradiente que respira: as cores mudam e se deslocam devagar, sem nunca se repetir do mesmo jeito.</value>
+  </data>
+  <data name="Gallery_auroraflow_Name" xml:space="preserve">
+    <value>Aurora Flow</value>
+  </data>
+  <data name="Gallery_auroraflow_Description" xml:space="preserve">
+    <value>Faixas de aurora que se movem como cortinas ao vento, com estrelas cintilando no fundo.</value>
+  </data>
+  <data name="Gallery_particles_Name" xml:space="preserve">
+    <value>Particles</value>
+  </data>
+  <data name="Gallery_particles_Description" xml:space="preserve">
+    <value>Partículas de luz flutuando em três profundidades, com o brilho suave de um bokeh.</value>
+  </data>
+  <data name="Gallery_digitalclock_Name" xml:space="preserve">
+    <value>Digital Clock</value>
+  </data>
+  <data name="Gallery_digitalclock_Description" xml:space="preserve">
+    <value>Um relógio grande e leve com a data, sobre um brilho que se move devagar. A linha marca os segundos.</value>
+  </data>
+  <data name="Gallery_fluidwaves_Name" xml:space="preserve">
+    <value>Fluid Waves</value>
+  </data>
+  <data name="Gallery_fluidwaves_Description" xml:space="preserve">
+    <value>Camadas de ondas translúcidas que deslizam em velocidades diferentes, como um mar à noite.</value>
+  </data>
+  <data name="GalleryDetailDialog.CloseButtonText" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="GalleryActiveBadge.Text" xml:space="preserve">
+    <value>Em uso</value>
+  </data>
+  <data name="GalleryHeader.Text" xml:space="preserve">
+    <value>Galeria</value>
+  </data>
+  <data name="GalleryKindStatic" xml:space="preserve">
+    <value>Estático</value>
+  </data>
+  <data name="GalleryKindInteractive" xml:space="preserve">
+    <value>Interativo</value>
+  </data>
+  <data name="GalleryInteractiveBadge.Text" xml:space="preserve">
+    <value>Interativo</value>
+  </data>
+  <data name="GalleryCardAutomationFormat" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="GalleryEmptyTitle" xml:space="preserve">
+    <value>Nenhum wallpaper ativo</value>
+  </data>
+  <data name="GalleryEmptyDescription" xml:space="preserve">
+    <value>Explore a galeria abaixo: escolha um wallpaper para ver a prévia e ative quando gostar. Os interativos ganham vida ao passar o mouse.</value>
+  </data>
+  <data name="GalleryEmptyFilesTitle" xml:space="preserve">
+    <value>Usando seus arquivos</value>
+  </data>
+  <data name="GalleryEmptyFilesDescription" xml:space="preserve">
+    <value>Seus arquivos estão no fundo agora. Ative um wallpaper da galeria para trocar por ele.</value>
+  </data>
+  <data name="GalleryInUse.Text" xml:space="preserve">
+    <value>EM USO</value>
+  </data>
+  <data name="GalleryDeactivateButton.Content" xml:space="preserve">
+    <value>Desativar</value>
+  </data>
+  <data name="GalleryDeactivateSelected.Content" xml:space="preserve">
+    <value>Desativar</value>
+  </data>
+  <data name="GalleryActivateButton.Content" xml:space="preserve">
+    <value>Ativar wallpaper</value>
+  </data>
+  <data name="GalleryFilterAll.Text" xml:space="preserve">
+    <value>Todos</value>
+  </data>
+  <data name="GalleryFilterStatic.Text" xml:space="preserve">
+    <value>Estáticos</value>
+  </data>
+  <data name="GalleryFilterInteractive.Text" xml:space="preserve">
+    <value>Interativos</value>
+  </data>
+  <data name="GalleryGrid.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Wallpapers da galeria</value>
+  </data>
+  <data name="ModuleOffInfo.Message" xml:space="preserve">
+    <value>O módulo está desligado. Ative-o no topo da página para aplicar o wallpaper escolhido.</value>
+  </data>
+  <data name="OwnFilesHeader.Text" xml:space="preserve">
+    <value>Seus arquivos</value>
+  </data>
+  <data name="OwnFilesDescription.Text" xml:space="preserve">
+    <value>Prefere uma imagem ou um vídeo seu? Escolher um arquivo desativa o wallpaper da galeria.</value>
   </data>
   <data name="SameForAllTitle.Text" xml:space="preserve">
     <value>Mesmo wallpaper em todos os monitores</value>

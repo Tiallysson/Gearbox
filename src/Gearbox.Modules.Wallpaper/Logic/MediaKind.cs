@@ -5,6 +5,8 @@ public enum MediaKind
     Unsupported,
     Image,
     Video,
+    Scene,
+    Pending,
 }
 
 public static class MediaKinds

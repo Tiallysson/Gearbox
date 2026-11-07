@@ -17,5 +17,7 @@ public sealed class GearboxPaths(string rootDirectory)
 
     public string UpdatesDirectory => Path.Combine(RootDirectory, "updates");
 
+    public string CacheDirectory => Path.Combine(RootDirectory, "cache");
+
     public string GetSettingsFile(string id) => Path.Combine(SettingsDirectory, $"{id}.json");
 }

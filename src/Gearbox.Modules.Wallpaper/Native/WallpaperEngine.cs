@@ -6,17 +6,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Gearbox.Modules.Wallpaper.Native;
 
-/// <summary>
-/// Aplica as decisões do <see cref="WallpaperResolver"/>: imagem pelo <c>IDesktopWallpaper</c> do Windows,
-/// vídeo por <see cref="VideoWallpaperWindow"/>. Guarda o wallpaper original antes da primeira mudança e o
-/// devolve em <see cref="RestoreAll"/>. Só pode ser usado na thread de UI.
-/// </summary>
 internal sealed class WallpaperEngine : IDisposable
 {
     private readonly WallpaperRestoration _restoration;
     private readonly ILogger _logger;
     private readonly DesktopWallpaper _api = new();
-    private readonly Dictionary<string, VideoWallpaperWindow> _videos = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IAnimatedWallpaper> _animated = new(StringComparer.OrdinalIgnoreCase);
 
     public WallpaperEngine(ISettingsService<WallpaperRestoreState> restore, GearboxPaths paths, ILogger logger)
     {
@@ -25,13 +20,11 @@ internal sealed class WallpaperEngine : IDisposable
         Monitors = _api.GetMonitors();
     }
 
-    /// <summary>Um vídeo falhou ao tocar; o monitor já voltou para o wallpaper estático.</summary>
     public event EventHandler<VideoFailedEventArgs>? VideoFailed;
 
     public IReadOnlyList<WallpaperMonitor> Monitors { get; private set; }
 
-    /// <summary>Device paths dos monitores que estão com vídeo.</summary>
-    public IReadOnlyCollection<string> VideoMonitors => _videos.Keys;
+    public IReadOnlyCollection<string> AnimatedMonitors => _animated.Keys;
 
     public void RefreshMonitors() => Monitors = _api.GetMonitors();
 
@@ -43,14 +36,13 @@ internal sealed class WallpaperEngine : IDisposable
             switch (assignment.Kind)
             {
                 case MediaKind.Image when assignment.Path is not null:
-                    RemoveVideo(assignment.DevicePath);
+                    RemoveAnimated(assignment.DevicePath);
                     if (!_restoration.TryApplyImage(assignment.DevicePath, assignment.Path))
                     {
                         applied.Add(assignment with
                         {
                             Path = null,
                             Kind = MediaKind.Unsupported,
-                            IsGearboxWallpaper = false,
                             Problem = WallpaperProblem.OriginalNotRestorable,
                         });
                         continue;
@@ -59,13 +51,20 @@ internal sealed class WallpaperEngine : IDisposable
                     break;
 
                 case MediaKind.Video when assignment.Path is not null:
-                    // Por trás do vídeo fica o wallpaper original: é o que aparece se o Gearbox fechar.
                     _restoration.RestoreMonitor(assignment.DevicePath);
                     ShowVideo(assignment.DevicePath, assignment.Path, fit);
                     break;
 
+                case MediaKind.Pending:
+                    break;
+
+                case MediaKind.Scene when assignment.Path is not null:
+                    _restoration.RestoreMonitor(assignment.DevicePath);
+                    ShowScene(assignment.DevicePath, assignment.Path);
+                    break;
+
                 default:
-                    RemoveVideo(assignment.DevicePath);
+                    RemoveAnimated(assignment.DevicePath);
                     _restoration.RestoreMonitor(assignment.DevicePath);
                     break;
             }
@@ -73,19 +72,19 @@ internal sealed class WallpaperEngine : IDisposable
             applied.Add(assignment);
         }
 
-        if (applied.Any(a => a.Kind == MediaKind.Image && a.Path is not null))
+        var images = applied.Where(a => a.Kind == MediaKind.Image && a.Path is not null).ToList();
+        if (images.Count > 0)
         {
-            _restoration.SetFit(fit.ToWallpaperFit());
+            _restoration.SetFit((images.All(a => a.IsGallery) ? WallpaperFitMode.Fill : fit).ToWallpaperFit());
         }
-        else
+        else if (!applied.Any(a => a.IsPending))
         {
             _restoration.RestoreFit();
         }
 
-        // Monitores que sumiram (ou que não estão mais na lista).
-        foreach (var devicePath in _videos.Keys.Except(assignments.Select(a => a.DevicePath), StringComparer.OrdinalIgnoreCase).ToList())
+        foreach (var devicePath in _animated.Keys.Except(assignments.Select(a => a.DevicePath), StringComparer.OrdinalIgnoreCase).ToList())
         {
-            RemoveVideo(devicePath);
+            RemoveAnimated(devicePath);
         }
 
         return applied;
@@ -93,33 +92,29 @@ internal sealed class WallpaperEngine : IDisposable
 
     public void SetPaused(string devicePath, bool paused)
     {
-        if (_videos.TryGetValue(devicePath, out var video) && video.SetPaused(paused))
+        if (_animated.TryGetValue(devicePath, out var animated) && animated.SetPaused(paused))
         {
-            _logger.LogDebug("Vídeo do monitor {Monitor} {State}", devicePath, paused ? "pausado" : "tocando");
+            _logger.LogDebug("Wallpaper animado do monitor {Monitor} {State}", devicePath, paused ? "pausado" : "rodando");
         }
     }
 
-    /// <summary>Prende os vídeos de novo (o Explorer reiniciou) e corrige as posições (monitores mudaram).</summary>
-    public void ReattachVideos()
+    public void ReattachAnimated()
     {
-        foreach (var (devicePath, video) in _videos)
+        foreach (var (devicePath, animated) in _animated)
         {
             var monitor = Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase));
-            if (monitor.DevicePath is null)
+            if (monitor.DevicePath is not null)
             {
-                continue;
+                animated.SetBounds(monitor.Bounds);
             }
-
-            video.SetBounds(monitor.Bounds);
         }
     }
 
-    /// <summary>Remove os vídeos e devolve o wallpaper e o ajuste que o Windows tinha antes.</summary>
     public void RestoreAll()
     {
-        foreach (var devicePath in _videos.Keys.ToList())
+        foreach (var devicePath in _animated.Keys.ToList())
         {
-            RemoveVideo(devicePath);
+            RemoveAnimated(devicePath);
         }
 
         _restoration.RestoreAll(Monitors.Select(m => m.DevicePath));
@@ -127,52 +122,78 @@ internal sealed class WallpaperEngine : IDisposable
 
     public void Dispose()
     {
-        foreach (var video in _videos.Values)
+        foreach (var animated in _animated.Values)
         {
-            video.Dispose();
+            animated.Dispose();
         }
 
-        _videos.Clear();
+        _animated.Clear();
         _api.Dispose();
     }
 
     private void ShowVideo(string devicePath, string path, WallpaperFitMode fit)
     {
-        if (_videos.TryGetValue(devicePath, out var existing))
+        if (_animated.TryGetValue(devicePath, out var existing))
         {
-            if (string.Equals(existing.Path, path, StringComparison.OrdinalIgnoreCase))
+            if (existing is VideoWallpaperWindow video && string.Equals(video.Source, path, StringComparison.OrdinalIgnoreCase))
             {
-                existing.SetFit(fit);
+                video.SetFit(fit);
                 return;
             }
 
-            RemoveVideo(devicePath);
+            RemoveAnimated(devicePath);
         }
 
-        var monitor = Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase));
-        if (monitor.DevicePath is null)
+        if (FindMonitor(devicePath) is not { } monitor)
         {
             return;
         }
 
-        var video = new VideoWallpaperWindow(path, fit, monitor.Bounds, _logger);
-        video.Failed += (_, message) => OnVideoFailed(devicePath, path, message);
-        _videos[devicePath] = video;
+        var created = new VideoWallpaperWindow(path, fit, monitor.Bounds, _logger);
+        created.Failed += (_, message) => OnVideoFailed(devicePath, path, message);
+        _animated[devicePath] = created;
         _logger.LogInformation("Vídeo {Path} no monitor {Monitor}", path, devicePath);
     }
 
-    private void RemoveVideo(string devicePath)
+    private void ShowScene(string devicePath, string sceneId)
     {
-        if (_videos.Remove(devicePath, out var video))
+        if (_animated.TryGetValue(devicePath, out var existing))
         {
-            video.Dispose();
+            if (existing is SceneWallpaperWindow && string.Equals(existing.Source, sceneId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            RemoveAnimated(devicePath);
+        }
+
+        if (FindMonitor(devicePath) is not { } monitor)
+        {
+            return;
+        }
+
+        _animated[devicePath] = new SceneWallpaperWindow(sceneId, monitor.Bounds, _logger);
+        _logger.LogInformation("Wallpaper interativo {Scene} no monitor {Monitor}", sceneId, devicePath);
+    }
+
+    private WallpaperMonitor? FindMonitor(string devicePath)
+    {
+        var monitor = Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase));
+        return monitor.DevicePath is null ? null : monitor;
+    }
+
+    private void RemoveAnimated(string devicePath)
+    {
+        if (_animated.Remove(devicePath, out var animated))
+        {
+            animated.Dispose();
         }
     }
 
     private void OnVideoFailed(string devicePath, string path, string message)
     {
         _logger.LogWarning("O vídeo {Path} não pôde ser tocado no monitor {Monitor}: {Message}", path, devicePath, message);
-        RemoveVideo(devicePath);
+        RemoveAnimated(devicePath);
         VideoFailed?.Invoke(this, new VideoFailedEventArgs(devicePath, path, message));
     }
 }
@@ -185,4 +206,3 @@ internal sealed class VideoFailedEventArgs(string devicePath, string path, strin
 
     public string Message { get; } = message;
 }
-

@@ -183,14 +183,122 @@
   <data name="AppearanceHeader.Text" xml:space="preserve">
     <value>Aparência</value>
   </data>
-  <data name="AcrylicBackgroundTitle.Text" xml:space="preserve">
-    <value>Fundo acrílico</value>
+  <data name="BackgroundStyleTitle.Text" xml:space="preserve">
+    <value>Estilo do fundo</value>
   </data>
-  <data name="AcrylicBackgroundDescription.Text" xml:space="preserve">
-    <value>Desfoca o que está atrás da ilha, como os menus do Windows 11. Se os efeitos de transparência estiverem desligados nas configurações do Windows (ou no modo economia de energia), o fundo fica sólido.</value>
+  <data name="BackgroundStyleDescription.Text" xml:space="preserve">
+    <value>O quanto dá para ver o que está atrás da ilha. Texto, capa e ícones continuam sempre nítidos.</value>
   </data>
-  <data name="AcrylicBackgroundToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Fundo acrílico</value>
+  <data name="BackgroundStyleRadios.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Estilo do fundo</value>
+  </data>
+  <data name="BackgroundStyleOpaque.Content" xml:space="preserve">
+    <value>Opaco: cor sólida</value>
+  </data>
+  <data name="BackgroundStyleSubtle.Content" xml:space="preserve">
+    <value>Pouco transparente</value>
+  </data>
+  <data name="BackgroundStyleTranslucent.Content" xml:space="preserve">
+    <value>Transparente</value>
+  </data>
+  <data name="BackgroundStyleClear.Content" xml:space="preserve">
+    <value>Muito transparente</value>
+  </data>
+  <data name="BackgroundStyleGlass.Content" xml:space="preserve">
+    <value>Vidro: desfoca o que está atrás (sem os efeitos de transparência do Windows, fica sólido)</value>
+  </data>
+  <data name="BackgroundColorTitle.Text" xml:space="preserve">
+    <value>Cor do fundo</value>
+  </data>
+  <data name="BackgroundColorDescription.Text" xml:space="preserve">
+    <value>Escolha uma cor da paleta, a cor de destaque do Windows ou qualquer outra. Cores muito claras são escurecidas para o texto continuar legível.</value>
+  </data>
+  <data name="BackgroundColorSwatches.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Cores do fundo</value>
+  </data>
+  <data name="ColorBlack" xml:space="preserve">
+    <value>Preto</value>
+  </data>
+  <data name="ColorGraphite" xml:space="preserve">
+    <value>Grafite</value>
+  </data>
+  <data name="ColorMidnight" xml:space="preserve">
+    <value>Azul-noite</value>
+  </data>
+  <data name="ColorPurple" xml:space="preserve">
+    <value>Roxo</value>
+  </data>
+  <data name="ColorGreen" xml:space="preserve">
+    <value>Verde</value>
+  </data>
+  <data name="ColorWine" xml:space="preserve">
+    <value>Vinho</value>
+  </data>
+  <data name="ColorAccent" xml:space="preserve">
+    <value>Destaque do Windows</value>
+  </data>
+  <data name="ColorCustom" xml:space="preserve">
+    <value>Cor personalizada</value>
+  </data>
+  <data name="CustomColorButton.Content" xml:space="preserve">
+    <value>Outra cor…</value>
+  </data>
+  <data name="CustomColorPicker.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Seletor de cor</value>
+  </data>
+  <data name="CustomColorApply.Content" xml:space="preserve">
+    <value>Usar esta cor</value>
+  </data>
+  <data name="RoundnessTitle.Text" xml:space="preserve">
+    <value>Arredondamento</value>
+  </data>
+  <data name="RoundnessDescription.Text" xml:space="preserve">
+    <value>O raio dos cantos de baixo e das curvas que ligam a ilha à borda da tela.</value>
+  </data>
+  <data name="RoundnessCombo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Arredondamento</value>
+  </data>
+  <data name="RoundnessLess.Content" xml:space="preserve">
+    <value>Menos</value>
+  </data>
+  <data name="RoundnessDefault.Content" xml:space="preserve">
+    <value>Padrão</value>
+  </data>
+  <data name="RoundnessMore.Content" xml:space="preserve">
+    <value>Mais</value>
+  </data>
+  <data name="SpringAnimationTitle.Text" xml:space="preserve">
+    <value>Animação com mola</value>
+  </data>
+  <data name="SpringAnimationDescription.Text" xml:space="preserve">
+    <value>A ilha e o conteúdo se movem como uma mola, passando um pouco do tamanho final antes de assentar. Desligada, a animação é suave e sem balanço.</value>
+  </data>
+  <data name="SpringAnimationToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Animação com mola</value>
+  </data>
+  <data name="SpringIntensityTitle.Text" xml:space="preserve">
+    <value>Intensidade da mola</value>
+  </data>
+  <data name="SpringIntensityDescription.Text" xml:space="preserve">
+    <value>Quanto a ilha balança ao abrir e fechar.</value>
+  </data>
+  <data name="SpringIntensityCombo.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Intensidade da mola</value>
+  </data>
+  <data name="SpringIntensityGentle.Content" xml:space="preserve">
+    <value>Suave</value>
+  </data>
+  <data name="SpringIntensityNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="SpringIntensityBouncy.Content" xml:space="preserve">
+    <value>Elástica</value>
+  </data>
+  <data name="SettingsButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Abrir configurações do Notch</value>
+  </data>
+  <data name="SettingsButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Configurações</value>
   </data>
   <data name="GlassBorderTitle.Text" xml:space="preserve">
     <value>Borda de vidro</value>
@@ -200,15 +308,6 @@
   </data>
   <data name="GlassBorderToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Borda de vidro</value>
-  </data>
-  <data name="BackgroundOpacityTitle.Text" xml:space="preserve">
-    <value>Opacidade do fundo</value>
-  </data>
-  <data name="BackgroundOpacityDescription.Text" xml:space="preserve">
-    <value>Quanto o tom preto cobre o fundo. Com o fundo acrílico, quanto menor, mais o desfoque aparece. Texto, capa e ícones continuam opacos.</value>
-  </data>
-  <data name="BackgroundOpacitySlider.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Opacidade do fundo em porcentagem</value>
   </data>
   <data name="BehaviorHeader.Text" xml:space="preserve">
     <value>Comportamento</value>
@@ -270,6 +369,42 @@
   <data name="ShowStorageToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Armazenamento</value>
   </data>
+  <data name="ShowClipboardTitle.Text" xml:space="preserve">
+    <value>Área de transferência</value>
+  </data>
+  <data name="ShowClipboardDescription.Text" xml:space="preserve">
+    <value>Aba com os últimos 20 textos e imagens copiados; clique num item para copiá-lo de novo. Fica só na memória (some ao desligar o módulo ou fechar o Gearbox) e ignora o que gerenciadores de senha pedem para não guardar.</value>
+  </data>
+  <data name="ShowClipboardToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Área de transferência</value>
+  </data>
+  <data name="ClipboardTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Área de transferência</value>
+  </data>
+  <data name="ClipboardTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Área de transferência</value>
+  </data>
+  <data name="NoClipboardText.Text" xml:space="preserve">
+    <value>Não há nada na área de transferência.</value>
+  </data>
+  <data name="ClipboardCopiedText.Text" xml:space="preserve">
+    <value>Copiado</value>
+  </data>
+  <data name="ClipboardClearButton.Content" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="ClipboardFilesFormat" xml:space="preserve">
+    <value>{0} e mais {1}</value>
+  </data>
+  <data name="ClipboardImage" xml:space="preserve">
+    <value>Imagem</value>
+  </data>
+  <data name="ClipboardRemove" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="ClipboardCopyFormat" xml:space="preserve">
+    <value>Copiar: {0}</value>
+  </data>
   <data name="ShowSystemInfoTitle.Text" xml:space="preserve">
     <value>Sistema</value>
   </data>
@@ -288,6 +423,42 @@
   <data name="HideOnFullscreenToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Esconder em tela cheia</value>
   </data>
+  <data name="CollapseToHandleTitle.Text" xml:space="preserve">
+    <value>Recolhida, só uma alça</value>
+  </data>
+  <data name="CollapseToHandleDescription.Text" xml:space="preserve">
+    <value>Sem música tocando, a ilha fica só uma alça fina no topo da tela, com ou sem janela embaixo. Passe o mouse nela para abrir. Os avisos de volume, música e bateria continuam aparecendo.</value>
+  </data>
+  <data name="CollapseToHandleToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Recolhida, só uma alça</value>
+  </data>
+  <data name="ShowMediaWhenCollapsedTitle.Text" xml:space="preserve">
+    <value>Música na ilha recolhida</value>
+  </data>
+  <data name="ShowMediaWhenCollapsedDescription.Text" xml:space="preserve">
+    <value>Com música tocando, a ilha recolhida mostra a capa, as barrinhas animadas e os botões anterior, pausar e próxima, em vez da alça. Passar o mouse nos botões não abre a ilha.</value>
+  </data>
+  <data name="ShowMediaWhenCollapsedToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Música na ilha recolhida</value>
+  </data>
+  <data name="CollapsedPreviousButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="CollapsedPreviousButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="CollapsedNextButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Próxima</value>
+  </data>
+  <data name="CollapsedNextButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Próxima</value>
+  </data>
+  <data name="CollapsedPauseButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Pausar</value>
+  </data>
+  <data name="CollapsedPauseButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pausar</value>
+  </data>
   <data name="CompactWhenCoveredTitle.Text" xml:space="preserve">
     <value>Encolher sobre janelas</value>
   </data>
@@ -299,5 +470,110 @@
   </data>
   <data name="HoverNote.Text" xml:space="preserve">
     <value>A ilha fica no topo do monitor principal. Passe o mouse sobre ela para abrir; ao sair, ela volta a recolher.</value>
+  </data>
+  <data name="LinksTab.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="LinksTab.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="NoLinksText.Text" xml:space="preserve">
+    <value>Adicione os sites e apps que você abre sempre.</value>
+  </data>
+  <data name="LinkAdd" xml:space="preserve">
+    <value>Adicionar</value>
+  </data>
+  <data name="LinkAddToolTip" xml:space="preserve">
+    <value>Adicionar um site ou app</value>
+  </data>
+  <data name="LinkOpenWebFormat" xml:space="preserve">
+    <value>Abrir {0} ({1})</value>
+  </data>
+  <data name="LinkOpenAppFormat" xml:space="preserve">
+    <value>Abrir {0}</value>
+  </data>
+  <data name="LinkAppDetail" xml:space="preserve">
+    <value>App do Windows</value>
+  </data>
+  <data name="LinkMoveUpFormat" xml:space="preserve">
+    <value>Mover {0} para cima</value>
+  </data>
+  <data name="LinkMoveDownFormat" xml:space="preserve">
+    <value>Mover {0} para baixo</value>
+  </data>
+  <data name="LinkRemoveFormat" xml:space="preserve">
+    <value>Remover {0}</value>
+  </data>
+  <data name="ShowLinksTitle.Text" xml:space="preserve">
+    <value>Aba "Links"</value>
+  </data>
+  <data name="ShowLinksDescription.Text" xml:space="preserve">
+    <value>Atalhos para os sites e apps que você mais usa. Sites abrem no seu navegador padrão.</value>
+  </data>
+  <data name="ShowLinksToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Aba "Links"</value>
+  </data>
+  <data name="LinksListTitle.Text" xml:space="preserve">
+    <value>Seus links</value>
+  </data>
+  <data name="LinksListDescription.Text" xml:space="preserve">
+    <value>Também dá para adicionar pelo botão "+" na própria ilha.</value>
+  </data>
+  <data name="LinksAddButton.Content" xml:space="preserve">
+    <value>Adicionar link</value>
+  </data>
+  <data name="LinksEmptyText.Text" xml:space="preserve">
+    <value>Nenhum link ainda.</value>
+  </data>
+  <data name="AddLinkTitle" xml:space="preserve">
+    <value>Adicionar link — Gearbox</value>
+  </data>
+  <data name="AddLinkHeading.Text" xml:space="preserve">
+    <value>Adicionar link</value>
+  </data>
+  <data name="AddLinkWebKind.Text" xml:space="preserve">
+    <value>Site</value>
+  </data>
+  <data name="AddLinkAppKind.Text" xml:space="preserve">
+    <value>App do Windows</value>
+  </data>
+  <data name="AddLinkAddress.Header" xml:space="preserve">
+    <value>Endereço</value>
+  </data>
+  <data name="AddLinkAddress.PlaceholderText" xml:space="preserve">
+    <value>exemplo.com</value>
+  </data>
+  <data name="AddLinkName.Header" xml:space="preserve">
+    <value>Nome (opcional)</value>
+  </data>
+  <data name="AddLinkName.PlaceholderText" xml:space="preserve">
+    <value>Usa o endereço se ficar vazio</value>
+  </data>
+  <data name="AddLinkSearch.PlaceholderText" xml:space="preserve">
+    <value>Pesquisar apps</value>
+  </data>
+  <data name="AddLinkSearch.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Pesquisar apps</value>
+  </data>
+  <data name="AddLinkCancel.Content" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="AddLinkConfirm.Content" xml:space="preserve">
+    <value>Adicionar</value>
+  </data>
+  <data name="AddLinkInvalidAddress" xml:space="preserve">
+    <value>Digite um endereço de site válido, como exemplo.com.</value>
+  </data>
+  <data name="AddLinkDuplicate" xml:space="preserve">
+    <value>Esse link já está na sua lista.</value>
+  </data>
+  <data name="AddLinkFull" xml:space="preserve">
+    <value>A lista já tem o máximo de 30 links. Remova algum nas configurações do Notch.</value>
+  </data>
+  <data name="AddLinkSaveFailed" xml:space="preserve">
+    <value>Não foi possível salvar o link. Tente de novo.</value>
+  </data>
+  <data name="AddLinkAppsFailed" xml:space="preserve">
+    <value>Não foi possível listar os apps instalados.</value>
   </data>
 </root>

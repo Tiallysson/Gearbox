@@ -7,6 +7,27 @@ public sealed class NotchLayoutTests
 {
     private static readonly PixelRect s_monitor = new(0, 0, 1920, 1080);
 
+    [Theory]
+    [InlineData(NotchVisibility.Normal, true, false, true)]
+    [InlineData(NotchVisibility.Compact, true, false, true)]
+    [InlineData(NotchVisibility.Normal, false, false, false)]
+    [InlineData(NotchVisibility.Compact, false, false, true)]
+    [InlineData(NotchVisibility.Normal, true, true, false)]
+    [InlineData(NotchVisibility.Compact, true, true, true)]
+    public void IsCompact_MusicaTocandoMostraAPilulaForaDeJanelas(NotchVisibility visibility, bool collapseToHandle, bool showsMedia, bool expected)
+    {
+        Assert.Equal(expected, NotchLayout.IsCompact(visibility, collapseToHandle, showsMedia));
+    }
+
+    [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void ShowsCollapsedMedia_SoTocandoEComAOpcaoLigada(bool isPlaying, bool option, bool expected)
+    {
+        Assert.Equal(expected, NotchLayout.ShowsCollapsedMedia(isPlaying, option));
+    }
+
     [Fact]
     public void Place_CentralizaNoTopo()
     {
@@ -63,6 +84,41 @@ public sealed class NotchLayoutTests
     }
 
     [Fact]
+    public void ShapeFor_AbertaAlta_SoQuandoAberta()
+    {
+        Assert.Equal(NotchLayout.ExpandedTallShape, NotchLayout.ShapeFor(NotchMode.Expanded, isPlaying: false, compact: false, withTabs: true, tall: true));
+        Assert.Equal(NotchLayout.Idle, NotchLayout.ShapeFor(NotchMode.Collapsed, isPlaying: false, compact: false, withTabs: true, tall: true));
+    }
+
+    [Fact]
+    public void MaxWindowSize_CabeAMaiorFormaComArredondamentoMaximoEPicoDaMola()
+    {
+        var largest = NotchLayout.WindowSize(NotchLayout.WithRoundness(NotchLayout.ExpandedTallShape, NotchAppearance.MaxRoundnessFactor));
+        var peak = 1 + SpringMotion.MaxOvershoot;
+
+        Assert.True(NotchLayout.MaxWindowSize.Width >= largest.Width * peak);
+        Assert.True(NotchLayout.MaxWindowSize.Height >= largest.Height * peak);
+    }
+
+    [Fact]
+    public void WithRoundness_EscalaCantosEOrelhas()
+    {
+        var shape = NotchLayout.WithRoundness(NotchLayout.ExpandedShape, 1.5);
+
+        Assert.Equal(42, shape.CornerRadius);
+        Assert.Equal(21, shape.EarRadius);
+        Assert.Equal(NotchLayout.ExpandedShape.Size, shape.Size);
+    }
+
+    [Fact]
+    public void WithRoundness_CantoNaoPassaDaAltura()
+    {
+        var shape = NotchLayout.WithRoundness(NotchLayout.Handle, 10);
+
+        Assert.Equal(NotchLayout.Handle.Size.Height, shape.CornerRadius);
+    }
+
+    [Fact]
     public void ShapeFor_Compacta_ViraAlca()
     {
         Assert.Equal(NotchLayout.Handle, NotchLayout.ShapeFor(NotchMode.Collapsed, isPlaying: true, compact: true));
@@ -103,6 +159,7 @@ public sealed class NotchLayoutTests
         NotchLayout.PeekShape,
         NotchLayout.ExpandedShape,
         NotchLayout.ExpandedTabbedShape,
+        NotchLayout.ExpandedTallShape,
     ];
 
     public static TheoryData<NotchShape> CollapsedShapes =>

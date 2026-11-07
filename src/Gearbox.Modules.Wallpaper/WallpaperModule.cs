@@ -4,6 +4,7 @@ using Gearbox.Core.Settings;
 using Gearbox.Interop.Session;
 using Gearbox.Interop.Windowing;
 using Gearbox.Modules.Wallpaper.Logic;
+using Gearbox.Modules.Wallpaper.Logic.Gallery;
 using Gearbox.Modules.Wallpaper.Native;
 using Gearbox.Modules.Wallpaper.UI;
 using Microsoft.Extensions.Logging;
@@ -12,15 +13,12 @@ using Windows.System.Power;
 
 namespace Gearbox.Modules.Wallpaper;
 
-/// <summary>
-/// Wallpaper em vídeo (atrás dos ícones) ou imagem (pela API do Windows), por monitor, com o wallpaper do
-/// Gearbox como padrão. Pausa o vídeo quando ninguém o vê. Ao desligar, devolve o wallpaper original.
-/// </summary>
 public sealed class WallpaperModule(
     WinEventHookManager hooks,
     ISettingsService<WallpaperSettings> settings,
     ISettingsService<WallpaperRestoreState> restore,
     GearboxPaths paths,
+    GalleryImageCache galleryImages,
     IModuleFaultReporter faults,
     ILogger<WallpaperModule> logger) : IGearboxModule
 {
@@ -33,6 +31,8 @@ public sealed class WallpaperModule(
     private static readonly TimeSpan ExplorerRestartDelay = TimeSpan.FromSeconds(2);
 
     private readonly HashSet<string> _failedVideos = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _rendering = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _renderFailures = new(StringComparer.OrdinalIgnoreCase);
     private WallpaperEngine? _engine;
     private SystemStateMonitor? _systemState;
     private IDisposable? _subscription;
@@ -61,9 +61,6 @@ public sealed class WallpaperModule(
     /// <summary>Resultado da última aplicação (vazio com o módulo desligado).</summary>
     public IReadOnlyList<WallpaperAssignment> Assignments { get; private set; } = [];
 
-    /// <summary>Arquivos do wallpaper embutido, ao lado do Gearbox.exe.</summary>
-    public static GearboxWallpaper BuiltIn { get; } = FindBuiltIn();
-
     public void Start()
     {
         if (IsEnabled)
@@ -84,7 +81,7 @@ public sealed class WallpaperModule(
             _reattachTimer = _dispatcher.CreateTimer();
             _reattachTimer.Interval = ExplorerRestartDelay;
             _reattachTimer.IsRepeating = false;
-            _reattachTimer.Tick += (_, _) => Guard(() => _engine?.ReattachVideos());
+            _reattachTimer.Tick += (_, _) => Guard(() => _engine?.ReattachAnimated());
 
             _engine = new WallpaperEngine(restore, paths, logger);
             _engine.VideoFailed += OnVideoFailed;
@@ -164,6 +161,8 @@ public sealed class WallpaperModule(
         }
 
         _failedVideos.Clear();
+        _rendering.Clear();
+        _renderFailures.Clear();
         Assignments = [];
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -178,9 +177,9 @@ public sealed class WallpaperModule(
         Assignments = WallpaperResolver.Resolve(
             _current,
             _engine.Monitors.Select(m => m.DevicePath),
-            BuiltIn,
             File.Exists,
-            _failedVideos);
+            _failedVideos,
+            GalleryImage);
 
         Assignments = _engine.Apply(Assignments, _current.Fit);
         foreach (var problem in Assignments.Where(a => a.Problem != WallpaperProblem.None))
@@ -189,13 +188,78 @@ public sealed class WallpaperModule(
         }
 
         UpdatePause();
+        galleryImages.Prune(Assignments.Where(a => a.IsGallery && a.Kind == MediaKind.Image).Select(a => a.Path!));
+        _ = RenderMissingGalleryImagesAsync();
         StatusChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private GalleryImage GalleryImage(GalleryItem item, string devicePath)
+    {
+        var monitor = _engine?.Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase));
+        if (monitor is not { DevicePath: not null } found)
+        {
+            return Logic.GalleryImage.Pending;
+        }
+
+        if (galleryImages.TryGetPath(item, found.Bounds.Width, found.Bounds.Height) is { } path)
+        {
+            return Logic.GalleryImage.Ready(path);
+        }
+
+        return _renderFailures.Contains(GalleryCatalog.CacheFileName(item, found.Bounds.Width, found.Bounds.Height))
+            ? Logic.GalleryImage.FailedToRender
+            : Logic.GalleryImage.Pending;
+    }
+
+    private async Task RenderMissingGalleryImagesAsync()
+    {
+        if (_engine is null || GalleryCatalog.Find(_current.GalleryWallpaperId) is not { Kind: GalleryKind.Static } item)
+        {
+            return;
+        }
+
+        var missing = Assignments
+            .Where(a => a.IsPending)
+            .Select(a => _engine.Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, a.DevicePath, StringComparison.OrdinalIgnoreCase)))
+            .Where(m => m.DevicePath is not null && !m.Bounds.IsEmpty)
+            .Select(m => (m.Bounds.Width, m.Bounds.Height))
+            .Distinct()
+            .Select(size => (size.Width, size.Height, Key: GalleryCatalog.CacheFileName(item, size.Width, size.Height)))
+            .Where(size => !_rendering.Contains(size.Key) && !_renderFailures.Contains(size.Key))
+            .ToList();
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var (width, height, key) in missing)
+        {
+            _rendering.Add(key);
+            try
+            {
+                await galleryImages.EnsureAsync(item, width, height);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Não foi possível gerar o wallpaper {Wallpaper} em {Width}x{Height}", item.Id, width, height);
+                _renderFailures.Add(key);
+            }
+            finally
+            {
+                _rendering.Remove(key);
+            }
+        }
+
+        if (GalleryCatalog.Find(_current.GalleryWallpaperId) is { } active && active.Id == item.Id)
+        {
+            Guard(Apply);
+        }
     }
 
     /// <summary>Pausa ou retoma cada vídeo conforme a <see cref="PausePolicy"/>.</summary>
     private void UpdatePause()
     {
-        if (_engine is null || _engine.VideoMonitors.Count == 0)
+        if (_engine is null || _engine.AnimatedMonitors.Count == 0)
         {
             return;
         }
@@ -227,7 +291,7 @@ public sealed class WallpaperModule(
             }
         }
 
-        foreach (var devicePath in _engine.VideoMonitors.ToList())
+        foreach (var devicePath in _engine.AnimatedMonitors.ToList())
         {
             _engine.SetPaused(devicePath, PausePolicy.IsPaused(_current, _state, covered.Contains(devicePath)));
         }
@@ -236,7 +300,7 @@ public sealed class WallpaperModule(
     private void OnWinEvent(object? sender, WinEventArgs e)
     {
         // Rajadas de eventos (arrastar uma janela gera dezenas): reavalia uma vez, um pouco depois.
-        if (_engine is { VideoMonitors.Count: > 0 } && _coverageTimer is not null)
+        if (_engine is { AnimatedMonitors.Count: > 0 } && _coverageTimer is not null)
         {
             _coverageTimer.Stop();
             _coverageTimer.Start();
@@ -246,7 +310,8 @@ public sealed class WallpaperModule(
     private void OnSettingsChanged(object? sender, WallpaperSettings e) => Guard(() =>
     {
         _current = e;
-        _failedVideos.Clear(); // Nova escolha: dá outra chance aos vídeos que falharam.
+        _failedVideos.Clear();
+        _renderFailures.Clear();
         Apply();
     });
 
@@ -271,7 +336,7 @@ public sealed class WallpaperModule(
     private void OnDisplaysChanged(object? sender, EventArgs e) => Guard(() =>
     {
         _engine?.RefreshMonitors();
-        _engine?.ReattachVideos();
+        _engine?.ReattachAnimated();
         Apply();
     });
 
@@ -289,22 +354,6 @@ public sealed class WallpaperModule(
             _state = _state with { OnBattery = IsOnBattery() };
             UpdatePause();
         }));
-    }
-
-    /// <summary>
-    /// O conteúdo de bibliotecas WinUI vai para <c>Gearbox.Modules.Wallpaper\Assets</c> no build, mas para
-    /// <c>Assets</c> no publish: procura nos dois.
-    /// </summary>
-    private static GearboxWallpaper FindBuiltIn()
-    {
-        string[] folders =
-        [
-            Path.Combine(AppContext.BaseDirectory, "Assets", "Wallpapers"),
-            Path.Combine(AppContext.BaseDirectory, typeof(WallpaperModule).Assembly.GetName().Name!, "Assets", "Wallpapers"),
-        ];
-
-        var folder = folders.FirstOrDefault(f => File.Exists(Path.Combine(f, "Gearbox.jpg"))) ?? folders[0];
-        return new GearboxWallpaper(Path.Combine(folder, "Gearbox.jpg"), Path.Combine(folder, "Gearbox.mp4"));
     }
 
     /// <summary>Na bateria = tem bateria e a fonte não está fornecendo energia suficiente.</summary>
