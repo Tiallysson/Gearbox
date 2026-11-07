@@ -3,9 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 Gearbox is a PowerToys-style Windows utility: .NET 10 + WinUI 3 (Windows App SDK), unpackaged, living in the
-system tray. Each tool is an independently toggleable **module**. The README (in Portuguese) has the full
-step-by-step guide for creating a module; `docs/ARCHITECTURE.md` has the startup flow, fault isolation table and
-per-module internals. Code identifiers are English; UI strings, test names and docs are pt-BR — keep it that way.
+system tray. Each tool is an independently toggleable **module**. The README (in Portuguese) is for end users;
+`docs/DEVELOPMENT.md` has build, installer, release and the full step-by-step guide for creating a module;
+`docs/ARCHITECTURE.md` has the startup flow, fault isolation table and per-module internals. Code identifiers are English; UI strings, test names and docs are pt-BR — keep it that way.
 
 ## Conventions
 

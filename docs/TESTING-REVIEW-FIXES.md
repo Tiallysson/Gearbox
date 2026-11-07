@@ -4,7 +4,7 @@ Branch: `fix/review-stability-2026-10-27`.
 
 ## Preparar no Windows
 
-Use o SDK .NET 10 e os requisitos de compilação descritos no README. Feche a instância instalada do Gearbox antes de executar a versão de teste: o aplicativo permite uma única instância.
+Use o SDK .NET 10 e os requisitos de compilação descritos em `docs/DEVELOPMENT.md`. Feche a instância instalada do Gearbox antes de executar a versão de teste: o aplicativo permite uma única instância.
 
 ```powershell
 git fetch origin
