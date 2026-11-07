@@ -89,6 +89,7 @@ Type: files; Name: "{app}\Darwin*"
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchAfterInstall}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: ShouldRelaunch
 
 [Code]
 const
@@ -139,6 +140,11 @@ begin
   end;
 
   Result := False;
+end;
+
+function ShouldRelaunch(): Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:relaunch|0}') = '1');
 end;
 
 function CloseGearbox(const AppDir: String): Boolean;

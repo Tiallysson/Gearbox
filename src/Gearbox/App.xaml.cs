@@ -68,6 +68,10 @@ public partial class App : Application
 
         Services.GetRequiredService<ModuleManager>().StartEnabledModules();
 
+        var updates = Services.GetRequiredService<UpdateService>();
+        updates.ShutdownRequested += (_, _) => Shutdown();
+        updates.Start();
+
         // Uma segunda instância redireciona a ativação para cá (ver Program.cs): mostra a janela.
         AppInstance.GetCurrent().Activated += OnRedirectedActivation;
     }
@@ -83,6 +87,7 @@ public partial class App : Application
         _isShuttingDown = true;
         _logger?.LogInformation("Encerrando o Gearbox");
 
+        TryRun(() => Services.GetRequiredService<UpdateService>().Dispose(), "parar a verificação de atualizações");
         TryRun(() => Services.GetRequiredService<ModuleManager>().StopAll(), "parar os módulos");
         TryRun(() => Services.GetRequiredService<TrayIconService>().Dispose(), "remover o ícone da bandeja");
         TryRun(() => Services.GetRequiredService<MainWindowService>().CloseForExit(), "fechar a janela");
@@ -120,6 +125,7 @@ public partial class App : Application
         builder.Services.AddSingleton<ThemeService>();
         builder.Services.AddSingleton<MainWindowService>();
         builder.Services.AddSingleton<TrayIconService>();
+        builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddTransient<MainWindow>();
         builder.Services.AddTransient<GeneralPage>();
         builder.Services.AddTransient<GeneralViewModel>();

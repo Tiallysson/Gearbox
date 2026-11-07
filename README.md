@@ -101,6 +101,27 @@ Gearbox-0.1.0.0-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /TASKS=startup
 > O `AppId` em `installer\Gearbox.iss` identifica a instalação para atualizações e desinstalação.
 > **Nunca o altere.** Para lançar uma versão nova, mude o `<Version>` no `Directory.Build.props`.
 
+### Atualização automática
+
+O Gearbox consulta as releases do GitHub 1 minuto depois de iniciar e depois uma vez por dia (desligável na
+página Geral, que também tem "Verificar agora"). Achando versão nova, avisa na bandeja e mostra "Instalar" na
+página Geral; nada é instalado sem o clique do usuário. Ao instalar, ele:
+
+1. baixa o `Gearbox-*-<arch>-setup.exe` da release para `%LocalAppData%\Gearbox\updates`;
+2. confere o SHA-256 com o `digest` que o GitHub publica para o arquivo (sem hash ou fora de HTTPS, recusa);
+3. roda o instalador com `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /relaunch=1` e encerra pelo mesmo caminho do
+   "Sair", restaurando o sistema; o instalador reabre o Gearbox no fim (`/relaunch=1`).
+
+Versões de teste (`-alpha`, `-beta`...) só são oferecidas com "Receber versões de teste" ligado, ou quando a versão
+instalada já é de teste.
+
+Para publicar uma versão:
+
+1. mude o `<Version>` no `Directory.Build.props` (ex.: `0.4.0-alpha`);
+2. gere os instaladores com `.\installer\build-installer.ps1` e `.\installer\build-installer.ps1 -Arch arm64`;
+3. crie a release com a tag `v<versão>` (ex.: `v0.4.0-alpha`), marque "pre-release" se a versão tiver sufixo e
+   anexe os dois `Gearbox-*-<arch>-setup.exe` (o nome precisa terminar em `-x64-setup.exe`/`-arm64-setup.exe`).
+
 ### Janelas de apps elevados
 
 Por causa do UIPI, um processo comum não consegue mover nem alterar janelas de processos que rodam
@@ -367,4 +388,4 @@ Detalhes do fluxo em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Tamanho da publicação (~170 MB):** o metapacote `Microsoft.WindowsAppSDK` 2.x traz componentes de IA
   (`onnxruntime.dll`, `DirectML.dll`, ~38 MB) que o Gearbox não usa. Dá para reduzir referenciando só os
   componentes necessários, mas o `H.NotifyIcon.WinUI` depende do metapacote.
-- Sem instalador, MSIX ou Store por enquanto.
+- Sem MSIX ou Store por enquanto.

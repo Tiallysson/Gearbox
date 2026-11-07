@@ -9,6 +9,8 @@ public sealed partial class GeneralPage : Page
     {
         ViewModel = viewModel;
         InitializeComponent();
+        Loaded += (_, _) => ViewModel.Attach();
+        Unloaded += (_, _) => ViewModel.Detach();
     }
 
     public GeneralViewModel ViewModel { get; }

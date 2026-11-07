@@ -104,6 +104,62 @@
     <value>Abrir pasta de logs</value>
   </data>
 
+  <!-- Atualizações -->
+  <data name="TrayInstallUpdateFormat" xml:space="preserve">
+    <value>Instalar atualização {0}</value>
+  </data>
+  <data name="UpdateAvailableTitle" xml:space="preserve">
+    <value>Atualização disponível</value>
+  </data>
+  <data name="UpdateAvailableMessageFormat" xml:space="preserve">
+    <value>O Gearbox {0} está disponível. Instale pela bandeja ou pela página Geral.</value>
+  </data>
+  <data name="UpdatesTitle.Text" xml:space="preserve">
+    <value>Atualizações</value>
+  </data>
+  <data name="CheckUpdatesButton.Content" xml:space="preserve">
+    <value>Verificar agora</value>
+  </data>
+  <data name="AutoUpdateTitle.Text" xml:space="preserve">
+    <value>Verificar automaticamente uma vez por dia</value>
+  </data>
+  <data name="AutoUpdateToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Verificar atualizações automaticamente</value>
+  </data>
+  <data name="PrereleaseTitle.Text" xml:space="preserve">
+    <value>Receber versões de teste</value>
+  </data>
+  <data name="PrereleaseDescription.Text" xml:space="preserve">
+    <value>Inclui versões alpha e beta, que podem ter falhas. Fica sempre ligado quando a versão instalada já é de teste.</value>
+  </data>
+  <data name="PrereleaseToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Receber versões de teste</value>
+  </data>
+  <data name="UpdateUnavailable" xml:space="preserve">
+    <value>Atualização automática indisponível nesta compilação.</value>
+  </data>
+  <data name="UpdateChecking" xml:space="preserve">
+    <value>Procurando atualizações…</value>
+  </data>
+  <data name="UpdateCurrentFormat" xml:space="preserve">
+    <value>Versão instalada: {0}.</value>
+  </data>
+  <data name="UpdateUpToDateFormat" xml:space="preserve">
+    <value>Você está na versão mais recente ({0}).</value>
+  </data>
+  <data name="UpdateAvailableFormat" xml:space="preserve">
+    <value>Versão {0} disponível (instalada: {1}).</value>
+  </data>
+  <data name="UpdateDownloadingFormat" xml:space="preserve">
+    <value>Baixando e verificando a versão {0}…</value>
+  </data>
+  <data name="UpdateFailed" xml:space="preserve">
+    <value>Não foi possível verificar ou instalar a atualização. Detalhes nos logs.</value>
+  </data>
+  <data name="UpdateInstallFormat" xml:space="preserve">
+    <value>Instalar {0}</value>
+  </data>
+
   <!-- Sobre -->
   <data name="AboutTitle.Text" xml:space="preserve">
     <value>Sobre</value>
