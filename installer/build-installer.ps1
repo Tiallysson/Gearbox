@@ -33,23 +33,29 @@ if (-not $iscc) {
     throw 'Inno Setup 6 não encontrado. Instale com: winget install JRSoftware.InnoSetup'
 }
 
-Write-Host "==> Publicando Gearbox ($rid)" -ForegroundColor Cyan
+$project = Join-Path $root 'src\Gearbox\Gearbox.csproj'
+$version = (dotnet msbuild $project -getProperty:Version -nologo | Select-Object -Last 1).Trim()
+$semVer = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+if ($LASTEXITCODE -ne 0 -or $version -notmatch $semVer) {
+    throw "Versão '$version' do Directory.Build.props não segue o SemVer 2.0 (ex.: 0.5.0, 0.5.0-alpha.1)"
+}
+$version = $version.Split('+')[0]
+
+Write-Host "==> Publicando Gearbox $version ($rid)" -ForegroundColor Cyan
 if (Test-Path $publishDir) {
     Remove-Item $publishDir -Recurse -Force
 }
 
-dotnet publish (Join-Path $root 'src\Gearbox\Gearbox.csproj') -c Release -r $rid --self-contained -o $publishDir -nologo
+dotnet publish $project -c Release -r $rid --self-contained -o $publishDir -nologo
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish falhou ($LASTEXITCODE)"
 }
 
 Write-Host "==> Gerando o instalador" -ForegroundColor Cyan
-& $iscc /Q "/DSourceDir=$publishDir" "/DArch=$Arch" "/DOutputDir=$outputDir" (Join-Path $PSScriptRoot 'Gearbox.iss')
+& $iscc /Q "/DSourceDir=$publishDir" "/DArch=$Arch" "/DAppVersion=$version" "/DOutputDir=$outputDir" (Join-Path $PSScriptRoot 'Gearbox.iss')
 if ($LASTEXITCODE -ne 0) {
     throw "ISCC falhou ($LASTEXITCODE)"
 }
 
-Get-ChildItem $outputDir -Filter "Gearbox-*-$Arch-setup.exe" |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1 |
-    ForEach-Object { Write-Host "==> $($_.FullName) ($([math]::Round($_.Length / 1MB, 1)) MB)" -ForegroundColor Green }
+$installer = Get-Item (Join-Path $outputDir "Gearbox-$version-$Arch-setup.exe")
+Write-Host "==> $($installer.FullName) ($([math]::Round($installer.Length / 1MB, 1)) MB)" -ForegroundColor Green

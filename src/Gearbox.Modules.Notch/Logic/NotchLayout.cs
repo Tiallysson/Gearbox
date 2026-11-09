@@ -27,6 +27,8 @@ public static class NotchLayout
     /// <summary>Aberta com as abas "Mídia" / "Controles": a linha das abas e os três controles precisam de altura.</summary>
     public static readonly NotchShape ExpandedTabbedShape = new(new DipSize(420, 204), 28, 14);
 
+    public static readonly NotchShape ExpandedRoomyShape = new(new DipSize(420, 240), 28, 14);
+
     public static readonly NotchShape ExpandedTallShape = new(new DipSize(420, 260), 28, 14);
 
     public static DipSize MaxWindowSize
@@ -66,9 +68,10 @@ public static class NotchLayout
     /// para não cobrir abas e botões (os avisos e a ilha aberta continuam no tamanho normal).
     /// <paramref name="withTabs"/> = a ilha aberta mostra as abas (algum controle rápido ligado).
     /// </summary>
-    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false, bool tall = false) => mode switch
+    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false, bool tall = false, bool roomy = false) => mode switch
     {
         NotchMode.Expanded when tall => ExpandedTallShape,
+        NotchMode.Expanded when roomy => ExpandedRoomyShape,
         NotchMode.Expanded => withTabs ? ExpandedTabbedShape : ExpandedShape,
         NotchMode.Peek => PeekShape,
         _ when compact => Handle,

@@ -26,6 +26,8 @@ public sealed class NotchSettings : IJsonOnDeserialized
     /// <summary>Aba "Controles": slider de volume, mudo e troca da saída de áudio.</summary>
     public bool ShowAudioControls { get; set; } = true;
 
+    public bool ShowMixer { get; set; } = true;
+
     /// <summary>Aba "Armazenamento": uso de cada disco em anéis; clique abre o disco no Explorer.</summary>
     public bool ShowStorage { get; set; } = true;
 

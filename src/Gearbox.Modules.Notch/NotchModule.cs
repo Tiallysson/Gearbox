@@ -26,6 +26,7 @@ namespace Gearbox.Modules.Notch;
 public sealed class NotchModule(
     WinEventHookManager hooks,
     ISettingsService<NotchSettings> settings,
+    ISettingsService<MixerSettings> mixerSettings,
     IModuleFaultReporter faults,
     IModuleSettingsOpener settingsOpener,
     LinkCatalog links,
@@ -58,6 +59,13 @@ public sealed class NotchModule(
     private ConnectivityWatcher? _connectivity;
     private SystemMonitor? _system;
     private ClipboardWatcher? _clipboard;
+    private AudioMixer? _mixer;
+    private NetworkMonitor? _network;
+    private readonly NetworkHistory _networkHistory = new();
+    private bool _networkVisible;
+    private SpeedTester? _speedTester;
+    private CancellationTokenSource? _speedTest;
+    private bool _meteredConfirmShown;
     private AccentColorSource? _accent;
     private bool _loggedUnsupportedBlur;
     private IDisposable? _subscription;
@@ -119,6 +127,10 @@ public sealed class NotchModule(
             _window.View.SettingsRequested += OnSettingsRequested;
             _window.View.LinkOpenRequested += OnLinkOpenRequested;
             _window.View.LinkAddRequested += OnLinkAddRequested;
+            _window.View.MixerVolumeChanged += OnMixerVolumeChanged;
+            _window.View.MixerMuteRequested += OnMixerMuteRequested;
+            _window.View.MixerOutputSelected += OnMixerOutputSelected;
+            _window.View.SpeedTestRequested += OnSpeedTestRequested;
             links.Changed += OnLinksChanged;
             ApplyAppearance();
 
@@ -183,6 +195,8 @@ public sealed class NotchModule(
             _systemState = null;
         }
 
+        StopMixer();
+        StopNetwork();
         StopVolume();
         StopMedia();
         StopConnectivity();
@@ -203,6 +217,10 @@ public sealed class NotchModule(
             _window.View.SettingsRequested -= OnSettingsRequested;
             _window.View.LinkOpenRequested -= OnLinkOpenRequested;
             _window.View.LinkAddRequested -= OnLinkAddRequested;
+            _window.View.MixerVolumeChanged -= OnMixerVolumeChanged;
+            _window.View.MixerMuteRequested -= OnMixerMuteRequested;
+            _window.View.MixerOutputSelected -= OnMixerOutputSelected;
+            _window.View.SpeedTestRequested -= OnSpeedTestRequested;
             _window.View.HoverChanged -= OnHoverChanged;
             _window.View.MediaCommandRequested -= OnMediaCommandRequested;
             _window.View.QuickActionRequested -= OnQuickActionRequested;
@@ -225,8 +243,7 @@ public sealed class NotchModule(
     /// <summary>Liga ou desliga as fontes (mídia, volume, rádios) conforme as configurações.</summary>
     private void ApplySources()
     {
-        // O aviso de volume e o slider da aba "Controles" leem o mesmo monitor.
-        var needsVolume = _current.ShowVolume || _current.ShowAudioControls;
+        var needsVolume = _current.ShowVolume || _current.ShowAudioControls || _current.ShowMixer;
         if (needsVolume && _volume is null)
         {
             try
@@ -260,6 +277,16 @@ public sealed class NotchModule(
             StopConnectivity();
         }
 
+        if (_current.ShowConnectivity && _network is null && _dispatcher is not null)
+        {
+            _network = new NetworkMonitor(_dispatcher, logger);
+            _network.Sampled += OnNetworkSampled;
+        }
+        else if (!_current.ShowConnectivity)
+        {
+            StopNetwork();
+        }
+
         if (_current.ShowSystemInfo && _system is null && _dispatcher is not null)
         {
             _system = new SystemMonitor(_dispatcher, logger);
@@ -282,6 +309,16 @@ public sealed class NotchModule(
             StopClipboard();
         }
 
+        if (_current.ShowMixer && _mixer is null && _dispatcher is not null)
+        {
+            StartMixer(_dispatcher);
+        }
+        else if (!_current.ShowMixer)
+        {
+            StopMixer();
+        }
+
+        _window?.View.SetMixerEnabled(_mixer is not null, AppAudioRouting.IsSupported);
         _window?.View.SetTabs(_current.ShowConnectivity, _current.ShowAudioControls, _current.ShowStorage, _current.ShowSystemInfo, _current.ShowClipboard, _current.ShowLinks);
         if (_current.ShowLinks)
         {
@@ -325,6 +362,174 @@ public sealed class NotchModule(
         _volume.DevicesChanged -= OnAudioDevicesChanged;
         _volume.Dispose();
         _volume = null;
+    }
+
+    private void StartMixer(DispatcherQueue dispatcher)
+    {
+        try
+        {
+            _mixer = new AudioMixer(dispatcher, mixerSettings, logger, Guard);
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidCastException)
+        {
+            logger.LogWarning(ex, "Não foi possível acompanhar o áudio dos apps");
+            return;
+        }
+
+        _mixer.AppsChanged += OnMixerAppsChanged;
+        _mixer.PeaksChanged += OnMixerPeaksChanged;
+        _window?.View.SetMixerApps(_mixer.Apps);
+    }
+
+    private void StopMixer()
+    {
+        if (_mixer is null)
+        {
+            return;
+        }
+
+        _mixer.AppsChanged -= OnMixerAppsChanged;
+        _mixer.PeaksChanged -= OnMixerPeaksChanged;
+        var mixer = _mixer;
+        _mixer = null;
+        _window?.View.SetMixerEnabled(false);
+        mixer.Dispose();
+    }
+
+    private void OnMixerAppsChanged(object? sender, EventArgs e) => Guard(() =>
+    {
+        if (_mixer is not null)
+        {
+            _window?.View.SetMixerApps(_mixer.Apps);
+        }
+    });
+
+    private void OnMixerPeaksChanged(object? sender, EventArgs e) => Guard(() =>
+    {
+        if (_mixer is not null)
+        {
+            _window?.View.SetMixerPeaks(_mixer.Peaks);
+        }
+    });
+
+    private void OnMixerVolumeChanged(object? sender, MixerVolumeRequest request) =>
+        Guard(() => _mixer?.SetVolume(request.Key, request.Percent));
+
+    private void OnMixerMuteRequested(object? sender, string key) => Guard(() => _mixer?.ToggleMute(key));
+
+    private void OnMixerOutputSelected(object? sender, MixerOutputRequest request) => Guard(() =>
+    {
+        logger.LogInformation("Trocando a saída de áudio de {App}", request.Key);
+        _mixer?.SetOutput(request.Key, request.DeviceId);
+    });
+
+    private void StopNetwork()
+    {
+        _speedTest?.Cancel();
+        _speedTest = null;
+        _speedTester?.Dispose();
+        _speedTester = null;
+        _window?.View.SetSpeedTestRunning(false);
+        _window?.View.SetSpeedTestMessage("SpeedTestHint");
+        _networkVisible = false;
+        if (_network is null)
+        {
+            return;
+        }
+
+        _network.Sampled -= OnNetworkSampled;
+        _network.Dispose();
+        _network = null;
+    }
+
+    private void OnNetworkSampled(object? sender, NetworkSample sample) => Guard(() =>
+    {
+        _networkHistory.Add(sample);
+        _window?.View.SetNetworkHistory(_networkHistory);
+    });
+
+    private async void OnSpeedTestRequested(object? sender, EventArgs e)
+    {
+        if (!IsEnabled || _window is null)
+        {
+            return;
+        }
+
+        switch (SpeedTestGate.Decide(_speedTest is not null, ConnectionCost.IsMetered(logger), _meteredConfirmShown))
+        {
+            case SpeedTestDecision.Cancel:
+                _speedTest?.Cancel();
+                return;
+            case SpeedTestDecision.ConfirmMetered:
+                _meteredConfirmShown = true;
+                Guard(() => _window?.View.SetSpeedTestMessage("SpeedTestMeteredConfirm"));
+                return;
+        }
+
+        _meteredConfirmShown = false;
+
+        var cancellation = new CancellationTokenSource();
+        var view = _window.View;
+        SpeedTester? tester = null;
+        Progress<SpeedTestProgress>? progress = null;
+        Guard(() =>
+        {
+            tester = _speedTester ??= new SpeedTester();
+            _speedTest = cancellation;
+            view.SetSpeedTestRunning(true);
+            progress = new Progress<SpeedTestProgress>(update => Guard(() =>
+            {
+                if (_speedTest == cancellation)
+                {
+                    view.SetSpeedTestProgress(update);
+                }
+            }));
+        });
+
+        if (tester is null || progress is null)
+        {
+            cancellation.Dispose();
+            return;
+        }
+
+        string? message = null;
+        try
+        {
+            var result = await tester.RunAsync(progress, cancellation.Token);
+            logger.LogInformation(
+                "Teste de velocidade: ping {Ping} ms, download {Down} bit/s, upload {Up} bit/s",
+                result.PingMilliseconds,
+                result.DownBitsPerSecond,
+                result.UpBitsPerSecond);
+        }
+        catch (Exception ex) when (cancellation.IsCancellationRequested && ex is OperationCanceledException or ObjectDisposedException or HttpRequestException or IOException)
+        {
+            message = "SpeedTestCanceled";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Teste de velocidade falhou");
+            message = "SpeedTestFailed";
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
+
+        Guard(() =>
+        {
+            if (_speedTest != cancellation)
+            {
+                return;
+            }
+
+            _speedTest = null;
+            view.SetSpeedTestRunning(false);
+            if (message is not null)
+            {
+                view.SetSpeedTestMessage(message);
+            }
+        });
     }
 
     private void StopConnectivity()
@@ -400,6 +605,22 @@ public sealed class NotchModule(
     {
         var page = _window is not null && _state.Mode == NotchMode.Expanded ? _window.View.CurrentPage : (NotchPage?)null;
         _system?.SetActive(page == NotchPage.System);
+        _mixer?.SetMeterActive(page == NotchPage.Mixer);
+
+        var networkVisible = page == NotchPage.Network && _network is not null;
+        if (networkVisible && !_networkVisible)
+        {
+            _networkHistory.Clear();
+            _window?.View.SetNetworkHistory(_networkHistory);
+        }
+
+        if (!networkVisible)
+        {
+            _meteredConfirmShown = false;
+        }
+
+        _networkVisible = networkVisible;
+        _network?.SetActive(networkVisible);
 
         var storageVisible = page == NotchPage.Storage && _current.ShowStorage;
         if (storageVisible && !_storageVisible)
@@ -432,7 +653,7 @@ public sealed class NotchModule(
     }
 
     private void RefreshOutputDevices() =>
-        _window?.View.SetOutputDevices(_current.ShowAudioControls ? AudioEndpoints.GetOutputDevices(logger) : []);
+        _window?.View.SetOutputDevices(_current.ShowAudioControls || _current.ShowMixer ? AudioEndpoints.GetOutputDevices(logger) : []);
 
     private void StopMedia()
     {
@@ -554,8 +775,8 @@ public sealed class NotchModule(
         var showsMedia = NotchLayout.ShowsCollapsedMedia(_media?.Current?.IsPlaying == true, _current.ShowMediaWhenCollapsed);
         var compact = NotchLayout.IsCompact(_visibility, _current.CollapseToHandle, showsMedia);
         _window.View.SetMode(mode, _state.Peek, compact, showsMedia);
-        var tall = _window.View.CurrentPage is NotchPage.Clipboard or NotchPage.Links;
-        var shape = NotchLayout.ShapeFor(mode, showsMedia, compact, _window.View.HasTabs, tall);
+        var tall = _window.View.CurrentPage is NotchPage.Clipboard or NotchPage.Links || _window.View.ShowsMixer || _window.View.ShowsNetwork;
+        var shape = NotchLayout.ShapeFor(mode, showsMedia, compact, _window.View.HasTabs, tall, _window.View.ShowsFullControls);
         _window.SetShape(NotchLayout.WithRoundness(shape, NotchAppearance.RoundnessFactor(_current.Roundness)), animate);
         UpdatePageSources();
         _window.SetVisible(_visibility != NotchVisibility.Hidden && !_sessionLocked && !_displayOff);

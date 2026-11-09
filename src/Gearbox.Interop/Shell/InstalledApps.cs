@@ -46,13 +46,17 @@ public static class InstalledApps
         return apps;
     }
 
-    public static unsafe ShellIcon? TryGetIcon(string parsingName, int size)
+    public static ShellIcon? TryGetIcon(string parsingName, int size) => TryGetShellIcon(LaunchTarget(parsingName), size);
+
+    public static ShellIcon? TryGetFileIcon(string filePath, int size) => TryGetShellIcon(filePath, size);
+
+    private static unsafe ShellIcon? TryGetShellIcon(string shellPath, int size)
     {
         try
         {
             var factoryId = typeof(IShellItemImageFactory).GUID;
             object factoryObject;
-            fixed (char* path = LaunchTarget(parsingName))
+            fixed (char* path = shellPath)
             {
                 PInvoke.SHCreateItemFromParsingName(path, null, &factoryId, out factoryObject).ThrowOnFailure();
             }
