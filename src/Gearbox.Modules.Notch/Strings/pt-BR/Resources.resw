@@ -576,4 +576,103 @@
   <data name="AddLinkAppsFailed" xml:space="preserve">
     <value>Não foi possível listar os apps instalados.</value>
   </data>
+  <data name="MixerOpenButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Volume e saída de cada app</value>
+  </data>
+  <data name="MixerOpenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mixer de volume</value>
+  </data>
+  <data name="MixerOpenText.Text" xml:space="preserve">
+    <value>Mixer de volume</value>
+  </data>
+  <data name="MixerBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voltar aos controles</value>
+  </data>
+  <data name="MixerTitle.Text" xml:space="preserve">
+    <value>Mixer de volume</value>
+  </data>
+  <data name="NoMixerAppsText.Text" xml:space="preserve">
+    <value>Nenhum app com áudio aberto</value>
+  </data>
+  <data name="MixerMuteLabel" xml:space="preserve">
+    <value>Ativar/desativar o mudo do app</value>
+  </data>
+  <data name="SystemSoundsName" xml:space="preserve">
+    <value>Sons do sistema</value>
+  </data>
+  <data name="MixerDefaultDevice" xml:space="preserve">
+    <value>Padrão do sistema</value>
+  </data>
+  <data name="MixerDevicesTitleFormat" xml:space="preserve">
+    <value>Saída de {0}</value>
+  </data>
+  <data name="MixerDevicesBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voltar ao mixer de volume</value>
+  </data>
+  <data name="ShowMixerTitle.Text" xml:space="preserve">
+    <value>Mixer de volume</value>
+  </data>
+  <data name="ShowMixerDescription.Text" xml:space="preserve">
+    <value>Na aba "Controles", ajuste o volume, o mudo e a saída de cada app com áudio aberto, como no mixer de volume do Windows (clique direito escolhe a saída). O Gearbox lembra essas escolhas e as reaplica quando o app volta a tocar; ao desligar, os apps que ele mudou voltam a 100% e à saída padrão. A saída por app usa um recurso interno do Windows e pode deixar de funcionar após uma atualização.</value>
+  </data>
+  <data name="ShowMixerToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Mixer de volume</value>
+  </data>
+  <data name="NetworkMoreButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Tráfego e teste de velocidade</value>
+  </data>
+  <data name="NetworkMoreButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Detalhes da rede</value>
+  </data>
+  <data name="NetworkBackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Voltar aos controles</value>
+  </data>
+  <data name="NetworkTitle" xml:space="preserve">
+    <value>Rede</value>
+  </data>
+  <data name="NetworkDownFormat" xml:space="preserve">
+    <value>↓ {0}</value>
+  </data>
+  <data name="NetworkUpFormat" xml:space="preserve">
+    <value>↑ {0}</value>
+  </data>
+  <data name="NetworkPingFormat" xml:space="preserve">
+    <value>Ping {0} ms</value>
+  </data>
+  <data name="NetworkPingUnknown" xml:space="preserve">
+    <value>Ping –</value>
+  </data>
+  <data name="SpeedTestStart" xml:space="preserve">
+    <value>Testar velocidade</value>
+  </data>
+  <data name="SpeedTestCancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="SpeedTestHint" xml:space="preserve">
+    <value>Servidor: Cloudflare</value>
+  </data>
+  <data name="SpeedTestPing" xml:space="preserve">
+    <value>Medindo o ping…</value>
+  </data>
+  <data name="SpeedTestDownloadFormat" xml:space="preserve">
+    <value>Download… {0}</value>
+  </data>
+  <data name="SpeedTestUploadFormat" xml:space="preserve">
+    <value>Upload… {0}</value>
+  </data>
+  <data name="SpeedTestResultFormat" xml:space="preserve">
+    <value>↓ {0} · ↑ {1} · {2} ms</value>
+  </data>
+  <data name="SpeedTestFailed" xml:space="preserve">
+    <value>Não foi possível testar</value>
+  </data>
+  <data name="SpeedTestCanceled" xml:space="preserve">
+    <value>Teste cancelado</value>
+  </data>
+  <data name="SpeedTestMeteredConfirm" xml:space="preserve">
+    <value>Conexão limitada: o teste usa até ~400 MB. Clique de novo para testar.</value>
+  </data>
+  <data name="MixerDevicesNote.Text" xml:space="preserve">
+    <value>A escolha fica gravada no Windows para este app.</value>
+  </data>
 </root>

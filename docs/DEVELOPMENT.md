@@ -69,7 +69,11 @@ O instalador é feito com o [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`
 
 O script publica o app em Release com o .NET embutido (`--self-contained`) em `artifacts\publish\win-<arch>`
 e gera `artifacts\installer\Gearbox-<versão>-<arch>-setup.exe`. A versão vem do `<Version>` do
-`Directory.Build.props`.
+`Directory.Build.props` e precisa seguir o SemVer 2.0 (`0.5.0`, `0.5.0-alpha.1`, `0.5.0-rc.1`); o script recusa
+qualquer outra coisa. Ela vai inteira para o nome do arquivo, para o "Aplicativos instalados" do Windows e para a
+versão de produto do instalador (`Gearbox-0.5.0-alpha.1-x64-setup.exe`). Os campos numéricos do Windows
+(`FileVersion`) ficam com os quatro números do `.exe` (`0.5.0.0`), porque não aceitam sufixo. O `.iss` confere
+que a versão informada bate com o `.exe` publicado e para a compilação se não bater (publish desatualizado).
 
 O que o instalador faz:
 

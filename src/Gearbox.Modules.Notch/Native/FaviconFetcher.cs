@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 using Gearbox.Modules.Notch.Logic;
 using Windows.Graphics.Imaging;
@@ -14,12 +16,15 @@ internal static class FaviconFetcher
 
     private static readonly HttpClient s_http = CreateClient();
 
+    private const int MaxRedirects = 3;
+
     public static async Task<byte[]?> TryDownloadAsync(Uri page, CancellationToken cancellation)
     {
-        var (html, baseUri) = await TryReadPageAsync(page, cancellation);
+        var allowPrivate = !await IsPublicHostAsync(page, cancellation);
+        var (html, baseUri) = await TryReadPageAsync(page, allowPrivate, cancellation);
         foreach (var candidate in FaviconParser.Candidates(html, baseUri))
         {
-            var icon = await TryReadAsync(candidate, MaxIconBytes, cancellation);
+            var icon = await TryReadAsync(candidate, MaxIconBytes, allowPrivate, cancellation);
             if (icon is not null && await IsDecodableAsync(icon))
             {
                 return icon;
@@ -29,11 +34,16 @@ internal static class FaviconFetcher
         return null;
     }
 
-    private static async Task<(string? Html, Uri BaseUri)> TryReadPageAsync(Uri page, CancellationToken cancellation)
+    private static async Task<(string? Html, Uri BaseUri)> TryReadPageAsync(Uri page, bool allowPrivate, CancellationToken cancellation)
     {
         try
         {
-            using var response = await s_http.GetAsync(page, HttpCompletionOption.ResponseHeadersRead, cancellation);
+            using var response = await GetCheckedAsync(page, allowPrivate, cancellation);
+            if (response is null)
+            {
+                return (null, page);
+            }
+
             var baseUri = response.RequestMessage?.RequestUri ?? page;
             if (!response.IsSuccessStatusCode)
             {
@@ -49,16 +59,64 @@ internal static class FaviconFetcher
         }
     }
 
-    private static async Task<byte[]?> TryReadAsync(Uri uri, int limit, CancellationToken cancellation)
+    private static async Task<byte[]?> TryReadAsync(Uri uri, int limit, bool allowPrivate, CancellationToken cancellation)
     {
         try
         {
-            using var response = await s_http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellation);
-            return response.IsSuccessStatusCode ? await ReadLimitedAsync(response, limit, cancellation) : null;
+            using var response = await GetCheckedAsync(uri, allowPrivate, cancellation);
+            return response is { IsSuccessStatusCode: true } ? await ReadLimitedAsync(response, limit, cancellation) : null;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
         {
             return null;
+        }
+    }
+
+    private static async Task<HttpResponseMessage?> GetCheckedAsync(Uri uri, bool allowPrivate, CancellationToken cancellation)
+    {
+        var current = uri;
+        for (var hop = 0; hop <= MaxRedirects; hop++)
+        {
+            if (!QuickLink.TryGetWebTarget(current.AbsoluteUri, out _) ||
+                (!allowPrivate && !await IsPublicHostAsync(current, cancellation)))
+            {
+                return null;
+            }
+
+            var response = await s_http.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, cancellation);
+            var status = (int)response.StatusCode;
+            if (status is < 300 or > 399 || response.Headers.Location is not { } location)
+            {
+                return response;
+            }
+
+            response.Dispose();
+            var next = location.IsAbsoluteUri ? location : new Uri(current, location);
+            if (current.Scheme == Uri.UriSchemeHttps && next.Scheme != Uri.UriSchemeHttps)
+            {
+                return null;
+            }
+
+            current = next;
+        }
+
+        return null;
+    }
+
+    private static async Task<bool> IsPublicHostAsync(Uri uri, CancellationToken cancellation)
+    {
+        if (IPAddress.TryParse(uri.IdnHost, out var literal))
+        {
+            return NetworkAddressRules.IsPublic(literal);
+        }
+
+        try
+        {
+            return NetworkAddressRules.AllPublic(await Dns.GetHostAddressesAsync(uri.IdnHost, cancellation));
+        }
+        catch (Exception ex) when (ex is SocketException or ArgumentException)
+        {
+            return false;
         }
     }
 
@@ -98,7 +156,7 @@ internal static class FaviconFetcher
 
     private static HttpClient CreateClient()
     {
-        var http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+        var http = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(8) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Gearbox");
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));

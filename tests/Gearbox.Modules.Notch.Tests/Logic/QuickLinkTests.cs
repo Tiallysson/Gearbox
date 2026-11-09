@@ -95,4 +95,47 @@ public sealed class QuickLinkTests
     {
         Assert.NotEqual(QuickLink.Create(QuickLinkKind.Web, "a", "b").Id, QuickLink.Create(QuickLinkKind.Web, "a", "b").Id);
     }
+
+    [Theory]
+    [InlineData("https://mail.google.com/", true)]
+    [InlineData("http://localhost:3000/", true)]
+    [InlineData("file:///C:/Windows/System32/calc.exe", false)]
+    [InlineData(@"C:\Windows\System32\cmd.exe", false)]
+    [InlineData("ms-settings:privacy", false)]
+    [InlineData("", false)]
+    public void IsSafe_LinkWeb_SoHttpEHttps(string target, bool expected)
+    {
+        Assert.Equal(expected, QuickLink.Create(QuickLinkKind.Web, "x", target).IsSafe());
+    }
+
+    [Theory]
+    [InlineData("Microsoft.WindowsCalculator_8wekyb3d8bbwe!App", true)]
+    [InlineData(@"{6D809377-6AF0-444B-8957-A3773F02200E}\Notepad++\notepad++.exe", true)]
+    [InlineData(@"..\..\Users\x\malware.exe", false)]
+    [InlineData("app\" /c calc", false)]
+    [InlineData("   ", false)]
+    public void IsSafe_LinkDeApp_SemCaminhoRelativoNemAspas(string target, bool expected)
+    {
+        Assert.Equal(expected, QuickLink.Create(QuickLinkKind.App, "x", target).IsSafe());
+    }
+
+    [Theory]
+    [InlineData(@"..\..\evil")]
+    [InlineData("abc")]
+    [InlineData(null)]
+    public void IsSafe_IdForaDoFormato_Recusa(string? id)
+    {
+        Assert.False(new QuickLink(id!, QuickLinkKind.Web, "x", "https://a.com/").IsSafe());
+        Assert.False(QuickLink.IsSafeId(id));
+    }
+
+    [Fact]
+    public void Safe_DescartaLinksAdulteradosENulos()
+    {
+        var good = QuickLink.Create(QuickLinkKind.Web, "Gmail", "https://mail.google.com/");
+        var evil = QuickLink.Create(QuickLinkKind.Web, "Evil", @"C:\Windows\System32\cmd.exe");
+
+        Assert.Equal([good], QuickLinkList.Safe([good, evil, null, s_mail]));
+        Assert.Empty(QuickLinkList.Safe(null));
+    }
 }

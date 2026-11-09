@@ -276,16 +276,16 @@
         </Setter>
     </Style>
 
-    <!-- Slider (lightweight styling): trilho "muted", faixa "primary", polegar com fundo escuro e borda "primary". -->
     <SolidColorBrush x:Key="SliderTrackFill" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="SliderTrackFillPressed" Color="#26FFFFFF" />
     <StaticResource x:Key="SliderTrackValueFill" ResourceKey="PrimaryBrush" />
     <StaticResource x:Key="SliderTrackValueFillPointerOver" ResourceKey="PrimaryBrush" />
     <StaticResource x:Key="SliderTrackValueFillPressed" ResourceKey="PrimaryBrush" />
-    <SolidColorBrush x:Key="SliderOuterThumbBackground" Color="#FF0A0A0A" />
-    <StaticResource x:Key="SliderThumbBorderBrush" ResourceKey="PrimaryBrush" />
-    <!-- O miolo do polegar do Windows (que cresce ao passar o mouse) fica da cor do fundo: some. -->
+    <StaticResource x:Key="SliderOuterThumbBackground" ResourceKey="PrimaryBrush" />
+    <SolidColorBrush x:Key="SliderThumbBorderBrush" Color="Transparent" />
+    <x:Double x:Key="SliderInnerThumbWidth">10</x:Double>
+    <x:Double x:Key="SliderInnerThumbHeight">10</x:Double>
     <SolidColorBrush x:Key="SliderThumbBackground" Color="#FF0A0A0A" />
     <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#FF0A0A0A" />
     <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#FF0A0A0A" />
@@ -293,7 +293,7 @@
     <CornerRadius x:Key="SliderTrackCornerRadius">3</CornerRadius>
     <x:Double x:Key="SliderHorizontalThumbWidth">16</x:Double>
     <x:Double x:Key="SliderHorizontalThumbHeight">16</x:Double>
-    <CornerRadius x:Key="SliderThumbCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="SliderThumbCornerRadius">10</CornerRadius>
 
     <!-- Itens da lista de saídas: como os itens de um DropdownMenu (fundo "accent" ao passar o mouse). -->
     <SolidColorBrush x:Key="ListViewItemBackground" Color="Transparent" />

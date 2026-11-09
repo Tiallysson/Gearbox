@@ -21,6 +21,8 @@ public static class NotchGlyphs
     public const string BluetoothOff = ""; // bluetooth-slash
     public const string Ethernet = ""; // network (o Phosphor não tem "ethernet")
 
+    public const string AppWindow = "";
+
     public const string HardDrive = ""; // hard-drive
     public const string Usb = ""; // usb
 

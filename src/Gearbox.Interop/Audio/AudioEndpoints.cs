@@ -12,14 +12,6 @@ namespace Gearbox.Interop.Audio;
 /// <param name="Id">Id do endpoint: opaco, só serve para devolver a <see cref="AudioEndpoints.TrySetDefaultOutput"/>.</param>
 public sealed record AudioOutputDevice(string Id, string Name, bool IsDefault);
 
-/// <summary>Lista as saídas de áudio e troca a padrão.</summary>
-/// <remarks>
-/// O Windows não tem API pública para trocar o dispositivo padrão: a troca usa <c>IPolicyConfig</c>, a interface COM
-/// não documentada que o próprio painel de som usa (e o EarTrumpet, entre outros). Ela existe desde o Windows 7 com
-/// o mesmo layout, mas pode mudar numa atualização: por isso cada chamada é protegida e uma falha só devolve
-/// <c>false</c>. É a única declaração COM escrita à mão do projeto, porque não está nos metadados do Win32.
-/// Chame na thread de UI (as mesmas regras do <see cref="AudioVolumeMonitor"/>).
-/// </remarks>
 public static class AudioEndpoints
 {
     /// <summary>Saídas ativas, na ordem do Windows. Vazia se o serviço de áudio não responde.</summary>

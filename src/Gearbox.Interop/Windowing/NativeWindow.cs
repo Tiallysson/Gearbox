@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Gearbox.Interop.Geometry;
+using Gearbox.Interop.Processes;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
@@ -173,18 +174,11 @@ public static class NativeWindow
             return null;
         }
 
-        using var process = PInvoke.OpenProcess_SafeHandle(PROCESS_ACCESS_RIGHTS.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
-        if (!process.IsInvalid)
+        if (ProcessImage.TryGetPath(processId) is { } path)
         {
-            Span<char> buffer = stackalloc char[1024];
-            var size = (uint)buffer.Length;
-            if (PInvoke.QueryFullProcessImageName(process, PROCESS_NAME_FORMAT.PROCESS_NAME_WIN32, buffer, ref size))
-            {
-                return Path.GetFileNameWithoutExtension(buffer[..(int)size].ToString());
-            }
+            return Path.GetFileNameWithoutExtension(path);
         }
 
-        // Plano B (processos protegidos): enumeração do sistema, que não precisa de handle.
         try
         {
             using var managed = System.Diagnostics.Process.GetProcessById((int)processId);
