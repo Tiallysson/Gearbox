@@ -218,6 +218,11 @@ NotchModule (orquestra, timers)
   `IModuleSettingsOpener.Open` (Core), implementado pelo `MainWindowService` do casco, que mostra a janela e seleciona
   a página do módulo. O `MainWindow.ShowAndActivate` usa `NativeWindow.BringToFront` (topo por um instante e
   `SetForegroundWindow`), porque o Windows não deixa um processo em segundo plano roubar o foco.
+- **Links e segurança**: `QuickLinkList.Safe` descarta, ao carregar `NotchLinks.json`, links com Id fora do formato
+  GUID "N" (o Id vira nome de arquivo do ícone), links Web que não sejam http/https e alvos de app com `..` ou aspas;
+  `LinkLauncher` confere de novo antes de abrir e chama o `explorer.exe` pelo caminho completo. `FaviconFetcher`
+  segue no máximo 3 redirecionamentos à mão e não busca ícones em IPs internos (`NetworkAddressRules`), a menos
+  que o próprio link seja interno (ex.: `localhost`).
 - **Aba "Links"** (`NotchSettings.ShowLinks`): atalhos para sites e apps do Windows, numa grade com o ícone de cada um
   e um "+" no fim. A lista fica em `settings\NotchLinks.json` (`LinksSettings`, separada para o ViewModel do Notch não
   sobrescrevê-la) e pertence ao `LinkCatalog`, um singleton usado pelo módulo e pela página de configurações (lá dá
@@ -257,6 +262,39 @@ NotchModule (orquestra, timers)
     `IsCursorInside()` do fechamento fecharia a ilha com o menu aberto. Pelo mesmo motivo o slider não tem a dica
     do polegar.
   - O que esses controles mudam é ação do usuário, como nas Configurações Rápidas: `Stop()` não desfaz.
+  - Rede (`NotchPage.Network`, botão `>` ao lado do botão de rede; forma alta): gráfico dos últimos 30 s
+    (`NetworkHistory`, `NetworkChart`) com download e upload somados dos adaptadores ativos (sem loopback/túnel;
+    `NetworkInterface.GetIPStatistics`) e ping ICMP a `1.1.1.1` a cada 2 s. `NetworkMonitor` usa um `BackgroundLoop`
+    e só roda com a página na tela; o histórico recomeça cada vez que ela abre.
+  - Teste de velocidade (`SpeedTester`, só ao clicar): `speed.cloudflare.com` — ping = mediana do tempo até os
+    cabeçalhos de `__down?bytes=0`, download por `__down` e upload por `__up` com 4 conexões por ~7 s cada, com
+    teto de 300 MB / 100 MB. Os bytes contados vão para a UI via `Progress<T>`. Cancela pelo botão, ao desligar
+    `ShowConnectivity` e no `Stop()`; falhas de rede só são logadas e mostradas na página (não são falha do módulo).
+    Em conexão limitada (`ConnectionCost`), o primeiro clique só avisa; o segundo testa (`SpeedTestGate`). O teste
+    continua se a página fechar.
+- **Mixer de volume** (`NotchSettings.ShowMixer`, dentro da aba "Controles"): a linha "Mixer de volume", abaixo da
+  saída de áudio, abre a página `NotchPage.Mixer` (subpágina, como `Devices`; a aba "Mídia" não muda), entrando da direita com fade (a mesma mola da ilha, ou easing sem mola). Toda subpágina que abre "para dentro"
+  usa essa entrada (`PageTransitions.IsDrillIn`): Controles → Dispositivos, Controles → Mixer e Mixer → saída do app.
+  Com as quatro
+  linhas da aba "Controles" visíveis, a ilha passa a 420×240 (`ExpandedRoomyShape`); com o mixer na tela, usa a forma
+  alta (420×260) e a lista rola.
+  - `AudioSessionTable` (Interop) lista as sessões do Core Audio (`IAudioSessionManager2` em cada saída ativa) e
+    guarda os objetos COM para ler o pico (`IAudioMeterInformation`) e mudar volume e mudo (`ISimpleAudioVolume`).
+    Tudo roda na thread de UI: varredura a cada 1 s (`AudioMixer`, Native) e medidor a 20 Hz só com a página do
+    mixer na tela. Notificações de sessão nova exigiriam uma thread MTA, por isso a varredura.
+  - `MixerApps.Open` (Logic) mostra o mesmo que o mixer de volume do Windows: toda sessão não expirada, tocando ou
+    não, uma linha por executável (chave = nome do `.exe` em minúsculas). "Sons do sistema" (`#system`) vem
+    sempre primeiro; o volume mostrado é o da sessão que está tocando, se houver.
+  - Saída por app: `AppAudioRouting` usa `IAudioPolicyConfigFactory` (`Windows.Media.Internal.AudioPolicyConfig`),
+    interface **não documentada** com dois IIDs conforme a versão do Windows, declarada à mão como o `IPolicyConfig`.
+    Como o método é chamado por posição na vtable, só é usada nas faixas de build conhecidas
+    (`AppAudioRouting.FactoryInterfaceFor`; acima de `FirstUnknownBuild` a saída por app some da UI até alguém
+    conferir o layout e subir a constante). A tela avisa que a escolha fica gravada no Windows.
+    A escolha é uma página dentro da ilha (`MixerDevices`), aberta com o botão direito na linha.
+  - As escolhas ficam em `settings\NotchMixer.json` (`MixerSettings`) e são reaplicadas a toda sessão que o módulo
+    ainda não viu (inclusive as que já existiam ao ligar). Diferente dos controles rápidos, isso é estado do módulo:
+    ao parar, os apps que o Gearbox mudou nesta execução voltam a 100%, sem mudo e à saída padrão
+    (`MixerMemory.Reset`). Um app que já fechou não pode ser desfeito (a saída por app é por processo vivo).
 - **Visual** no estilo shadcn/ui (tema "neutral" escuro): `UI/NotchTheme.xaml` (um `ResourceDictionary` com
   `x:Class`, mesclado na `NotchView` por instância, pelo mesmo motivo de caminho da fonte abaixo) tem a paleta, com
   `muted`/`accent`/`input` como brancos translúcidos para o acrílico aparecer, e templates próprios de

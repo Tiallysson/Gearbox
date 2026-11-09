@@ -16,9 +16,16 @@
 #define AppName "Gearbox"
 #define AppExe "Gearbox.exe"
 #define AppIdValue "E4A7C2B1-5D3F-4C8E-9A61-2F0B7D9C3E54"
-#define AppVersion GetVersionNumbersString(AddBackslash(SourceDir) + AppExe)
-#if AppVersion == ""
+#define AppFileVersion GetVersionNumbersString(AddBackslash(SourceDir) + AppExe)
+#if AppFileVersion == ""
   #error Gearbox.exe não encontrado em SourceDir
+#endif
+#ifndef AppVersion
+  #define AppVersion AppFileVersion
+#endif
+#define AppVersionCore Pos("-", AppVersion) > 0 ? Copy(AppVersion, 1, Pos("-", AppVersion) - 1) : AppVersion
+#if Pos(AppVersionCore + ".", AppFileVersion + ".") != 1
+  #error A versão informada não corresponde à versão do Gearbox.exe
 #endif
 
 [Setup]
@@ -28,7 +35,9 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=Gearbox
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#AppFileVersion}
+VersionInfoProductVersion={#AppFileVersion}
+VersionInfoProductTextVersion={#AppVersion}
 VersionInfoProductName={#AppName}
 
 ; Instalação por usuário, sem administrador: %LocalAppData%\Programs\Gearbox.

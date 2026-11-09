@@ -305,6 +305,159 @@
                         </StackPanel>
                     </Grid>
 
+                    <Grid x:Name="MixerPage" Grid.Row="1" RowSpacing="2" Visibility="Collapsed">
+                        <Grid.RenderTransform>
+                            <CompositeTransform x:Name="MixerPageTransform" />
+                        </Grid.RenderTransform>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Button x:Uid="MixerBackButton" Click="OnMixerBackClick" Style="{StaticResource BackRowStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="&#xE138;" />
+                                <TextBlock x:Uid="MixerTitle" VerticalAlignment="Center" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock
+                            x:Name="NoMixerAppsText"
+                            x:Uid="NoMixerAppsText"
+                            Grid.Row="1"
+                            Padding="6,0"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{StaticResource MutedForegroundBrush}" />
+                        <ScrollViewer
+                            Grid.Row="1"
+                            HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="MixerList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:MixerRow">
+                                        <Grid
+                                            Height="34"
+                                            Padding="6,0,4,0"
+                                            Background="Transparent"
+                                            ColumnSpacing="10"
+                                            RightTapped="OnMixerRowRightTapped"
+                                            Tag="{x:Bind Key}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="96" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border
+                                                Width="16"
+                                                Height="16"
+                                                VerticalAlignment="Center"
+                                                Background="{StaticResource ArtPlaceholderBrush}"
+                                                CornerRadius="4">
+                                                <Grid>
+                                                    <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="10" Foreground="{StaticResource MutedForegroundBrush}" Glyph="{x:Bind Placeholder}" />
+                                                    <Image Source="{x:Bind Icon, Mode=OneWay}" Stretch="Uniform" />
+                                                </Grid>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    MaxLines="1"
+                                                    Text="{x:Bind Name, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}" />
+                                                <Grid Height="3">
+                                                    <Border Background="{StaticResource MutedBrush}" CornerRadius="1.5" />
+                                                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                                                        <Border.RenderTransform>
+                                                            <ScaleTransform ScaleX="{x:Bind Peak, Mode=OneWay}" />
+                                                        </Border.RenderTransform>
+                                                    </Border>
+                                                </Grid>
+                                            </StackPanel>
+                                            <Slider
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                IsThumbToolTipEnabled="False"
+                                                Maximum="100"
+                                                StepFrequency="1"
+                                                Tag="{x:Bind Key}"
+                                                Value="{x:Bind Percent, Mode=OneWay}"
+                                                ValueChanged="OnMixerSliderChanged"
+                                                AutomationProperties.Name="{x:Bind Name, Mode=OneWay}" />
+                                            <Button
+                                                Grid.Column="3"
+                                                Width="28"
+                                                Height="28"
+                                                VerticalAlignment="Center"
+                                                Click="OnMixerMuteClick"
+                                                Style="{StaticResource MediaButtonStyle}"
+                                                Tag="{x:Bind Key}"
+                                                ToolTipService.ToolTip="{x:Bind MuteLabel}"
+                                                AutomationProperties.Name="{x:Bind MuteLabel}">
+                                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="13" Glyph="{x:Bind VolumeGlyph, Mode=OneWay}" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <Grid x:Name="MixerDevicesPage" Grid.Row="1" RowSpacing="2" Visibility="Collapsed">
+                        <Grid.RenderTransform>
+                            <CompositeTransform x:Name="MixerDevicesPageTransform" />
+                        </Grid.RenderTransform>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            x:Uid="MixerDevicesNote"
+                            Grid.Row="2"
+                            Padding="8,2,8,0"
+                            FontSize="11"
+                            Foreground="{StaticResource MutedForegroundBrush}"
+                            TextWrapping="Wrap" />
+                        <Button x:Uid="MixerDevicesBackButton" Click="OnMixerDevicesBackClick" Style="{StaticResource BackRowStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="&#xE138;" />
+                                <TextBlock x:Name="MixerDevicesTitle" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Button>
+                        <ListView
+                            x:Name="MixerDeviceList"
+                            Grid.Row="1"
+                            IsItemClickEnabled="True"
+                            ItemClick="OnMixerDeviceClick"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                    <Setter Property="MinHeight" Value="28" />
+                                    <Setter Property="Padding" Value="8,0" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="local:MixerDeviceChoice">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12" MaxLines="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                        <FontIcon
+                                            Grid.Column="1"
+                                            FontFamily="{StaticResource PhosphorFont}"
+                                            FontSize="12"
+                                            Foreground="{StaticResource ForegroundBrush}"
+                                            Glyph="&#xE182;"
+                                            Visibility="{x:Bind IsSelected}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+
                     <!-- Aba "Controles": rádios (clique alterna, botão direito abre a lista do Windows), volume e saída. -->
                     <StackPanel x:Name="ControlsPage" Grid.Row="1" VerticalAlignment="Center" Spacing="6" Visibility="Collapsed">
                         <Grid x:Name="RadiosRow" ColumnSpacing="8">
@@ -312,21 +465,38 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ToggleButton
-                                x:Name="WiFiButton"
-                                x:Uid="WiFiButton"
-                                Click="OnWiFiClick"
-                                RightTapped="OnWiFiRightTapped"
-                                Style="{StaticResource QuickToggleStyle}">
-                                <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <FontIcon x:Name="WiFiIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
-                                    <TextBlock x:Name="WiFiText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
-                                </Grid>
-                            </ToggleButton>
+                            <Grid ColumnSpacing="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton
+                                    x:Name="WiFiButton"
+                                    x:Uid="WiFiButton"
+                                    Click="OnWiFiClick"
+                                    RightTapped="OnWiFiRightTapped"
+                                    Style="{StaticResource QuickToggleStyle}">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon x:Name="WiFiIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="14" />
+                                        <TextBlock x:Name="WiFiText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </ToggleButton>
+                                <Button
+                                    x:Name="NetworkMoreButton"
+                                    x:Uid="NetworkMoreButton"
+                                    Grid.Column="1"
+                                    Width="26"
+                                    Height="32"
+                                    Padding="0"
+                                    Click="OnNetworkMoreClick"
+                                    Style="{StaticResource OutlineButtonStyle}">
+                                    <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="10" Glyph="&#xE13A;" />
+                                </Button>
+                            </Grid>
                             <ToggleButton
                                 x:Name="BluetoothButton"
                                 x:Uid="BluetoothButton"
@@ -386,10 +556,93 @@
                                 <FontIcon Grid.Column="2" FontFamily="{StaticResource PhosphorFont}" FontSize="10" Glyph="&#xE13A;" />
                             </Grid>
                         </Button>
+
+                        <Button x:Name="MixerOpenButton" x:Uid="MixerOpenButton" Click="OnMixerClick" Style="{StaticResource QuickRowStyle}" Visibility="Collapsed">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE228;" />
+                                <TextBlock x:Uid="MixerOpenText" Grid.Column="1" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                                <FontIcon Grid.Column="2" FontFamily="{StaticResource PhosphorFont}" FontSize="10" Glyph="&#xE13A;" />
+                            </Grid>
+                        </Button>
                     </StackPanel>
 
-                    <!-- Escolha da saída de áudio: lista dentro da ilha (um menu seria um popup fora dela e a fecharia). -->
+                    <Grid x:Name="NetworkPage" Grid.Row="1" RowSpacing="4" Visibility="Collapsed">
+                        <Grid.RenderTransform>
+                            <CompositeTransform x:Name="NetworkPageTransform" />
+                        </Grid.RenderTransform>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Button x:Uid="NetworkBackButton" Click="OnNetworkBackClick" Style="{StaticResource BackRowStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="&#xE138;" />
+                                <TextBlock x:Name="NetworkTitle" VerticalAlignment="Center" FontSize="12" MaxLines="1" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Button>
+                        <Border
+                            x:Name="NetworkChartFrame"
+                            Grid.Row="1"
+                            Padding="0,4,0,0"
+                            Background="{StaticResource MutedBrush}"
+                            CornerRadius="6"
+                            SizeChanged="OnNetworkChartSizeChanged">
+                            <Grid>
+                                <Polyline x:Name="UploadLine" Stroke="{StaticResource MutedForegroundBrush}" StrokeLineJoin="Round" StrokeThickness="1.5" />
+                                <Polyline x:Name="DownloadLine" Stroke="{StaticResource PrimaryBrush}" StrokeLineJoin="Round" StrokeThickness="1.5" />
+                                <TextBlock
+                                    x:Name="NetworkScaleText"
+                                    Margin="0,0,6,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    FontSize="10"
+                                    Foreground="{StaticResource MutedForegroundBrush}" />
+                            </Grid>
+                        </Border>
+                        <Grid Grid.Row="2" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="NetworkDownText" FontSize="11" />
+                            <TextBlock x:Name="NetworkUpText" Grid.Column="1" FontSize="11" Foreground="{StaticResource MutedForegroundBrush}" />
+                            <TextBlock x:Name="NetworkPingText" Grid.Column="2" FontSize="11" Foreground="{StaticResource MutedForegroundBrush}" />
+                        </Grid>
+                        <Grid Grid.Row="3" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button
+                                x:Name="SpeedTestButton"
+                                Height="26"
+                                Padding="10,0"
+                                Click="OnSpeedTestClick"
+                                FontSize="12"
+                                Style="{StaticResource OutlineButtonStyle}" />
+                            <TextBlock
+                                x:Name="SpeedTestText"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{StaticResource MutedForegroundBrush}"
+                                MaxLines="1"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </Grid>
+
                     <Grid x:Name="DevicesPage" Grid.Row="1" RowSpacing="2" Visibility="Collapsed">
+                        <Grid.RenderTransform>
+                            <CompositeTransform x:Name="DevicesPageTransform" />
+                        </Grid.RenderTransform>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />

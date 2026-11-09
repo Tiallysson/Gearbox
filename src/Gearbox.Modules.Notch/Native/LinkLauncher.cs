@@ -8,9 +8,20 @@ internal static class LinkLauncher
 {
     public static void Open(QuickLink link)
     {
-        var start = link.Kind == QuickLinkKind.App
-            ? new ProcessStartInfo("explorer.exe", InstalledApps.LaunchTarget(link.Target)) { UseShellExecute = true }
-            : new ProcessStartInfo(link.Target) { UseShellExecute = true };
-        using var process = Process.Start(start);
+        if (!link.IsSafe())
+        {
+            throw new InvalidOperationException("Link inválido ou adulterado.");
+        }
+
+        if (link.Kind == QuickLinkKind.Web && QuickLink.TryGetWebTarget(link.Target, out var uri))
+        {
+            using var browser = Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+            return;
+        }
+
+        var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        var start = new ProcessStartInfo(explorer) { UseShellExecute = false };
+        start.ArgumentList.Add(InstalledApps.LaunchTarget(link.Target));
+        using var app = Process.Start(start);
     }
 }

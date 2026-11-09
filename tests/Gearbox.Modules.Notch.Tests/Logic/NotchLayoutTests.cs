@@ -91,6 +91,17 @@ public sealed class NotchLayoutTests
     }
 
     [Fact]
+    public void ShapeFor_ControlesCompletos_CresceUmPoucoSoAberta()
+    {
+        var roomy = NotchLayout.ShapeFor(NotchMode.Expanded, isPlaying: false, compact: false, withTabs: true, roomy: true);
+
+        Assert.Equal(NotchLayout.ExpandedRoomyShape, roomy);
+        Assert.True(roomy.Size.Height > NotchLayout.ExpandedTabbedShape.Size.Height);
+        Assert.True(roomy.Size.Height < NotchLayout.ExpandedTallShape.Size.Height);
+        Assert.Equal(NotchLayout.Idle, NotchLayout.ShapeFor(NotchMode.Collapsed, isPlaying: false, compact: false, withTabs: true, roomy: true));
+    }
+
+    [Fact]
     public void MaxWindowSize_CabeAMaiorFormaComArredondamentoMaximoEPicoDaMola()
     {
         var largest = NotchLayout.WindowSize(NotchLayout.WithRoundness(NotchLayout.ExpandedTallShape, NotchAppearance.MaxRoundnessFactor));
@@ -159,6 +170,7 @@ public sealed class NotchLayoutTests
         NotchLayout.PeekShape,
         NotchLayout.ExpandedShape,
         NotchLayout.ExpandedTabbedShape,
+        NotchLayout.ExpandedRoomyShape,
         NotchLayout.ExpandedTallShape,
     ];
 

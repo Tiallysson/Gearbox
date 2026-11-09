@@ -123,6 +123,17 @@ PropVariantToStringAlloc
 PropVariantClear
 STGM
 
+IAudioSessionManager2
+IAudioSessionEnumerator
+IAudioSessionControl2
+ISimpleAudioVolume
+IAudioMeterInformation
+AudioSessionState
+RoGetActivationFactory
+WindowsCreateString
+WindowsDeleteString
+WindowsGetStringRawBuffer
+
 // Informações do sistema (aba "Sistema" do Notch): contadores de desempenho, memória, placas de vídeo
 PdhOpenQuery
 PdhAddEnglishCounter

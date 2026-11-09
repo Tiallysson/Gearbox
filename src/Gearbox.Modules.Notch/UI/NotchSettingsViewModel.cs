@@ -49,6 +49,7 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
         ShowBattery = current.ShowBattery;
         ShowConnectivity = current.ShowConnectivity;
         ShowAudioControls = current.ShowAudioControls;
+        ShowMixer = current.ShowMixer;
         ShowStorage = current.ShowStorage;
         ShowSystemInfo = current.ShowSystemInfo;
         ShowClipboard = current.ShowClipboard;
@@ -110,6 +111,9 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     public partial bool ShowAudioControls { get; set; }
 
     [ObservableProperty]
+    public partial bool ShowMixer { get; set; }
+
+    [ObservableProperty]
     public partial bool ShowStorage { get; set; }
 
     [ObservableProperty]
@@ -142,6 +146,8 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     partial void OnShowConnectivityChanged(bool value) => Save();
 
     partial void OnShowAudioControlsChanged(bool value) => Save();
+
+    partial void OnShowMixerChanged(bool value) => Save();
 
     partial void OnShowStorageChanged(bool value) => Save();
 
@@ -343,6 +349,7 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
             ShowBattery = ShowBattery,
             ShowConnectivity = ShowConnectivity,
             ShowAudioControls = ShowAudioControls,
+            ShowMixer = ShowMixer,
             ShowStorage = ShowStorage,
             ShowSystemInfo = ShowSystemInfo,
             ShowClipboard = ShowClipboard,

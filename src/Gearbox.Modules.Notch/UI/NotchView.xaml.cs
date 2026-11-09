@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Globalization;
 using Gearbox.Interop.Audio;
@@ -29,6 +30,9 @@ public sealed partial class NotchView : UserControl
     private readonly Storyboard _bars;
     private readonly SpringAnimator _shapeSpring = new();
     private readonly SpringAnimator _contentSpring = new();
+    private readonly SpringAnimator _pageSpring = new();
+    private Storyboard? _pageEntrance;
+    private const double PageEntranceOffset = 28;
     private Storyboard? _shape;
     private bool _springEnabled = true;
     private SpringMotion _springMotion = SpringMotion.For(SpringIntensity.Normal);
@@ -59,10 +63,22 @@ public sealed partial class NotchView : UserControl
     private NotchPage _page = NotchPage.Media;
     private ulong _gpuTotalBytes;
     private bool _updatingVolume;
+    private readonly ObservableCollection<MixerRow> _mixerRows = [];
+    private readonly Dictionary<string, MixerRow> _mixerRowsByKey = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ImageSource> _mixerIcons = new(StringComparer.OrdinalIgnoreCase);
+    private List<AudioOutputDevice> _outputDevices = [];
+    private bool _hasMixer;
+    private bool _mixerRoutingSupported;
+    private NetworkHistory? _networkHistory;
+    private string? _mixerDevicesKey;
 
     public NotchView()
     {
         InitializeComponent();
+        MixerList.ItemsSource = _mixerRows;
+        SetSpeedTestRunning(false);
+        SpeedTestText.Text = ModuleStrings.Get("SpeedTestHint");
+        SetNetworkHistory(new NetworkHistory());
         _bars = CreateBarsAnimation();
         _visiblePanel = CollapsedPanel;
         ArtPlaceholder.Glyph = NotchGlyphs.MusicNote;
@@ -107,8 +123,24 @@ public sealed partial class NotchView : UserControl
 
     public event EventHandler<NotchShape>? ShapeFrame;
 
+    public event EventHandler<MixerVolumeRequest>? MixerVolumeChanged;
+
+    public event EventHandler<string>? MixerMuteRequested;
+
+    public event EventHandler<MixerOutputRequest>? MixerOutputSelected;
+
+    public event EventHandler? SpeedTestRequested;
+
+    public bool ShowsMixer => _page is NotchPage.Mixer or NotchPage.MixerDevices;
+
+    public bool ShowsNetwork => _page == NotchPage.Network;
+
+    public bool ShowsFullControls => _page == NotchPage.Controls && _hasConnectivity && _hasAudioControls && _hasMixer;
+
     /// <summary>A ilha aberta mostra as abas (alguma aba além de "Mídia" ligada): usa a forma mais alta.</summary>
-    public bool HasTabs => _hasConnectivity || _hasAudioControls || _hasStorage || _hasSystem || _hasClipboard || _hasLinks;
+    public bool HasTabs => HasControlsTab || _hasStorage || _hasSystem || _hasClipboard || _hasLinks;
+
+    private bool HasControlsTab => _hasConnectivity || _hasAudioControls || _hasMixer;
 
     public NotchPage CurrentPage => _page;
 
@@ -222,6 +254,7 @@ public sealed partial class NotchView : UserControl
     {
         StopShapeAnimation();
         _contentSpring.Stop();
+        StopPageEntrance();
     }
 
     private void StopShapeAnimation()
@@ -272,10 +305,14 @@ public sealed partial class NotchView : UserControl
             ShowPeekContent(peek);
         }
 
-        // Fechou com a lista de saídas aberta: na próxima vez, volta para os controles.
-        if (mode != NotchMode.Expanded && DevicesPage.Visibility == Visibility.Visible)
+        if (mode != NotchMode.Expanded && _page == NotchPage.Devices)
         {
             ShowPage(NotchPage.Controls);
+        }
+
+        if (mode != NotchMode.Expanded && _page == NotchPage.MixerDevices)
+        {
+            ShowPage(NotchPage.Mixer);
         }
 
         UpdateBars(panel == CollapsedPanel && ShowsCollapsedMedia);
@@ -393,41 +430,48 @@ public sealed partial class NotchView : UserControl
         }
     }
 
-    /// <summary>
-    /// Quais abas e grupos aparecem. "Controles" existe com rádios ou áudio; sem nenhuma aba além de "Mídia", a ilha
-    /// aberta fica sem a linha das abas. Se a aba visível sumiu, volta para "Mídia".
-    /// </summary>
     public void SetTabs(bool connectivity, bool audio, bool storage, bool system, bool clipboard, bool links)
     {
-        _hasLinks = links;
-        LinksTab.Visibility = links ? Visibility.Visible : Visibility.Collapsed;
         _hasConnectivity = connectivity;
         _hasAudioControls = audio;
         _hasStorage = storage;
         _hasSystem = system;
         _hasClipboard = clipboard;
-        ClipboardTab.Visibility = clipboard ? Visibility.Visible : Visibility.Collapsed;
-        RadiosRow.Visibility = connectivity ? Visibility.Visible : Visibility.Collapsed;
-        VolumeRow.Visibility = OutputButton.Visibility = audio ? Visibility.Visible : Visibility.Collapsed;
-        ControlsTab.Visibility = connectivity || audio ? Visibility.Visible : Visibility.Collapsed;
-        StorageTab.Visibility = storage ? Visibility.Visible : Visibility.Collapsed;
-        SystemTab.Visibility = system ? Visibility.Visible : Visibility.Collapsed;
-        TabsPanel.Visibility = HasTabs ? Visibility.Visible : Visibility.Collapsed;
+        _hasLinks = links;
+        ApplyTabs();
+    }
+
+    private void ApplyTabs()
+    {
+        LinksTab.Visibility = Visible(_hasLinks);
+        ClipboardTab.Visibility = Visible(_hasClipboard);
+        RadiosRow.Visibility = Visible(_hasConnectivity);
+        VolumeRow.Visibility = OutputButton.Visibility = Visible(_hasAudioControls);
+        MixerOpenButton.Visibility = Visible(_hasMixer);
+        ControlsTab.Visibility = Visible(HasControlsTab);
+        StorageTab.Visibility = Visible(_hasStorage);
+        SystemTab.Visibility = Visible(_hasSystem);
+        TabsPanel.Visibility = Visible(HasTabs);
 
         var pageGone = _page switch
         {
-            NotchPage.Controls => !connectivity && !audio,
-            NotchPage.Devices => !audio,
-            NotchPage.Storage => !storage,
-            NotchPage.System => !system,
-            NotchPage.Clipboard => !clipboard,
-            NotchPage.Links => !links,
+            NotchPage.Controls => !HasControlsTab,
+            NotchPage.Devices => !_hasAudioControls,
+            NotchPage.Mixer or NotchPage.MixerDevices => !_hasMixer,
+            NotchPage.Network => !_hasConnectivity,
+            NotchPage.Storage => !_hasStorage,
+            NotchPage.System => !_hasSystem,
+            NotchPage.Clipboard => !_hasClipboard,
+            NotchPage.Links => !_hasLinks,
             _ => false,
         };
         if (pageGone)
         {
-            ShowPage(_page == NotchPage.Devices && connectivity ? NotchPage.Controls : NotchPage.Media);
+            var subPage = _page is NotchPage.Devices or NotchPage.Mixer or NotchPage.MixerDevices or NotchPage.Network;
+            ShowPage(subPage && HasControlsTab ? NotchPage.Controls : NotchPage.Media);
         }
+
+        static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -460,6 +504,7 @@ public sealed partial class NotchView : UserControl
             tooltip = ModuleStrings.Get("WiFiToolTip");
         }
 
+        NetworkTitle.Text = link.Kind == NetworkKind.None ? ModuleStrings.Get("NetworkTitle") : WiFiText.Text;
         ToolTipService.SetToolTip(WiFiButton, tooltip);
         AutomationProperties.SetName(WiFiButton, WiFiText.Text);
         BluetoothIcon.Glyph = NotchGlyphs.Bluetooth(bluetooth.Power);
@@ -555,8 +600,248 @@ public sealed partial class NotchView : UserControl
         value.Text = celsius is { } c ? ModuleStrings.Format("UsageTemperatureFormat", usage, (int)Math.Round(c)) : usage;
     }
 
+    public void SetNetworkHistory(NetworkHistory history)
+    {
+        _networkHistory = history;
+        var latest = history.Latest;
+        NetworkDownText.Text = ModuleStrings.Format("NetworkDownFormat", NetworkRates.Format(latest?.DownBitsPerSecond ?? 0));
+        NetworkUpText.Text = ModuleStrings.Format("NetworkUpFormat", NetworkRates.Format(latest?.UpBitsPerSecond ?? 0));
+        NetworkPingText.Text = history.LatestPing is { } ping
+            ? ModuleStrings.Format("NetworkPingFormat", (int)Math.Round(ping))
+            : ModuleStrings.Get("NetworkPingUnknown");
+        DrawNetworkChart();
+    }
+
+    internal void SetSpeedTestRunning(bool running)
+    {
+        SpeedTestButton.Content = ModuleStrings.Get(running ? "SpeedTestCancel" : "SpeedTestStart");
+    }
+
+    internal void SetSpeedTestProgress(SpeedTestProgress progress)
+    {
+        SpeedTestText.Text = progress.Phase switch
+        {
+            SpeedTestPhase.Ping => ModuleStrings.Get("SpeedTestPing"),
+            SpeedTestPhase.Download => ModuleStrings.Format("SpeedTestDownloadFormat", NetworkRates.Format(progress.DownBitsPerSecond ?? 0)),
+            SpeedTestPhase.Upload => ModuleStrings.Format("SpeedTestUploadFormat", NetworkRates.Format(progress.UpBitsPerSecond ?? 0)),
+            _ => ModuleStrings.Format(
+                "SpeedTestResultFormat",
+                NetworkRates.Format(progress.DownBitsPerSecond ?? 0),
+                NetworkRates.Format(progress.UpBitsPerSecond ?? 0),
+                (int)Math.Round(progress.PingMilliseconds ?? 0)),
+        };
+    }
+
+    internal void SetSpeedTestMessage(string key) => SpeedTestText.Text = ModuleStrings.Get(key);
+
+    private void DrawNetworkChart()
+    {
+        var samples = _networkHistory?.Samples ?? [];
+        var scale = NetworkChart.ScaleFor(samples);
+        var width = Math.Max(0, NetworkChartFrame.ActualWidth);
+        var height = Math.Max(0, NetworkChartFrame.ActualHeight - NetworkChartFrame.Padding.Top - 2);
+        DownloadLine.Points = ToPoints(NetworkChart.Points(samples.Select(sample => sample.DownBitsPerSecond).ToList(), scale, width, height));
+        UploadLine.Points = ToPoints(NetworkChart.Points(samples.Select(sample => sample.UpBitsPerSecond).ToList(), scale, width, height));
+        NetworkScaleText.Text = NetworkRates.Format(scale);
+
+        static PointCollection ToPoints(List<ChartPoint> points)
+        {
+            var collection = new PointCollection();
+            foreach (var point in points)
+            {
+                collection.Add(new Windows.Foundation.Point(point.X, point.Y));
+            }
+
+            return collection;
+        }
+    }
+
+    private void OnNetworkChartSizeChanged(object sender, SizeChangedEventArgs e) => DrawNetworkChart();
+
+    private void OnNetworkMoreClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Network);
+
+    private void OnNetworkBackClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Controls);
+
+    private void OnSpeedTestClick(object sender, RoutedEventArgs e) => SpeedTestRequested?.Invoke(this, EventArgs.Empty);
+
+    public void SetMixerEnabled(bool enabled, bool routingSupported = false)
+    {
+        _hasMixer = enabled;
+        _mixerRoutingSupported = enabled && routingSupported;
+        if (!enabled)
+        {
+            SetMixerApps([]);
+        }
+
+        ApplyTabs();
+    }
+
+    public void SetMixerApps(IReadOnlyList<MixerApp> apps)
+    {
+        var keys = apps.Select(app => app.Key).ToHashSet(StringComparer.Ordinal);
+        for (var i = _mixerRows.Count - 1; i >= 0; i--)
+        {
+            if (!keys.Contains(_mixerRows[i].Key))
+            {
+                _mixerRowsByKey.Remove(_mixerRows[i].Key);
+                _mixerRows.RemoveAt(i);
+            }
+        }
+
+        for (var i = 0; i < apps.Count; i++)
+        {
+            var app = apps[i];
+            if (_mixerRowsByKey.TryGetValue(app.Key, out var row))
+            {
+                row.Update(app);
+                var at = _mixerRows.IndexOf(row);
+                if (at != i)
+                {
+                    _mixerRows.Move(at, i);
+                }
+            }
+            else
+            {
+                row = new MixerRow(app);
+                _mixerRowsByKey[app.Key] = row;
+                _mixerRows.Insert(i, row);
+                _ = LoadMixerIconAsync(row);
+            }
+        }
+
+        NoMixerAppsText.Visibility = apps.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (_page == NotchPage.MixerDevices)
+        {
+            if (_mixerDevicesKey is not null && _mixerRowsByKey.ContainsKey(_mixerDevicesKey))
+            {
+                ShowMixerDevices(_mixerDevicesKey);
+            }
+            else
+            {
+                ShowPage(NotchPage.Mixer);
+            }
+        }
+    }
+
+    public void SetMixerPeaks(IReadOnlyDictionary<string, double> peaks)
+    {
+        foreach (var row in _mixerRows)
+        {
+            row.Peak = peaks.GetValueOrDefault(row.Key);
+        }
+    }
+
+    private async Task LoadMixerIconAsync(MixerRow row)
+    {
+        if (row.ExecutablePath is not { } path)
+        {
+            return;
+        }
+
+        if (_mixerIcons.TryGetValue(path, out var cached))
+        {
+            row.Icon = cached;
+            return;
+        }
+
+        try
+        {
+            if (await AppIconQueue.GetFileAsync(path, 32) is not { } icon)
+            {
+                return;
+            }
+
+            var bitmap = new WriteableBitmap(icon.Width, icon.Height);
+            using (var stream = bitmap.PixelBuffer.AsStream())
+            {
+                stream.Write(icon.Bgra);
+            }
+
+            bitmap.Invalidate();
+            _mixerIcons[path] = bitmap;
+            row.Icon = bitmap;
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or ArgumentException or IOException)
+        {
+            _mixerIcons.Remove(path);
+        }
+    }
+
+    private void ShowMixerDevices(string key)
+    {
+        if (!_mixerRowsByKey.TryGetValue(key, out var row))
+        {
+            return;
+        }
+
+        _mixerDevicesKey = key;
+        MixerDevicesTitle.Text = ModuleStrings.Format("MixerDevicesTitleFormat", row.Name);
+        var choices = new List<MixerDeviceChoice>(_outputDevices.Count + 1)
+        {
+            new(null, ModuleStrings.Get("MixerDefaultDevice"), row.OutputDeviceId is null),
+        };
+        choices.AddRange(_outputDevices.Select(device => new MixerDeviceChoice(device.Id, device.Name, device.Id == row.OutputDeviceId)));
+        MixerDeviceList.ItemsSource = choices;
+        if (_page != NotchPage.MixerDevices)
+        {
+            ShowPage(NotchPage.MixerDevices);
+        }
+    }
+
+    private void OnMixerClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Mixer);
+
+    private void OnMixerBackClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Controls);
+
+    private void OnMixerDevicesBackClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Mixer);
+
+    private void OnMixerSliderChanged(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string key } ||
+            !_mixerRowsByKey.TryGetValue(key, out var row) ||
+            Math.Abs(e.NewValue - row.Percent) < 0.5)
+        {
+            return;
+        }
+
+        row.Percent = e.NewValue;
+        MixerVolumeChanged?.Invoke(this, new MixerVolumeRequest(key, e.NewValue));
+    }
+
+    private void OnMixerMuteClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string key })
+        {
+            MixerMuteRequested?.Invoke(this, key);
+        }
+    }
+
+    private void OnMixerRowRightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        if (_mixerRoutingSupported && sender is FrameworkElement { Tag: string key } && key != MixerApps.SystemSoundsKey)
+        {
+            e.Handled = true;
+            ShowMixerDevices(key);
+        }
+    }
+
+    private void OnMixerDeviceClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is MixerDeviceChoice choice && _mixerDevicesKey is { } key)
+        {
+            MixerOutputSelected?.Invoke(this, new MixerOutputRequest(key, choice.Id));
+        }
+
+        ShowPage(NotchPage.Mixer);
+    }
+
     public void SetOutputDevices(List<AudioOutputDevice> devices)
     {
+        _outputDevices = devices;
+        if (_page == NotchPage.MixerDevices && _mixerDevicesKey is { } key)
+        {
+            ShowMixerDevices(key);
+        }
+
         DeviceList.ItemsSource = devices;
         OutputText.Text = devices.Find(d => d.IsDefault)?.Name ?? ModuleStrings.Get("NoOutputDevice");
         OutputButton.IsEnabled = devices.Count > 0;
@@ -813,6 +1098,11 @@ public sealed partial class NotchView : UserControl
 
     private void ShowPage(NotchPage page)
     {
+        if (PageTransitions.IsDrillIn(_page, page))
+        {
+            AnimatePageEntrance(page);
+        }
+
         MediaPage.Visibility = Visible(page == NotchPage.Media);
         ControlsPage.Visibility = Visible(page == NotchPage.Controls);
         DevicesPage.Visibility = Visible(page == NotchPage.Devices);
@@ -820,10 +1110,12 @@ public sealed partial class NotchView : UserControl
         SystemPage.Visibility = Visible(page == NotchPage.System);
         ClipboardPage.Visibility = Visible(page == NotchPage.Clipboard);
         LinksPage.Visibility = Visible(page == NotchPage.Links);
+        MixerPage.Visibility = Visible(page == NotchPage.Mixer);
+        MixerDevicesPage.Visibility = Visible(page == NotchPage.MixerDevices);
+        NetworkPage.Visibility = Visible(page == NotchPage.Network);
 
-        // O ToggleButton se inverte sozinho no clique: aqui todas as abas ficam no estado da página real.
         MediaTab.IsChecked = page == NotchPage.Media;
-        ControlsTab.IsChecked = page is NotchPage.Controls or NotchPage.Devices;
+        ControlsTab.IsChecked = page is NotchPage.Controls or NotchPage.Devices or NotchPage.Mixer or NotchPage.MixerDevices or NotchPage.Network;
         StorageTab.IsChecked = page == NotchPage.Storage;
         SystemTab.IsChecked = page == NotchPage.System;
         ClipboardTab.IsChecked = page == NotchPage.Clipboard;
@@ -836,6 +1128,54 @@ public sealed partial class NotchView : UserControl
         }
 
         static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void AnimatePageEntrance(NotchPage page)
+    {
+        (UIElement Element, CompositeTransform Transform)? target = page switch
+        {
+            NotchPage.Devices => (DevicesPage, DevicesPageTransform),
+            NotchPage.Mixer => (MixerPage, MixerPageTransform),
+            NotchPage.MixerDevices => (MixerDevicesPage, MixerDevicesPageTransform),
+            NotchPage.Network => (NetworkPage, NetworkPageTransform),
+            _ => null,
+        };
+        if (target is not { } found)
+        {
+            return;
+        }
+
+        var (element, transform) = found;
+        StopPageEntrance();
+        var entrance = new Storyboard();
+        var fade = CreateAnimation(element, "Opacity", 1, null, FadeDuration);
+        fade.From = 0;
+        entrance.Children.Add(fade);
+        if (_springEnabled)
+        {
+            transform.TranslateX = PageEntranceOffset;
+            _pageSpring.Start(_springMotion, [new SpringChannel(PageEntranceOffset, 0, value => transform.TranslateX = value)]);
+        }
+        else
+        {
+            var slide = CreateAnimation(transform, "TranslateX", 0, new CubicEase { EasingMode = EasingMode.EaseOut }, ShapeDuration);
+            slide.From = PageEntranceOffset;
+            entrance.Children.Add(slide);
+        }
+
+        _pageEntrance = entrance;
+        entrance.Begin();
+    }
+
+    private void StopPageEntrance()
+    {
+        _pageSpring.Stop();
+        _pageEntrance?.Stop();
+        _pageEntrance = null;
+        foreach (var transform in new[] { DevicesPageTransform, MixerPageTransform, MixerDevicesPageTransform, NetworkPageTransform })
+        {
+            transform.TranslateX = 0;
+        }
     }
 
     private void OnMediaTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Media);

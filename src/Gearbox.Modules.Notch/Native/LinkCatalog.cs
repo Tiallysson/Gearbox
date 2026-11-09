@@ -25,7 +25,7 @@ public sealed class LinkCatalog
 
     public event EventHandler? Changed;
 
-    public IReadOnlyList<QuickLink> Links => _links ??= _settings.Load().Links;
+    public IReadOnlyList<QuickLink> Links => _links ??= QuickLinkList.Safe(_settings.Load().Links);
 
     public string? IconPath(string linkId) => _icons.Exists(linkId) ? _icons.PathFor(linkId) : null;
 
@@ -125,7 +125,7 @@ public sealed class LinkCatalog
 
     private void OnSettingsChanged(object? sender, LinksSettings e)
     {
-        _links = e.Links;
+        _links = QuickLinkList.Safe(e.Links);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 }

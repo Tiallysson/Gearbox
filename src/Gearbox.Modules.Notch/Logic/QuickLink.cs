@@ -18,6 +18,36 @@ public sealed record QuickLink(string Id, QuickLinkKind Kind, string Name, strin
 
     public bool SameTarget(QuickLink other) =>
         Kind == other.Kind && string.Equals(Target, other.Target, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsSafeId(string? id) => Guid.TryParseExact(id, "N", out _);
+
+    public static bool TryGetWebTarget(string? target, out Uri uri)
+    {
+        uri = null!;
+        if (!Uri.TryCreate(target, UriKind.Absolute, out var parsed) ||
+            (parsed.Scheme != Uri.UriSchemeHttps && parsed.Scheme != Uri.UriSchemeHttp))
+        {
+            return false;
+        }
+
+        uri = parsed;
+        return true;
+    }
+
+    public static bool IsSafeAppTarget(string? target) =>
+        !string.IsNullOrWhiteSpace(target) &&
+        !target.Any(char.IsControl) &&
+        !target.Contains('"', StringComparison.Ordinal) &&
+        !target.Split('\\', '/').Any(segment => segment == "..");
+
+    public bool IsSafe() =>
+        IsSafeId(Id) &&
+        Kind switch
+        {
+            QuickLinkKind.Web => TryGetWebTarget(Target, out _),
+            QuickLinkKind.App => IsSafeAppTarget(Target),
+            _ => false,
+        };
 }
 
 public static class QuickLinkList
@@ -34,6 +64,9 @@ public static class QuickLinkList
 
         return result;
     }
+
+    public static List<QuickLink> Safe(IEnumerable<QuickLink?>? links) =>
+        (links ?? []).OfType<QuickLink>().Where(link => link.IsSafe()).Take(MaxLinks).ToList();
 
     public static List<QuickLink> Remove(IReadOnlyList<QuickLink> links, string id) =>
         links.Where(l => l.Id != id).ToList();

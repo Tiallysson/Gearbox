@@ -8,12 +8,18 @@ internal static class AppIconQueue
 
     private static readonly SemaphoreSlim s_gate = new(MaxConcurrent);
 
-    public static async Task<ShellIcon?> GetAsync(string parsingName, int size)
+    public static Task<ShellIcon?> GetAsync(string parsingName, int size) =>
+        RunAsync(() => InstalledApps.TryGetIcon(parsingName, size));
+
+    public static Task<ShellIcon?> GetFileAsync(string filePath, int size) =>
+        RunAsync(() => InstalledApps.TryGetFileIcon(filePath, size));
+
+    private static async Task<ShellIcon?> RunAsync(Func<ShellIcon?> read)
     {
         await s_gate.WaitAsync();
         try
         {
-            return await Task.Run(() => InstalledApps.TryGetIcon(parsingName, size));
+            return await Task.Run(read);
         }
         finally
         {

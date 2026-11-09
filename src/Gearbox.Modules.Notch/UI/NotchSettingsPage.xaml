@@ -122,6 +122,24 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowMixerTitle" />
+                    <TextBlock x:Uid="ShowMixerDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowMixerToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowMixer, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
                     <TextBlock x:Uid="ShowStorageTitle" />
                     <TextBlock x:Uid="ShowStorageDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                 </StackPanel>
