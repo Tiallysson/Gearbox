@@ -15,6 +15,7 @@
     <SolidColorBrush x:Key="PrimaryBrush" Color="#E5E5E5" />
     <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#CECECE" />
     <SolidColorBrush x:Key="PrimaryForegroundBrush" Color="#171717" />
+    <SolidColorBrush x:Key="PrimaryTrackBrush" Color="#33E5E5E5" />
     <SolidColorBrush x:Key="DestructiveBrush" Color="#FF6467" />
     <!-- muted / accent / input: brancos translúcidos sobre o tom escuro da ilha. -->
     <SolidColorBrush x:Key="MutedBrush" Color="#14FFFFFF" />

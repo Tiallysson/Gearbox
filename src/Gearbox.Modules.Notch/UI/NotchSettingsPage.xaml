@@ -403,6 +403,24 @@
             </Grid>
         </Border>
 
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="AdaptTextContrastTitle" />
+                    <TextBlock x:Uid="AdaptTextContrastDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="AdaptTextContrastToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.AdaptTextContrast, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
         <!-- Comportamento -->
         <TextBlock x:Uid="BehaviorHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
 

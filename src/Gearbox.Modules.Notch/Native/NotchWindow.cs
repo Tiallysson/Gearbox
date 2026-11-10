@@ -19,7 +19,7 @@ internal sealed class NotchWindow : IDisposable
     private readonly Window _window;
     private readonly AppWindow _appWindow;
     private readonly nint _hwnd;
-    private readonly TransparentWindow? _transparency; // Campo: precisa viver enquanto a janela existir.
+    private readonly TransparentWindow? _transparency;
     private DisplayMonitor _monitor;
     private static readonly DipSize s_windowSize = NotchLayout.MaxWindowSize;
 
@@ -72,6 +72,10 @@ internal sealed class NotchWindow : IDisposable
     }
 
     public NotchView View { get; }
+
+    public bool IsVisible => _visible;
+
+    public bool IsTransparent => _transparency is not null;
 
     /// <summary>Retângulo atual da janela, em pixels físicos.</summary>
     public PixelRect Bounds => _bounds;

@@ -1,6 +1,7 @@
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
 using Gearbox.Interop.Audio;
+using Gearbox.Interop.Desktop;
 using Gearbox.Interop.Geometry;
 using Gearbox.Interop.Session;
 using Gearbox.Interop.Windowing;
@@ -49,6 +50,8 @@ public sealed class NotchModule(
     /// <summary>Com a ilha aberta: relógio e rede de segurança contra um <c>PointerExited</c> perdido.</summary>
     private static readonly TimeSpan ExpandedTick = TimeSpan.FromMilliseconds(500);
 
+    private static readonly TimeSpan ContrastTick = TimeSpan.FromSeconds(1);
+
     private readonly NotchState _state = new();
     private NotchSettings _current = new();
     private DispatcherQueue? _dispatcher;
@@ -76,6 +79,9 @@ public sealed class NotchModule(
     private DispatcherQueueTimer? _peekTimer;
     private DispatcherQueueTimer? _overlapTimer;
     private DispatcherQueueTimer? _expandedTimer;
+    private DispatcherQueueTimer? _contrastTimer;
+    private TintColor _tint = NotchAppearance.Black;
+    private TextTone _tone;
     private NotchVisibility _visibility;
     private bool _sessionLocked;
     private bool _displayOff;
@@ -111,6 +117,7 @@ public sealed class NotchModule(
             _peekTimer = CreateTimer(PeekDuration, repeating: false, OnPeekElapsed);
             _overlapTimer = CreateTimer(OverlapDebounce, repeating: false, () => Guard(UpdateVisibility));
             _expandedTimer = CreateTimer(ExpandedTick, repeating: true, OnExpandedTick);
+            _contrastTimer = CreateTimer(ContrastTick, repeating: true, () => Guard(UpdateContrast));
 
             _current = settings.Load();
             _window = new NotchWindow(GetMonitor(), logger);
@@ -181,10 +188,12 @@ public sealed class NotchModule(
         PowerManager.RemainingChargePercentChanged -= OnPowerChanged;
         PowerManager.BatteryStatusChanged -= OnPowerChanged;
 
-        foreach (var timer in new[] { _expandTimer, _collapseTimer, _peekTimer, _overlapTimer, _expandedTimer })
+        foreach (var timer in new[] { _expandTimer, _collapseTimer, _peekTimer, _overlapTimer, _expandedTimer, _contrastTimer })
         {
             timer?.Stop();
         }
+
+        _tone = TextTone.Light;
 
         if (_systemState is not null)
         {
@@ -683,9 +692,61 @@ public sealed class NotchModule(
             logger.LogInformation("O acrílico não é suportado neste sistema; o estilo Vidro usa só a cor");
         }
 
-        _window.View.SetBackground(look.Blur, NotchAppearance.Readable(ResolveColor()), look.Opacity);
+        _tint = NotchAppearance.Readable(ResolveColor());
+        _window.View.SetBackground(look.Blur, _tint, look.Opacity);
         _window.View.SetGlassBorder(_current.GlassBorder);
         _window.View.SetAnimation(_current.SpringAnimation, _current.SpringIntensity);
+        UpdateContrast();
+    }
+
+    private void UpdateContrast()
+    {
+        if (_window is null)
+        {
+            return;
+        }
+
+        var look = NotchAppearance.Look(_current.BackgroundStyle);
+        if (!_current.AdaptTextContrast || !TextContrast.ShowsWhatIsBehind(look, _window.IsTransparent))
+        {
+            _contrastTimer?.Stop();
+            SetTextTone(TextTone.Light);
+            return;
+        }
+
+        if (_contrastTimer?.IsRunning == false)
+        {
+            _contrastTimer.Start();
+        }
+
+        if (!_window.IsVisible)
+        {
+            return;
+        }
+
+        var monitor = GetMonitor();
+        var captures = TextContrast.SampleAreas(_window.Bounds, monitor.Bounds, monitor.DpiScale)
+            .Select(ScreenPixels.CaptureBgra)
+            .OfType<byte[]>();
+        if (TextContrast.Average(captures) is not { } behind)
+        {
+            return;
+        }
+
+        var luminance = TextContrast.Luminance(TextContrast.Blend(_tint, look.Opacity, behind));
+        SetTextTone(TextContrast.Choose(luminance, _tone));
+    }
+
+    private void SetTextTone(TextTone tone)
+    {
+        if (tone == _tone || _window is null)
+        {
+            return;
+        }
+
+        logger.LogDebug("Ilha: texto {Tone}", tone);
+        _tone = tone;
+        _window.View.SetTextTone(tone);
     }
 
     private TintColor ResolveColor()
@@ -832,6 +893,8 @@ public sealed class NotchModule(
             _visibility = visibility;
             Render();
         }
+
+        UpdateContrast();
     }
 
     private void UpdateBattery(bool peek)

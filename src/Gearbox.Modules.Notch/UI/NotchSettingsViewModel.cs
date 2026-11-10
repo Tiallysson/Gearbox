@@ -66,6 +66,7 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
         SpringAnimation = current.SpringAnimation;
         SpringIntensityIndex = (int)current.SpringIntensity;
         GlassBorder = current.GlassBorder;
+        AdaptTextContrast = current.AdaptTextContrast;
         _isLoading = false;
     }
 
@@ -93,6 +94,9 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool GlassBorder { get; set; }
+
+    [ObservableProperty]
+    public partial bool AdaptTextContrast { get; set; }
 
 
     [ObservableProperty]
@@ -196,6 +200,8 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     partial void OnSpringIntensityIndexChanged(int oldValue, int newValue) => SaveIndex(oldValue, newValue, value => SpringIntensityIndex = value);
 
     partial void OnGlassBorderChanged(bool value) => Save();
+
+    partial void OnAdaptTextContrastChanged(bool value) => Save();
 
 
     /// <summary>Grava imediatamente o que estiver pendente (ex.: ao sair da página).</summary>
@@ -365,5 +371,6 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
             SpringAnimation = SpringAnimation,
             SpringIntensity = ToEnum(SpringIntensityIndex, SpringIntensity.Normal),
             GlassBorder = GlassBorder,
+            AdaptTextContrast = AdaptTextContrast,
         };
 }

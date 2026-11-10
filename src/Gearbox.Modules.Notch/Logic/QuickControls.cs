@@ -79,7 +79,7 @@ public static class QuickControls
             return false;
         }
 
-        var target = FromSlider(current, percent);
+        var target = FromSlider(current, percent); 
         if (!setLevel(target.Level))
         {
             return false;
