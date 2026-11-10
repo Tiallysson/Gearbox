@@ -30,7 +30,7 @@ public static class ScreenPixels
             }
 
             var previous = PInvoke.SelectObject(memory, bitmap);
-            var copied = PInvoke.BitBlt(memory, 0, 0, area.Width, area.Height, screen, area.Left, area.Top, ROP_CODE.SRCCOPY);
+            var copied = PInvoke.BitBlt(memory, 0, 0, area.Width, area.Height, screen, area.Left, area.Top, ROP_CODE.SRCCOPY | ROP_CODE.CAPTUREBLT);
             PInvoke.SelectObject(memory, previous);
             if (!copied)
             {
