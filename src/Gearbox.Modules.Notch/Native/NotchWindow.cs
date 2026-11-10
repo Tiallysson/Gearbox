@@ -73,6 +73,8 @@ internal sealed class NotchWindow : IDisposable
 
     public NotchView View { get; }
 
+    public bool IsVisible => _visible;
+
     /// <summary>Retângulo atual da janela, em pixels físicos.</summary>
     public PixelRect Bounds => _bounds;
 

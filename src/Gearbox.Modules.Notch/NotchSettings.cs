@@ -61,6 +61,8 @@ public sealed class NotchSettings : IJsonOnDeserialized
     /// <summary>Borda de 1 px quase transparente em volta da ilha (efeito de vidro).</summary>
     public bool GlassBorder { get; set; } = true;
 
+    public bool AdaptTextContrast { get; set; } = true;
+
     [JsonInclude]
     [JsonPropertyName("acrylicBackground")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

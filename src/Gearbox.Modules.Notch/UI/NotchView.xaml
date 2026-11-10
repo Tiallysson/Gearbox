@@ -187,7 +187,7 @@
                     </Grid>
                     <!-- Barra de volume como o Progress do shadcn: trilho "primary/20" e indicador "primary". -->
                     <Grid x:Name="PeekBar" Grid.Column="1" Height="6" VerticalAlignment="Center">
-                        <Border Background="#33E5E5E5" CornerRadius="3" />
+                        <Border Background="{StaticResource PrimaryTrackBrush}" CornerRadius="3" />
                         <Border Background="{StaticResource PrimaryBrush}" CornerRadius="3" RenderTransformOrigin="0,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform x:Name="PeekBarScale" ScaleX="0" />
@@ -716,7 +716,12 @@
                                             ToolTipService.ToolTip="{x:Bind ToolTip}"
                                             AutomationProperties.Name="{x:Bind ToolTip}">
                                             <StackPanel Spacing="4">
-                                                <controls:UsageRing HorizontalAlignment="Center" Percent="{x:Bind Percent}" />
+                                                <controls:UsageRing
+                                                    HorizontalAlignment="Center"
+                                                    Percent="{x:Bind Percent}"
+                                                    TrackBrush="{StaticResource MutedBrush}"
+                                                    ValueBrush="{StaticResource PrimaryBrush}"
+                                                    WarningBrush="{StaticResource DestructiveBrush}" />
                                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
                                                     <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="12" Glyph="{x:Bind Glyph}" />
                                                     <TextBlock FontSize="12" FontWeight="Medium" Text="{x:Bind Letter}" />

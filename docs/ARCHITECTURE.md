@@ -302,6 +302,17 @@ NotchModule (orquestra, timers)
   itens da lista usam lightweight styling (chaves conferidas no `generic.xaml` do WinUI). A borda de 1 px
   (`GlassEdge`, pincel `GlassEdgeBrush`) fica por cima do fundo, sem o lado de cima, e acompanha os cantos animados
   em `NotchView.SetShape`; `NotchSettings.GlassBorder` só a esconde (`NotchView.SetGlassBorder`).
+- **Contraste do texto** (`NotchSettings.AdaptTextContrast`): com fundo não opaco, o módulo captura (GDI,
+  `Interop/Desktop/ScreenPixels`) faixas da tela logo ao lado e abaixo da ilha — fora da região recortada da janela,
+  então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Logic/TextContrast` mistura
+  a média com a cor da ilha pela opacidade do estilo, calcula a luminância relativa (WCAG) e escolhe o tom com
+  histerese (escuro acima de 0,24, volta ao claro abaixo de 0,13). `NotchView.SetTextTone` troca o `RequestedTheme`
+  (texto padrão dos controles) e `NotchTheme.ApplyTone` muda a `Color` dos próprios pincéis da paleta: como todo o XAML
+  os usa por `StaticResource` (a mesma instância), tudo se atualiza sem recriar nada. Por isso nenhuma cor da ilha pode
+  ficar fixa no XAML nem num `NotchTheme` separado (o `UsageRing` recebe os pincéis por propriedade). Trocar o
+  `RequestedTheme` dispara `OnDefaultSystemBackdropConfigurationChanged` nos backdrops da janela; a implementação base
+  lança `ArgumentException` para alvos que ela não gerencia, então `IslandBackdrop` e `TransparentBackdrop` a
+  sobrescrevem sem fazer nada (a configuração deles é fixa).
 - **Ícones**: fonte Phosphor Icons (regular, MIT) em `Assets\Fonts`, referenciada como
   `ms-appx:///Gearbox.Modules.Notch/Assets/Fonts/Phosphor.ttf#Phosphor` (recurso `PhosphorFont` da `NotchView`).
   Os codepoints que mudam com o estado ficam em `NotchGlyphs`; os fixos, no XAML com o nome do ícone num

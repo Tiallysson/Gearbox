@@ -309,6 +309,15 @@
   <data name="GlassBorderToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Borda de vidro</value>
   </data>
+  <data name="AdaptTextContrastTitle.Text" xml:space="preserve">
+    <value>Adaptar contraste do texto</value>
+  </data>
+  <data name="AdaptTextContrastDescription.Text" xml:space="preserve">
+    <value>Com fundo transparente ou de vidro, o texto fica escuro quando a janela atrás da ilha é clara, para continuar legível.</value>
+  </data>
+  <data name="AdaptTextContrastToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Adaptar contraste do texto</value>
+  </data>
   <data name="BehaviorHeader.Text" xml:space="preserve">
     <value>Comportamento</value>
   </data>

@@ -24,6 +24,9 @@ public sealed partial class NotchView : UserControl
     private static readonly Duration FadeDuration = new(TimeSpan.FromMilliseconds(180));
     private static readonly Duration FadeOutDuration = new(TimeSpan.FromMilliseconds(100));
 
+    private static readonly Windows.UI.Color DarkArtPlaceholder = Windows.UI.Color.FromArgb(0xFF, 0x26, 0x26, 0x26);
+    private static readonly Windows.UI.Color LightArtPlaceholder = Windows.UI.Color.FromArgb(0xFF, 0xD4, 0xD4, 0xD4);
+
     private const double ContentStartScale = 0.96;
     private const double ContentStartOffset = -6;
 
@@ -906,6 +909,18 @@ public sealed partial class NotchView : UserControl
     public void SetGlassBorder(bool visible) =>
         GlassEdge.Visibility = LeftEarEdge.Visibility = RightEarEdge.Visibility =
             visible ? Visibility.Visible : Visibility.Collapsed;
+
+    public void SetTextTone(TextTone tone)
+    {
+        var dark = tone == TextTone.Dark;
+        RequestedTheme = dark ? ElementTheme.Light : ElementTheme.Dark;
+        foreach (var theme in Resources.MergedDictionaries.OfType<NotchTheme>())
+        {
+            theme.ApplyTone(tone);
+        }
+
+        ((SolidColorBrush)Resources["ArtPlaceholderBrush"]).Color = dark ? LightArtPlaceholder : DarkArtPlaceholder;
+    }
 
     public void UpdateClock(DateTime now)
     {
