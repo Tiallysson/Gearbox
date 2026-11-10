@@ -18,6 +18,9 @@ public static class TextContrast
 
     private const double SampleDepthDip = 16;
 
+    public static bool ShowsWhatIsBehind(BackgroundLook look, bool windowIsTransparent) =>
+        windowIsTransparent && (look.Blur || look.Opacity < 1);
+
     public static PixelRect[] SampleAreas(PixelRect island, PixelRect monitor, double dpiScale)
     {
         var gap = (int)Math.Round(SampleGapDip * dpiScale);

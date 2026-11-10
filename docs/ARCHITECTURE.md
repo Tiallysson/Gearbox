@@ -302,7 +302,8 @@ NotchModule (orquestra, timers)
   itens da lista usam lightweight styling (chaves conferidas no `generic.xaml` do WinUI). A borda de 1 px
   (`GlassEdge`, pincel `GlassEdgeBrush`) fica por cima do fundo, sem o lado de cima, e acompanha os cantos animados
   em `NotchView.SetShape`; `NotchSettings.GlassBorder` só a esconde (`NotchView.SetGlassBorder`).
-- **Contraste do texto** (`NotchSettings.AdaptTextContrast`): com fundo não opaco, o módulo captura (GDI,
+- **Contraste do texto** (`NotchSettings.AdaptTextContrast`): com fundo não opaco e a janela realmente transparente
+  (`TextContrast.ShowsWhatIsBehind`; se `TransparentWindow.Apply` falhou, a ilha é opaca e o texto fica claro), o módulo captura (GDI,
   `Interop/Desktop/ScreenPixels`) faixas da tela logo ao lado e abaixo da ilha — fora da região recortada da janela,
   então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Logic/TextContrast` mistura
   a média com a cor da ilha pela opacidade do estilo, calcula a luminância relativa (WCAG) e escolhe o tom com

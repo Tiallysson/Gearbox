@@ -707,7 +707,7 @@ public sealed class NotchModule(
         }
 
         var look = NotchAppearance.Look(_current.BackgroundStyle);
-        if (!_current.AdaptTextContrast || (!look.Blur && look.Opacity >= 1))
+        if (!_current.AdaptTextContrast || !TextContrast.ShowsWhatIsBehind(look, _window.IsTransparent))
         {
             _contrastTimer?.Stop();
             SetTextTone(TextTone.Light);

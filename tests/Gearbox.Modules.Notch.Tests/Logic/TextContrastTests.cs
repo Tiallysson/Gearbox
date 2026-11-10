@@ -35,6 +35,18 @@ public sealed class TextContrastTests
     }
 
     [Theory]
+    [InlineData(BackgroundStyle.Glass, true, true)]
+    [InlineData(BackgroundStyle.Clear, true, true)]
+    [InlineData(BackgroundStyle.Subtle, true, true)]
+    [InlineData(BackgroundStyle.Opaque, true, false)]
+    [InlineData(BackgroundStyle.Glass, false, false)]
+    [InlineData(BackgroundStyle.Clear, false, false)]
+    public void ShowsWhatIsBehind_SoComJanelaTransparenteEEstiloNaoOpaco(BackgroundStyle style, bool transparent, bool expected)
+    {
+        Assert.Equal(expected, TextContrast.ShowsWhatIsBehind(NotchAppearance.Look(style), transparent));
+    }
+
+    [Theory]
     [InlineData(0.18, TextTone.Light, TextTone.Light)]
     [InlineData(0.18, TextTone.Dark, TextTone.Dark)]
     [InlineData(0.30, TextTone.Light, TextTone.Dark)]
