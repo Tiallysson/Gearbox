@@ -55,14 +55,24 @@ Layered, dependencies point down only:
   `Audio/` (Core Audio), `Metrics/` (PDH, DXGI, memory), `Session/` (`SystemStateMonitor`: lock, display
   power/topology, Explorer restart), `Shell/` (`InstalledApps`: Start menu apps and their icons), `Clipboard/`. `NativeMethods.txt/json` stay at the project root (CsWin32). Never name a folder/namespace segment `Windows`, `System` or `Microsoft`: inside
   `Gearbox.Interop.*` it would shadow `Windows.Win32` (CsWin32) / `System.*` and break name resolution.
-- `src/Gearbox.Modules.*` — one project per tool, layout: `XxxModule.cs` (implements `IGearboxModule`),
-  `XxxSettings.cs` (POCO → `settings\{ModuleId}.json`), `ServiceCollectionExtensions.cs`
-  (`AddGearboxSettings<T>` + `AddGearboxModule<TModule, TPage>`), `Logic/` (pure, Win32-free, unit-tested),
-  `Native/` (applies to the system via Interop), `UI/` (settings page + `ObservableObject` ViewModel),
-  `Strings/pt-BR/Resources.resw`. `Gearbox.Modules.RoundedMaximize` is the reference implementation.
-- `tests/` — one xUnit v3 project per production project (`OutputType=Exe`), testing mainly the `Logic/` classes.
+- `src/Gearbox.Modules.*` — one project per tool, MVVM layout (folder == namespace):
+  - root: `XxxModule.cs` (implements `IGearboxModule`), `ServiceCollectionExtensions.cs`
+    (`AddGearboxSettings<T>` + `AddGearboxModule<TModule, TPage>`), `ModuleStrings.cs`.
+  - `Models/`: pure, Win32-free, unit-tested rules and entities, including the `XxxSettings.cs` POCOs
+    (→ `settings\{ModuleId}.json`).
+  - `Services/<Area>/`: applies to the system via Interop, plus I/O and network (e.g. `Services/Windowing`,
+    `Services/AI`, `Services/Storage`).
+  - `ViewModels/`: `ObservableObject` ViewModels and list-item view models.
+  - `Views/<Area>/`: XAML and UI helpers (`Views/Settings` for the settings page, `Views/Controls` for reusable
+    controls).
+  - `Strings/pt-BR/Resources.resw`.
+  - `Gearbox.Modules.RoundedMaximize` is the reference implementation.
+  - Never name a folder after a type you use unqualified in that subtree. For example, `Services/Clipboard` would
+    make `Clipboard` resolve to the namespace instead of WinRT's `Clipboard` class; that is why it is
+    `Services/Transfer`.
+- `tests/` — one xUnit v3 project per production project (`OutputType=Exe`), testing mainly the `Models/` classes.
   Test files mirror the folder of the class under test, with a matching namespace (e.g.
-  `tests/Gearbox.Modules.Notch.Tests/Logic/NotchLayoutTests.cs` → `Gearbox.Modules.Notch.Tests.Logic`).
+  `tests/Gearbox.Modules.Notch.Tests/Models/NotchLayoutTests.cs` → `Gearbox.Modules.Notch.Tests.Models`).
 
 The shell derives navigation, tray toggles and persisted on/off state from `IEnumerable<IGearboxModule>`; the
 module's settings page is created via DI (ViewModel injected through the constructor) and embedded inside the

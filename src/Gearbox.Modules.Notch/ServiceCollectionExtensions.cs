@@ -1,7 +1,11 @@
 using Gearbox.Core;
 using Gearbox.Interop.Windowing;
-using Gearbox.Modules.Notch.Native;
-using Gearbox.Modules.Notch.UI;
+using Gearbox.Modules.Notch.Models;
+using Gearbox.Modules.Notch.Services.AI;
+using Gearbox.Modules.Notch.Services.Links;
+using Gearbox.Modules.Notch.Services.Storage;
+using Gearbox.Modules.Notch.ViewModels;
+using Gearbox.Modules.Notch.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

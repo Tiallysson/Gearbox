@@ -14,8 +14,8 @@
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────── Gearbox.Modules.* (um por ferramenta) ─┐
-│ Módulo (Start/Stop) ─► Logic/ (regras puras) + Native/ (aplica no sistema)   │
-│ UI/ (página de configurações + ViewModel) · Strings/*.resw                   │
+│ Módulo (Start/Stop) ─► Models/ (regras puras) + Services/ (aplica no sistema)│
+│ ViewModels/ + Views/ (página de configurações, controles) · Strings/*.resw   │
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼────────────────────────── Gearbox.Interop ─────┐
@@ -103,7 +103,7 @@ EVENT_OBJECT_LOCATIONCHANGE (OBJID_WINDOW, CHILDID_SELF)
              5. DwmSetWindowAttribute(CORNER_PREFERENCE = ROUND, BORDER_COLOR)
 ```
 
-- `Logic/` (`EligibilityRules`, `PseudoMaximizeTracker`, `PseudoMaximizeLayout`, `ColorRef`,
+- `Models/` (`EligibilityRules`, `PseudoMaximizeTracker`, `PseudoMaximizeLayout`, `ColorRef`,
   `ProcessNameCache`) não chama Win32 e é coberto por testes.
 - As margens são medidas a partir da moldura **visível** (`DWMWA_EXTENDED_FRAME_BOUNDS`), descontando
   as bordas invisíveis de redimensionamento.
@@ -125,7 +125,7 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
               └─ original → devolve a imagem guardada no snapshot
 ```
 
-- **Galeria** (`Logic/Gallery`): `GalleryCatalog` tem os 10 wallpapers (5 estáticos, 5 interativos), por id estável;
+- **Galeria** (`Models/Gallery`): `GalleryCatalog` tem os 10 wallpapers (5 estáticos, 5 interativos), por id estável;
   `WallpaperSettings.GalleryWallpaperId` é o ativo (nenhum por padrão). Com um ativo, ele vale para todos os
   monitores e ganha dos arquivos; escolher um arquivo na página desativa o da galeria.
   - **Estáticos**: desenhados por código em `StaticWallpaperRenderer` (ruído fractal, funções de distância,
@@ -135,7 +135,7 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
     geração falhar, o monitor volta ao original com o problema `RenderFailed`; mudar as configurações tenta de novo.
     A imagem vai pelo mesmo caminho dos arquivos (com snapshot para restaurar), sempre em "Preencher". A cada
     aplicação o cache é podado: fica só a imagem em uso (e as que estão sendo geradas), e `.tmp` órfãos somem.
-  - **Interativos**: cenas em `UI/Scenes` (`WallpaperScene` + `SceneFactory`), árvores de visuais de Composition com
+  - **Interativos**: cenas em `Views/Scenes` (`WallpaperScene` + `SceneFactory`), árvores de visuais de Composition com
     animações de quadros-chave em loop, que rodam no compositor (GPU), sem trabalho por quadro na thread de UI.
     Pausam pelos `AnimationController` (mesma `PausePolicy` dos vídeos) e, paradas, servem de pôster. As animações
     usam propriedades inteiras (`Translation`, `Offset`, `Scale`), não subcanais, para o controlador existir. Cada
@@ -168,10 +168,10 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
 
 ```
 NotchModule (orquestra, timers)
-  ├─ NotchState (Logic) ─► modo: Collapsed | Peek (volume, bateria, faixa nova) | Expanded (mouse em cima)
-  ├─ OverlapRules (Logic) ─► Normal | Compact (alça) | Hidden (tela cheia)
-  ├─ NotchLayout (Logic) ─► forma (tamanho em DIP + raio) e posição no topo do monitor principal
-  ├─ QuickControls (Logic) ─► regras dos controles rápidos (alternar rádio, slider → volume/mudo)
+  ├─ NotchState (Models) ─► modo: Collapsed | Peek (volume, bateria, faixa nova) | Expanded (mouse em cima)
+  ├─ OverlapRules (Models) ─► Normal | Compact (alça) | Hidden (tela cheia)
+  ├─ NotchLayout (Models) ─► forma (tamanho em DIP + raio) e posição no topo do monitor principal
+  ├─ QuickControls (Models) ─► regras dos controles rápidos (alternar rádio, slider → volume/mudo)
   ├─ fontes: MediaSessionWatcher (WinRT) · AudioVolumeMonitor (Core Audio) · PowerManager (WinRT)
   │          ConnectivityWatcher (WinRT: Windows.Devices.Radios + NetworkInformation) · AudioEndpoints (Core Audio)
   └─► NotchWindow ─► NotchView (XAML: forma preta animada + conteúdo de cada modo; aberta: abas Mídia/Controles)
@@ -210,7 +210,7 @@ NotchModule (orquestra, timers)
 - **Região da janela**: a janela tem o tamanho máximo (`NotchLayout.MaxWindowSize`: a maior forma com o maior
   arredondamento, mais a folga do pico da mola) e a região recorta a forma atual, para não bloquear cliques em volta.
   Durante a animação, a `NotchView` emite `ShapeFrame` a cada quadro e a `NotchWindow` atualiza a região.
-- **Animação com mola** (`NotchSettings.SpringAnimation`/`SpringIntensity`): `SpringMotion` (Logic) é um oscilador
+- **Animação com mola** (`NotchSettings.SpringAnimation`/`SpringIntensity`): `SpringMotion` (Models) é um oscilador
   amortecido com solução fechada; `SpringAnimator` (UI) aplica os valores em `CompositionTarget.Rendering`. A forma
   (largura, altura e orelhas) e o painel que entra (escala 0,96→1 e deslocamento −6→0, junto do fade) usam a mola;
   desligada, a forma volta ao `Storyboard` com `CubicEase`. Uma animação interrompida continua do tamanho atual.
@@ -282,7 +282,7 @@ NotchModule (orquestra, timers)
     guarda os objetos COM para ler o pico (`IAudioMeterInformation`) e mudar volume e mudo (`ISimpleAudioVolume`).
     Tudo roda na thread de UI: varredura a cada 1 s (`AudioMixer`, Native) e medidor a 20 Hz só com a página do
     mixer na tela. Notificações de sessão nova exigiriam uma thread MTA, por isso a varredura.
-  - `MixerApps.Open` (Logic) mostra o mesmo que o mixer de volume do Windows: toda sessão não expirada, tocando ou
+  - `MixerApps.Open` (Models) mostra o mesmo que o mixer de volume do Windows: toda sessão não expirada, tocando ou
     não, uma linha por executável (chave = nome do `.exe` em minúsculas). "Sons do sistema" (`#system`) vem
     sempre primeiro; o volume mostrado é o da sessão que está tocando, se houver.
   - Saída por app: `AppAudioRouting` usa `IAudioPolicyConfigFactory` (`Windows.Media.Internal.AudioPolicyConfig`),
@@ -295,7 +295,7 @@ NotchModule (orquestra, timers)
     ainda não viu (inclusive as que já existiam ao ligar). Diferente dos controles rápidos, isso é estado do módulo:
     ao parar, os apps que o Gearbox mudou nesta execução voltam a 100%, sem mudo e à saída padrão
     (`MixerMemory.Reset`). Um app que já fechou não pode ser desfeito (a saída por app é por processo vivo).
-- **Visual** no estilo shadcn/ui (tema "neutral" escuro): `UI/NotchTheme.xaml` (um `ResourceDictionary` com
+- **Visual** no estilo shadcn/ui (tema "neutral" escuro): `Views/Notch/NotchTheme.xaml` (um `ResourceDictionary` com
   `x:Class`, mesclado na `NotchView` por instância, pelo mesmo motivo de caminho da fonte abaixo) tem a paleta, com
   `muted`/`accent`/`input` como brancos translúcidos para o acrílico aparecer, e templates próprios de
   `Button`/`ToggleButton` (ghost, outline, toggle e aba), sem a borda de elevação nem o acento do Windows. Slider e
@@ -305,7 +305,7 @@ NotchModule (orquestra, timers)
 - **Contraste do texto** (`NotchSettings.AdaptTextContrast`): com fundo não opaco e a janela realmente transparente
   (`TextContrast.ShowsWhatIsBehind`; se `TransparentWindow.Apply` falhou, a ilha é opaca e o texto fica claro), o módulo captura (GDI `BitBlt` com `CAPTUREBLT`, para incluir janelas em camadas,
   `Interop/Desktop/ScreenPixels`) faixas da tela logo ao lado e abaixo da ilha — fora da região recortada da janela,
-  então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Logic/TextContrast` mistura
+  então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Models/TextContrast` mistura
   a média com a cor da ilha pela opacidade do estilo, calcula a luminância relativa (WCAG) e escolhe o tom com
   histerese (escuro acima de 0,24, volta ao claro abaixo de 0,13). `NotchView.SetTextTone` troca o `RequestedTheme`
   (texto padrão dos controles) e `NotchTheme.ApplyTone` muda a `Color` dos próprios pincéis da paleta: como todo o XAML
@@ -326,7 +326,7 @@ NotchModule (orquestra, timers)
 - **Abas e páginas**: a view expõe `CurrentPage` (`NotchPage`) e `PageChanged`; `NotchModule.UpdatePageSources` só lê
   discos e sensores com a ilha aberta **e** a página deles na tela.
   - *Armazenamento*: `DriveScanner` (`DriveInfo`, numa thread do pool; só discos fixos e removíveis, sem rede/CD) é
-    relido cada vez que a aba aparece. Anéis em `UsageRing` (controle em `UI/Controls`, geometria em `RingGeometry`,
+    relido cada vez que a aba aparece. Anéis em `UsageRing` (controle em `Views/Controls`, geometria em `RingGeometry`,
     vermelho a partir de 90%). O clique abre o disco com o caminho completo do `explorer.exe` e o disco como argumento
     separado, sem shell. Antes, confere se é mesmo a raiz de uma unidade.
   - *Sistema*: `SystemMonitor` amostra a cada 1 s numa thread do pool enquanto a aba está visível (`SetActive`).

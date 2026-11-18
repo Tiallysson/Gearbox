@@ -3,10 +3,11 @@ using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
 using Gearbox.Interop.Session;
 using Gearbox.Interop.Windowing;
-using Gearbox.Modules.Wallpaper.Logic;
-using Gearbox.Modules.Wallpaper.Logic.Gallery;
-using Gearbox.Modules.Wallpaper.Native;
-using Gearbox.Modules.Wallpaper.UI;
+using Gearbox.Modules.Wallpaper.Models;
+using Gearbox.Modules.Wallpaper.Models.Gallery;
+using Gearbox.Modules.Wallpaper.Services.Desktop;
+using Gearbox.Modules.Wallpaper.Services.Storage;
+using Gearbox.Modules.Wallpaper.Views.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Windows.System.Power;
@@ -198,17 +199,17 @@ public sealed class WallpaperModule(
         var monitor = _engine?.Monitors.FirstOrDefault(m => string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase));
         if (monitor is not { DevicePath: not null } found)
         {
-            return Logic.GalleryImage.Pending;
+            return Models.GalleryImage.Pending;
         }
 
         if (galleryImages.TryGetPath(item, found.Bounds.Width, found.Bounds.Height) is { } path)
         {
-            return Logic.GalleryImage.Ready(path);
+            return Models.GalleryImage.Ready(path);
         }
 
         return _renderFailures.Contains(GalleryCatalog.CacheFileName(item, found.Bounds.Width, found.Bounds.Height))
-            ? Logic.GalleryImage.FailedToRender
-            : Logic.GalleryImage.Pending;
+            ? Models.GalleryImage.FailedToRender
+            : Models.GalleryImage.Pending;
     }
 
     private async Task RenderMissingGalleryImagesAsync()

@@ -182,14 +182,17 @@ projeto novo, mapeie-as para `x64` (ou abra a solution no Visual Studio, que faz
 ```
 src/Gearbox.Modules.Foo/
   FooModule.cs                    # implementa IGearboxModule
-  FooSettings.cs                  # POCO serializado em settings\Foo.json
   ServiceCollectionExtensions.cs  # AddFooModule()
   ModuleStrings.cs                # acesso ao .resw do módulo
-  Logic/                          # regras puras, sem Win32 (testáveis)
-  Native/                         # chamadas ao Win32 via Gearbox.Interop
-  UI/
-    FooSettingsPage.xaml(.cs)
+  Models/                         # regras e entidades puras, sem Win32 (testáveis)
+    FooSettings.cs                #   POCO serializado em settings\Foo.json
+  Services/<Área>/                # aplica no sistema via Gearbox.Interop, I/O e rede (ex.: Services/Windowing)
+  ViewModels/
     FooSettingsViewModel.cs
+  Views/
+    Settings/
+      FooSettingsPage.xaml(.cs)
+    Controls/                     # controles reutilizáveis, se houver
   Strings/pt-BR/Resources.resw
 ```
 
@@ -198,7 +201,8 @@ src/Gearbox.Modules.Foo/
 ```csharp
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
-using Gearbox.Modules.Foo.UI;
+using Gearbox.Modules.Foo.Models;
+using Gearbox.Modules.Foo.Views.Settings;
 using Microsoft.Extensions.Logging;
 
 namespace Gearbox.Modules.Foo;
@@ -258,7 +262,9 @@ public sealed class FooModule(
 
 ```csharp
 using Gearbox.Core;
-using Gearbox.Modules.Foo.UI;
+using Gearbox.Modules.Foo.Models;
+using Gearbox.Modules.Foo.ViewModels;
+using Gearbox.Modules.Foo.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -279,7 +285,7 @@ public static class ServiceCollectionExtensions
 **`ModuleStrings.cs`**: copie o do RoundedMaximize e troque o mapa de recursos para
 `"Gearbox.Modules.Foo/Resources"` (em bibliotecas, os `.resw` ficam num mapa com o nome do assembly).
 
-**`UI/FooSettingsPage.xaml.cs`**: a página recebe o ViewModel pelo construtor, porque o casco a cria pelo DI:
+**`Views/Settings/FooSettingsPage.xaml.cs`**: a página recebe o ViewModel pelo construtor, porque o casco a cria pelo DI:
 
 ```csharp
 public sealed partial class FooSettingsPage : Page
@@ -297,7 +303,7 @@ public sealed partial class FooSettingsPage : Page
 A página traz só as configurações do módulo. O título, a descrição, o ícone e o botão "Ativar módulo"
 são desenhados pelo casco (`Views/ModulePage.xaml`).
 
-**`UI/FooSettingsViewModel.cs`**: um `ObservableObject` (CommunityToolkit.Mvvm) que lê com
+**`ViewModels/FooSettingsViewModel.cs`**: um `ObservableObject` (CommunityToolkit.Mvvm) que lê com
 `settings.Load()` e grava com `settings.Save(...)`. O `Save` dispara `Changed` e o módulo aplica na
 hora, sem reiniciar. Use propriedades `[ObservableProperty] public partial ...`.
 
@@ -330,7 +336,7 @@ dotnet sln add tests\Gearbox.Modules.Foo.Tests\Gearbox.Modules.Foo.Tests.csproj 
 ```
 
 Use o `.csproj` de `tests\Gearbox.Modules.RoundedMaximize.Tests` como modelo (`OutputType=Exe`, `xunit.v3`,
-referência ao módulo) e teste as classes de `Logic/`.
+referência ao módulo) e teste as classes de `Models/`.
 
 ### Regras para módulos
 
@@ -368,7 +374,7 @@ src/
   Gearbox.Modules.Notch/
   Gearbox.Modules.RoundedMaximize/
   Gearbox.Modules.Wallpaper/
-tests/                       # pastas e namespaces espelham os do código testado (Logic/, Native/, ...)
+tests/                       # pastas e namespaces espelham os do código testado (Models/, Services/, ...)
   Gearbox.Core.Tests/
   Gearbox.Modules.Notch.Tests/
   Gearbox.Modules.RoundedMaximize.Tests/
