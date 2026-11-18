@@ -31,7 +31,7 @@ public static class NotchLayout
 
     public static readonly NotchShape ExpandedTallShape = new(new DipSize(420, 260), 28, 14);
 
-    public static readonly NotchShape ExpandedChatShape = new(new DipSize(480, 420), 28, 14);
+    public static readonly NotchShape ExpandedChatShape = new(new DipSize(540, 420), 28, 14);
 
     public static DipSize MaxWindowSize
     {

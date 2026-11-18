@@ -874,15 +874,16 @@
                                                 Visibility="{x:Bind AssistantVisibility}" />
                                             <Border
                                                 Grid.Column="1"
-                                                MaxWidth="340"
-                                                Padding="10,6"
-                                                Background="{StaticResource MutedBrush}"
+                                                MaxWidth="380"
+                                                Padding="11,7"
+                                                Background="{StaticResource PrimaryBrush}"
                                                 CornerRadius="12"
                                                 Visibility="{x:Bind UserVisibility}">
                                                 <TextBlock
                                                     FontSize="13"
                                                     IsTextSelectionEnabled="True"
                                                     SelectionHighlightColor="{StaticResource SelectionBrush}"
+                                                    Foreground="{StaticResource PrimaryForegroundBrush}"
                                                     Text="{x:Bind Text, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
                                             </Border>
@@ -895,18 +896,26 @@
                                                 Foreground="{StaticResource MutedForegroundBrush}"
                                                 Text="{x:Bind RedactionNotice, Mode=OneWay}"
                                                 Visibility="{x:Bind RedactionVisibility, Mode=OneWay}" />
-                                            <StackPanel Grid.Column="1" MaxWidth="380" Spacing="2" Visibility="{x:Bind AssistantVisibility}">
-                                                <TextBlock
-                                                    x:Uid="ChatThinkingText"
-                                                    FontSize="13"
-                                                    Foreground="{StaticResource MutedForegroundBrush}"
-                                                    Visibility="{x:Bind PendingVisibility, Mode=OneWay}" />
-                                                <RichTextBlock
-                                                    controls:MarkdownText.Markdown="{x:Bind Markdown, Mode=OneWay}"
-                                                    FontSize="13"
-                                                    IsTextSelectionEnabled="True"
-                                                    SelectionHighlightColor="{StaticResource SelectionBrush}"
-                                                    TextWrapping="Wrap" />
+                                            <StackPanel Grid.Column="1" MaxWidth="430" Spacing="2" Visibility="{x:Bind AssistantVisibility}">
+                                                <Border
+                                                    HorizontalAlignment="Left"
+                                                    Padding="11,7"
+                                                    Background="{StaticResource ChatBubbleBrush}"
+                                                    CornerRadius="12">
+                                                    <StackPanel>
+                                                        <TextBlock
+                                                            x:Uid="ChatThinkingText"
+                                                            FontSize="13"
+                                                            Foreground="{StaticResource MutedForegroundBrush}"
+                                                            Visibility="{x:Bind PendingVisibility, Mode=OneWay}" />
+                                                        <RichTextBlock
+                                                            controls:MarkdownText.Markdown="{x:Bind Markdown, Mode=OneWay}"
+                                                            FontSize="13"
+                                                            IsTextSelectionEnabled="True"
+                                                            SelectionHighlightColor="{StaticResource SelectionBrush}"
+                                                            TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Border>
                                                 <Button
                                                     Padding="4"
                                                     HorizontalAlignment="Left"

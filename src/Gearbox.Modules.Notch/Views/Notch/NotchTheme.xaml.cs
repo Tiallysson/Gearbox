@@ -17,6 +17,7 @@ public sealed partial class NotchTheme : ResourceDictionary
         ["PrimaryTrackBrush"] = Color.FromArgb(0x33, 0x17, 0x17, 0x17),
         ["DestructiveBrush"] = Rgb(0xDC, 0x26, 0x26),
         ["MutedBrush"] = Color.FromArgb(0x14, 0, 0, 0),
+        ["ChatBubbleBrush"] = Color.FromArgb(0x12, 0, 0, 0),
         ["AccentBrush"] = Color.FromArgb(0x1A, 0, 0, 0),
         ["AccentPressedBrush"] = Color.FromArgb(0x26, 0, 0, 0),
         ["InputBrush"] = Color.FromArgb(0x26, 0, 0, 0),

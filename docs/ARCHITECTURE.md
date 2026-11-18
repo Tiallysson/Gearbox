@@ -420,7 +420,7 @@ NotchModule (orquestra, timers)
     - **Markdown** (`MarkdownBlocks`, puro): parágrafos, títulos, listas, negrito/itálico/código e blocos de código,
       tolerante a marcadores ainda sem par durante o streaming. `MarkdownText` é uma attached property que monta o
       `RichTextBlock`.
-    - **Tamanho e foco**: a aba usa `ExpandedChatShape` (480×420), e o `MaxWindowSize` é calculado por ela. A ilha é
+    - **Tamanho e foco**: a aba usa `ExpandedChatShape` (540×420), e o `MaxWindowSize` é calculado por ela. A ilha é
       `WS_EX_NOACTIVATE`; com a aba Chat aberta, `NotchWindow.BeginInput` tira essa flag
       (`NativeWindow.SetActivatable`), guarda a janela que estava em primeiro plano e pede o foco. Se o Windows
       recusar, o primeiro clique ativa a ilha. Ao fechar a ilha ou sair da aba, `EndInput` repõe a flag e devolve o
