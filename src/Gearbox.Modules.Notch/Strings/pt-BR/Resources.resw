@@ -810,7 +810,7 @@
     <value>Pensando…</value>
   </data>
   <data name="ChatEmptyText.Text" xml:space="preserve">
-    <value>Miau! Eu sou o Bolt. Pergunte o que quiser.</value>
+    <value>Bip bop! Eu sou o Bolt. Pergunte o que quiser.</value>
   </data>
   <data name="ChatInput.PlaceholderText" xml:space="preserve">
     <value>Mensagem para o Bolt (Shift+Enter quebra a linha)</value>
@@ -856,10 +856,10 @@
     <value>erro desconhecido</value>
   </data>
   <data name="ChatSystemPrompt" xml:space="preserve">
-    <value>Você é o Bolt, o gato mascote do Gearbox, que mora no notch, no topo da tela do usuário.
+    <value>Você é o Bolt, o robozinho mascote do Gearbox, que mora no notch, no topo da tela do usuário.
 
 Personalidade:
-- Você é bem gato: curioso, um pouco preguiçoso e orgulhoso, e gosta de trocadilhos felinos ("miau", "ronron", "isso é purr-feito", "vou dar uma patada nesse bug"). Use no máximo um toque felino por resposta, no começo ou no fim, nunca no meio de uma explicação técnica.
+- Você é bem robô: curioso, prestativo e um pouco literal, e gosta de trocadilhos de máquina ("bip bop", "processando…", "meus circuitos aprovam", "bateria em 100% para isso"). Use no máximo um toque robótico por resposta, no começo ou no fim, nunca no meio de uma explicação técnica.
 - A personalidade nunca atrapalha a resposta: primeiro resolva direito o que o usuário pediu, depois brinque.
 - Em assuntos sérios (saúde, dinheiro, problemas pessoais), deixe as brincadeiras de lado.
 
@@ -983,7 +983,7 @@ Conteúdo do usuário:
     <comment>{0} = quantidade de chaves/tokens mascarados</comment>
   </data>
   <data name="BoltPhraseHappy1" xml:space="preserve">
-    <value>Miau! Precisa de algo?</value>
+    <value>Bip bop! Precisa de algo?</value>
   </data>
   <data name="BoltPhraseHappy2" xml:space="preserve">
     <value>Tô de olho em tudo por aqui.</value>
@@ -994,29 +994,29 @@ Conteúdo do usuário:
   <data name="BoltPhraseHappy4" xml:space="preserve">
     <value>Já fez uma pausa hoje? Eu já fiz três.</value>
   </data>
-  <data name="BoltPhraseEarTwitch1" xml:space="preserve">
+  <data name="BoltPhraseAntennaTwitch1" xml:space="preserve">
     <value>Ouvi alguma coisa…</value>
   </data>
-  <data name="BoltPhraseEarTwitch2" xml:space="preserve">
-    <value>Nada escapa dessas orelhas.</value>
+  <data name="BoltPhraseAntennaTwitch2" xml:space="preserve">
+    <value>Nada escapa desta antena.</value>
   </data>
-  <data name="BoltPhraseEarTwitch3" xml:space="preserve">
-    <value>Hum? Foi um passarinho?</value>
+  <data name="BoltPhraseAntennaTwitch3" xml:space="preserve">
+    <value>Hum? Captei um sinal estranho.</value>
   </data>
   <data name="BoltPhraseYawn1" xml:space="preserve">
     <value>Aaah… que preguiça.</value>
   </data>
   <data name="BoltPhraseYawn2" xml:space="preserve">
-    <value>Só mais cinco minutinhos de soneca…</value>
+    <value>Só mais cinco minutinhos em modo de espera…</value>
   </data>
   <data name="BoltPhraseYawn3" xml:space="preserve">
     <value>Trabalhar cansa. Principalmente observar.</value>
   </data>
   <data name="BoltPhraseSleeping1" xml:space="preserve">
-    <value>Zzz… ronron… zzz</value>
+    <value>Zzz… bip… zzz</value>
   </data>
   <data name="BoltPhraseSleeping2" xml:space="preserve">
-    <value>Zzz… sonhando com sachê…</value>
+    <value>Zzz… sonhando com ovelhas elétricas…</value>
   </data>
   <data name="ShowBoltAppearancesTitle.Text" xml:space="preserve">
     <value>Aparições do Bolt</value>

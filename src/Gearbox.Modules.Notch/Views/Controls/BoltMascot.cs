@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
-using Windows.Foundation;
+using Windows.UI;
 using Path = Microsoft.UI.Xaml.Shapes.Path;
 
 namespace Gearbox.Modules.Notch.Views.Controls;
@@ -17,63 +17,65 @@ public sealed partial class BoltMascot : Grid
     public static readonly DependencyProperty IsAnimatedProperty = DependencyProperty.Register(
         nameof(IsAnimated), typeof(bool), typeof(BoltMascot), new PropertyMetadata(false, (d, _) => ((BoltMascot)d).Apply()));
 
-    public static readonly DependencyProperty BodyBrushProperty = DependencyProperty.Register(
-        nameof(BodyBrush), typeof(Brush), typeof(BoltMascot), new PropertyMetadata(null, (d, _) => ((BoltMascot)d).ApplyBrushes()));
-
-    public static readonly DependencyProperty FaceBrushProperty = DependencyProperty.Register(
-        nameof(FaceBrush), typeof(Brush), typeof(BoltMascot), new PropertyMetadata(null, (d, _) => ((BoltMascot)d).ApplyBrushes()));
-
     private const double CanvasSize = 32;
-    private const double LineThickness = 1.1;
+    private const double GlowOpacity = 0.25;
+    private const double SleepingLightOpacity = 0.3;
+
+    private static readonly Color s_shellColor = Color.FromArgb(0xFF, 0xEC, 0xEE, 0xF1);
+    private static readonly Color s_shadeColor = Color.FromArgb(0xFF, 0xB4, 0xBC, 0xC6);
+    private static readonly Color s_visorColor = Color.FromArgb(0xFF, 0x0B, 0x0F, 0x14);
+    private static readonly Color s_visorEdgeColor = Color.FromArgb(0xFF, 0x2B, 0x35, 0x42);
+    private static readonly Color s_ledColor = Color.FromArgb(0xFF, 0x5C, 0xE1, 0xFF);
+    private static readonly Color s_highlightColor = Color.FromArgb(0xB3, 0xFF, 0xFF, 0xFF);
+
+    private readonly SolidColorBrush _shell = new(s_shellColor);
+    private readonly SolidColorBrush _shade = new(s_shadeColor);
+    private readonly SolidColorBrush _led = new(s_ledColor);
 
     private readonly TranslateTransform _bob = new();
-    private readonly RotateTransform _leftEarTurn = new() { CenterX = 9.5, CenterY = 11.5 };
-    private readonly RotateTransform _rightEarTurn = new() { CenterX = 22.5, CenterY = 11.5 };
-    private readonly CompositeTransform _eyesTransform = new() { CenterX = 16, CenterY = 18.5 };
-    private readonly ScaleTransform _mouthOpenScale = new() { CenterX = 16, CenterY = 24.6 };
+    private readonly RotateTransform _antennaTurn = new() { CenterX = 16, CenterY = 8.4 };
+    private readonly CompositeTransform _eyesTransform = new() { CenterX = 16, CenterY = 17.1 };
+    private readonly ScaleTransform _mouthScale = new() { CenterX = 16, CenterY = 21.5 };
+    private readonly RotateTransform _handTurn = new() { CenterX = 28.7, CenterY = 25 };
     private readonly TranslateTransform _zzzMove = new();
 
-    private readonly Ellipse _face = new() { Width = 24, Height = 21 };
-    private readonly Polygon _leftEar = Triangle([new(5.5, 14), new(7, 3.5), new(14, 9.2)]);
-    private readonly Polygon _rightEar = Triangle([new(26.5, 14), new(25, 3.5), new(18, 9.2)]);
+    private readonly Canvas _light = new();
     private readonly Canvas _eyesOpen = new();
-    private readonly Ellipse _leftEye = new() { Width = 3, Height = 3.8 };
-    private readonly Ellipse _rightEye = new() { Width = 3, Height = 3.8 };
-    private readonly Path _eyesClosed = Line("M9.6,18.8 Q11.5,20.4 13.4,18.8 M18.6,18.8 Q20.5,20.4 22.4,18.8");
-    private readonly Path _eyesHappy = Line("M9.8,19.8 L11.5,17.8 L13.2,19.8 M18.8,19.8 L20.5,17.8 L22.2,19.8");
-    private readonly Polygon _nose = Triangle([new(15.1, 22), new(16.9, 22), new(16, 23.1)]);
-    private readonly Path _mouth = Line("M13.9,24 Q15,25.4 16,24 Q17,25.4 18.1,24");
-    private readonly Ellipse _mouthOpen = new() { Width = 2.4, Height = 2.2 };
-    private readonly Path _whiskers = Line("M8.6,22.4 L3.4,21.4 M8.6,23.9 L3.4,24.6 M23.4,22.4 L28.6,21.4 M23.4,23.9 L28.6,24.6", 0.7);
-    private readonly TextBlock _zzz = new() { Text = "z", FontSize = 7, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+    private readonly Canvas _eyesHappy = new();
+    private readonly Canvas _eyesClosed = new();
+    private readonly Rectangle _mouth = new() { Width = 3.2, Height = 1.8, RadiusX = 0.9, RadiusY = 0.9 };
+    private readonly Canvas _hand = new();
+    private readonly TextBlock _zzz = new() { Text = "z", FontSize = 6, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
 
     private Storyboard? _story;
 
     public BoltMascot()
     {
-        var canvas = new Canvas { Width = CanvasSize, Height = CanvasSize, RenderTransform = _bob };
-        Place(_face, 4, 8);
-        _leftEar.RenderTransform = _leftEarTurn;
-        _rightEar.RenderTransform = _rightEarTurn;
-        Place(_leftEye, 10, 16.6);
-        Place(_rightEye, 19, 16.6);
-        _eyesOpen.Children.Add(_leftEye);
-        _eyesOpen.Children.Add(_rightEye);
-        _eyesOpen.RenderTransform = _eyesTransform;
-        Place(_mouthOpen, 14.8, 23.6);
-        _mouthOpen.RenderTransform = _mouthOpenScale;
-        Place(_zzz, 24.5, 0);
+        var rig = new Canvas { Width = CanvasSize, Height = CanvasSize, RenderTransform = _bob };
+        rig.Children.Add(BuildAntenna());
+        rig.Children.Add(Rounded(14.2, 7.4, 3.6, 1.6, 0.8, _shade));
+        rig.Children.Add(Rounded(2.4, 14, 3.2, 8, 1.6, _shade));
+        rig.Children.Add(Rounded(26.4, 14, 3.2, 8, 1.6, _shade));
+        rig.Children.Add(Rounded(4.5, 8.2, 23, 20, 9, _shell));
+        rig.Children.Add(Line("M8.4,13.4 Q9.8,10 13.6,9.5", new SolidColorBrush(s_highlightColor), 1.1));
+        var visor = Rounded(7.2, 11.6, 17.6, 12.6, 5, new SolidColorBrush(s_visorColor));
+        visor.Stroke = new SolidColorBrush(s_visorEdgeColor);
+        visor.StrokeThickness = 0.5;
+        rig.Children.Add(visor);
+        rig.Children.Add(BuildEyes());
+        Place(_mouth, 14.4, 20.6);
+        _mouth.Fill = _led;
+        _mouth.RenderTransform = _mouthScale;
+        rig.Children.Add(_mouth);
+        rig.Children.Add(BuildHand());
+        Place(_zzz, 23.6, -1.4);
+        _zzz.Foreground = _shade;
         _zzz.RenderTransform = _zzzMove;
+        rig.Children.Add(_zzz);
 
-        foreach (var part in new UIElement[] { _leftEar, _rightEar, _face, _whiskers, _eyesOpen, _eyesClosed, _eyesHappy, _nose, _mouth, _mouthOpen, _zzz })
-        {
-            canvas.Children.Add(part);
-        }
-
-        Children.Add(new Viewbox { Stretch = Stretch.Uniform, Child = canvas });
+        Children.Add(new Viewbox { Stretch = Stretch.Uniform, Child = rig });
         Loaded += (_, _) => Apply();
         Unloaded += (_, _) => Stop();
-        ApplyBrushes();
         Apply();
     }
 
@@ -89,24 +91,50 @@ public sealed partial class BoltMascot : Grid
         set => SetValue(IsAnimatedProperty, value);
     }
 
-    public Brush? BodyBrush
+    private Canvas BuildAntenna()
     {
-        get => (Brush?)GetValue(BodyBrushProperty);
-        set => SetValue(BodyBrushProperty, value);
+        var antenna = new Canvas { RenderTransform = _antennaTurn };
+        antenna.Children.Add(Line("M16,4.6 L16,8.4", _shade, 1.1));
+        _light.Children.Add(Dot(16, 3.3, 2.6, _led, GlowOpacity));
+        _light.Children.Add(Dot(16, 3.3, 1.7, _led, 1));
+        antenna.Children.Add(_light);
+        return antenna;
     }
 
-    public Brush? FaceBrush
+    private Canvas BuildEyes()
     {
-        get => (Brush?)GetValue(FaceBrushProperty);
-        set => SetValue(FaceBrushProperty, value);
+        foreach (var left in new[] { 10.4, 18.6 })
+        {
+            var glow = Rounded(left - 0.8, 14.2, 4.6, 5.8, 2.3, _led);
+            glow.Opacity = GlowOpacity;
+            _eyesOpen.Children.Add(glow);
+            _eyesOpen.Children.Add(Rounded(left, 15, 3, 4.2, 1.5, _led));
+        }
+
+        AddGlowingStroke(_eyesHappy, "M10,19 Q12,15.4 14,19 M18.2,19 Q20.2,15.4 22.2,19");
+        AddGlowingStroke(_eyesClosed, "M10.2,17.8 Q12,19.4 13.8,17.8 M18.4,17.8 Q20.2,19.4 22,17.8");
+
+        var eyes = new Canvas { RenderTransform = _eyesTransform };
+        eyes.Children.Add(_eyesOpen);
+        eyes.Children.Add(_eyesHappy);
+        eyes.Children.Add(_eyesClosed);
+        return eyes;
     }
 
-    private void ApplyBrushes()
+    private void AddGlowingStroke(Canvas target, string data)
     {
-        _face.Fill = _leftEar.Fill = _rightEar.Fill = BodyBrush;
-        _zzz.Foreground = BodyBrush;
-        _leftEye.Fill = _rightEye.Fill = _nose.Fill = _mouthOpen.Fill = FaceBrush;
-        _eyesClosed.Stroke = _eyesHappy.Stroke = _mouth.Stroke = _whiskers.Stroke = FaceBrush;
+        var glow = Line(data, _led, 3);
+        glow.Opacity = GlowOpacity;
+        target.Children.Add(glow);
+        target.Children.Add(Line(data, _led, 1.5));
+    }
+
+    private Canvas BuildHand()
+    {
+        _hand.RenderTransform = _handTurn;
+        _hand.Children.Add(Rounded(27.6, 19.6, 3.6, 5.4, 1.8, _shell));
+        _hand.Children.Add(Dot(27.7, 23.4, 0.9, _shell, 1));
+        return _hand;
     }
 
     private void Apply()
@@ -115,12 +143,13 @@ public sealed partial class BoltMascot : Grid
         var mood = Mood;
         var closed = mood is BoltMood.Sleeping or BoltMood.Yawn;
         var happy = mood is BoltMood.Happy or BoltMood.Wave;
-        _eyesOpen.Visibility = closed || happy ? Visibility.Collapsed : Visibility.Visible;
-        _eyesClosed.Visibility = closed ? Visibility.Visible : Visibility.Collapsed;
-        _eyesHappy.Visibility = happy ? Visibility.Visible : Visibility.Collapsed;
-        _mouthOpen.Visibility = mood is BoltMood.Talking or BoltMood.Yawn ? Visibility.Visible : Visibility.Collapsed;
-        _mouth.Visibility = _mouthOpen.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
-        _zzz.Visibility = mood == BoltMood.Sleeping ? Visibility.Visible : Visibility.Collapsed;
+        _eyesOpen.Visibility = Show(!closed && !happy);
+        _eyesHappy.Visibility = Show(happy);
+        _eyesClosed.Visibility = Show(closed);
+        _mouth.Visibility = Show(mood is BoltMood.Talking or BoltMood.Yawn);
+        _hand.Visibility = Show(mood == BoltMood.Wave);
+        _zzz.Visibility = Show(mood == BoltMood.Sleeping);
+        _light.Opacity = mood == BoltMood.Sleeping ? SleepingLightOpacity : 1;
         _eyesTransform.TranslateX = mood == BoltMood.Thinking ? 1.2 : 0;
         _eyesTransform.TranslateY = mood == BoltMood.Thinking ? -1 : 0;
 
@@ -129,7 +158,7 @@ public sealed partial class BoltMascot : Grid
             return;
         }
 
-        var story = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+        var story = new Storyboard();
         switch (mood)
         {
             case BoltMood.Idle:
@@ -138,26 +167,26 @@ public sealed partial class BoltMascot : Grid
             case BoltMood.Thinking:
                 Blink(story, 3);
                 Keys(story, _bob, "Y", 1.2, (0, 0), (0.6, -0.7), (1.2, 0));
+                Keys(story, _light, "Opacity", 0.9, (0, 1), (0.45, 0.35), (0.9, 1));
                 break;
             case BoltMood.Talking:
                 Blink(story, 3);
-                Keys(story, _mouthOpenScale, "ScaleY", 0.6, (0, 0.4), (0.15, 1.1), (0.3, 0.5), (0.45, 1), (0.6, 0.4));
+                Keys(story, _mouthScale, "ScaleY", 0.6, (0, 0.4), (0.15, 1.1), (0.3, 0.5), (0.45, 1), (0.6, 0.4));
                 break;
             case BoltMood.Happy:
                 Keys(story, _bob, "Y", 1.6, (0, 0), (0.2, -1.6), (0.4, 0), (0.6, -1.2), (0.8, 0), (1.6, 0));
                 break;
             case BoltMood.Wave:
-                Keys(story, _leftEarTurn, "Angle", 1.4, (0, 0), (0.15, -14), (0.3, 0), (0.7, 0), (1.4, 0));
-                Keys(story, _rightEarTurn, "Angle", 1.4, (0, 0), (0.7, 0), (0.85, 14), (1, 0), (1.4, 0));
+                Keys(story, _handTurn, "Angle", 1.4, (0, 0), (0.28, -22), (0.56, 8), (0.84, -18), (1.12, 4), (1.4, 0));
                 Keys(story, _bob, "Y", 1.4, (0, 0), (0.35, -1), (0.7, 0), (1.05, -1), (1.4, 0));
                 break;
-            case BoltMood.EarTwitch:
+            case BoltMood.AntennaTwitch:
                 Blink(story, 2.4);
-                Keys(story, _leftEarTurn, "Angle", 2.4, (0, 0), (1.2, 0), (1.3, -16), (1.4, 0), (1.5, -12), (1.6, 0), (2.4, 0));
+                Keys(story, _antennaTurn, "Angle", 2.4, (0, 0), (1.2, 0), (1.3, -16), (1.4, 0), (1.5, 12), (1.6, 0), (2.4, 0));
                 break;
             case BoltMood.Yawn:
-                Keys(story, _mouthOpenScale, "ScaleY", 3, (0, 0.2), (0.8, 1.8), (1.8, 1.8), (2.4, 0.2), (3, 0.2));
-                Keys(story, _mouthOpenScale, "ScaleX", 3, (0, 0.6), (0.8, 1.3), (1.8, 1.3), (2.4, 0.6), (3, 0.6));
+                Keys(story, _mouthScale, "ScaleY", 3, (0, 0.2), (0.8, 1.8), (1.8, 1.8), (2.4, 0.2), (3, 0.2));
+                Keys(story, _mouthScale, "ScaleX", 3, (0, 0.6), (0.8, 1.3), (1.8, 1.3), (2.4, 0.6), (3, 0.6));
                 break;
             case BoltMood.Sleeping:
                 Keys(story, _zzzMove, "Y", 2.4, (0, 2), (2.4, -4));
@@ -175,9 +204,10 @@ public sealed partial class BoltMascot : Grid
         _story?.Stop();
         _story = null;
         _bob.Y = 0;
-        _leftEarTurn.Angle = _rightEarTurn.Angle = 0;
+        _antennaTurn.Angle = 0;
+        _handTurn.Angle = 0;
         _eyesTransform.ScaleY = 1;
-        _mouthOpenScale.ScaleX = _mouthOpenScale.ScaleY = 1;
+        _mouthScale.ScaleX = _mouthScale.ScaleY = 1;
         _zzzMove.Y = 0;
         _zzz.Opacity = 1;
     }
@@ -187,7 +217,11 @@ public sealed partial class BoltMascot : Grid
 
     private static void Keys(Storyboard story, DependencyObject target, string property, double period, params (double At, double Value)[] frames)
     {
-        var animation = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromSeconds(period) };
+        var animation = new DoubleAnimationUsingKeyFrames
+        {
+            Duration = TimeSpan.FromSeconds(period),
+            RepeatBehavior = RepeatBehavior.Forever,
+        };
         foreach (var (at, value) in frames)
         {
             animation.KeyFrames.Add(new LinearDoubleKeyFrame { KeyTime = TimeSpan.FromSeconds(at), Value = value });
@@ -198,26 +232,32 @@ public sealed partial class BoltMascot : Grid
         story.Children.Add(animation);
     }
 
+    private static Visibility Show(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
+
     private static void Place(UIElement element, double left, double top)
     {
-        Microsoft.UI.Xaml.Controls.Canvas.SetLeft(element, left);
-        Microsoft.UI.Xaml.Controls.Canvas.SetTop(element, top);
+        Canvas.SetLeft(element, left);
+        Canvas.SetTop(element, top);
     }
 
-    private static Polygon Triangle(Point[] points)
+    private static Rectangle Rounded(double left, double top, double width, double height, double radius, Brush fill)
     {
-        var polygon = new Polygon();
-        foreach (var point in points)
-        {
-            polygon.Points.Add(point);
-        }
-
-        return polygon;
+        var rectangle = new Rectangle { Width = width, Height = height, RadiusX = radius, RadiusY = radius, Fill = fill };
+        Place(rectangle, left, top);
+        return rectangle;
     }
 
-    private static Path Line(string data, double thickness = LineThickness) => new()
+    private static Ellipse Dot(double centerX, double centerY, double radius, Brush fill, double opacity)
+    {
+        var ellipse = new Ellipse { Width = radius * 2, Height = radius * 2, Fill = fill, Opacity = opacity };
+        Place(ellipse, centerX - radius, centerY - radius);
+        return ellipse;
+    }
+
+    private static Path Line(string data, Brush stroke, double thickness) => new()
     {
         Data = (Geometry)Microsoft.UI.Xaml.Markup.XamlBindingHelper.ConvertValue(typeof(Geometry), data),
+        Stroke = stroke,
         StrokeThickness = thickness,
         StrokeStartLineCap = PenLineCap.Round,
         StrokeEndLineCap = PenLineCap.Round,

@@ -6,7 +6,7 @@ public enum BoltMood
     Thinking,
     Talking,
     Happy,
-    EarTwitch,
+    AntennaTwitch,
     Yawn,
     Sleeping,
     Wave,

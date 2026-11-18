@@ -12,12 +12,12 @@ public sealed partial class BoltScheduler(Func<double> random)
     public static readonly TimeSpan SleepAfter = TimeSpan.FromMinutes(15);
     public const int PreviewLength = 60;
 
-    private static readonly BoltMood[] s_awakeMoods = [BoltMood.Happy, BoltMood.EarTwitch, BoltMood.Yawn];
+    private static readonly BoltMood[] s_awakeMoods = [BoltMood.Happy, BoltMood.AntennaTwitch, BoltMood.Yawn];
 
     private static readonly Dictionary<BoltMood, int> s_phraseCount = new()
     {
         [BoltMood.Happy] = 4,
-        [BoltMood.EarTwitch] = 3,
+        [BoltMood.AntennaTwitch] = 3,
         [BoltMood.Yawn] = 3,
         [BoltMood.Sleeping] = 2,
     };

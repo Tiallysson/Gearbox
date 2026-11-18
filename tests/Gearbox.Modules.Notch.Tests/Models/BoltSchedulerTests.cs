@@ -32,7 +32,7 @@ public sealed class BoltSchedulerTests
 
     [Theory]
     [InlineData(0.0, BoltMood.Happy)]
-    [InlineData(0.5, BoltMood.EarTwitch)]
+    [InlineData(0.5, BoltMood.AntennaTwitch)]
     [InlineData(0.99, BoltMood.Yawn)]
     [InlineData(1.0, BoltMood.Yawn)]
     public void Acordado_EscolheUmHumorEUmaFraseDele(double random, BoltMood expected)

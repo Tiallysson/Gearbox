@@ -24,7 +24,7 @@ Uma "ilha" discreta no topo da tela, inspirada no notch do Mac.
   platform.openai.com › Settings › Organization › Admin keys); as chaves ficam no Gerenciador de Credenciais do
   Windows, nunca nos arquivos de configuração. Com o OpenRouter conectado (aba Chat), ele também aparece, sem chave
   extra: quanto do limite de crédito da chave já foi usado, ou o gasto do mês contra um orçamento seu.
-- Na aba **Chat** (opcional, desligada por padrão), converse com o **Bolt**, o gato mascote do Gearbox, usando qualquer
+- Na aba **Chat** (opcional, desligada por padrão), converse com o **Bolt**, o robô mascote do Gearbox, usando qualquer
   modelo do [OpenRouter](https://openrouter.ai). Clique em "Conectar com o OpenRouter", faça login no navegador e
   pronto: não precisa copiar chave nenhuma. As respostas aparecem enquanto são geradas, as conversas ficam salvas
   no seu computador e dá para trocar de modelo no próprio chat. Com a aba aberta, a ilha cresce e recebe o teclado;

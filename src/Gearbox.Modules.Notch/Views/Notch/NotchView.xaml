@@ -187,8 +187,6 @@
                         <FontIcon x:Name="PeekIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="16" />
                         <controls:BoltMascot
                             x:Name="PeekMascot"
-                            BodyBrush="{StaticResource PrimaryBrush}"
-                            FaceBrush="{StaticResource PrimaryForegroundBrush}"
                             Visibility="Collapsed" />
                     </Grid>
                     <!-- Barra de volume como o Progress do shadcn: trilho "primary/20" e indicador "primary". -->
@@ -871,8 +869,6 @@
                                                 Width="26"
                                                 Height="26"
                                                 VerticalAlignment="Top"
-                                                BodyBrush="{StaticResource PrimaryBrush}"
-                                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
                                                 IsAnimated="{x:Bind IsMascotAnimated, Mode=OneWay}"
                                                 Mood="{x:Bind Mood, Mode=OneWay}"
                                                 Visibility="{x:Bind AssistantVisibility}" />
@@ -940,8 +936,6 @@
                                 Width="52"
                                 Height="52"
                                 HorizontalAlignment="Center"
-                                BodyBrush="{StaticResource PrimaryBrush}"
-                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
                                 Mood="Idle" />
                             <TextBlock
                                 x:Uid="ChatEmptyText"
@@ -1009,8 +1003,6 @@
                                 Width="56"
                                 Height="56"
                                 HorizontalAlignment="Center"
-                                BodyBrush="{StaticResource PrimaryBrush}"
-                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
                                 Mood="Wave" />
                             <TextBlock
                                 x:Name="ChatConnectText"

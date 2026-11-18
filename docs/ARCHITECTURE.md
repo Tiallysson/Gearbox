@@ -396,10 +396,12 @@ NotchModule (orquestra, timers)
         que roda também em cancelamento e falha de rede.
       - A validação síncrona (modelo, tamanho) roda no `ChatSession.Send` antes de limpar a caixa de texto. Uma
         regra que barra depois (uso) retira a mensagem da conversa, porque ela não foi enviada.
-    - **Bolt, o gato mascote** (`Views/Controls/BoltMascot`): cabeça de gato desenhada em código (canvas 32×32
-      num `Viewbox`). Corpo em `BodyBrush` (`PrimaryBrush`) e traços em `FaceBrush` (`PrimaryForegroundBrush`), por
-      isso acompanha o contraste adaptativo. Humores (`BoltMood`): `Idle` (pisca), `Thinking` (olhos para cima,
-      balança), `Talking` (boca abre e fecha), `Happy`, `Wave`, `EarTwitch`, `Yawn` e `Sleeping` (zzz). Os
+    - **Bolt, o robô mascote** (`Views/Controls/BoltMascot`): cabeça de robô desenhada em código (canvas 32×32
+      num `Viewbox`): casco claro, fones laterais, antena com luz e visor escuro com olhos de LED ciano. As cores são
+      fixas no controle (não seguem o contraste adaptativo), e o brilho do LED é uma cópia da forma, maior e com 25%
+      de opacidade, por trás. Humores (`BoltMood`): `Idle` (pisca), `Thinking` (olhos para cima, antena pulsa),
+      `Talking` (boca de LED abre e fecha), `Happy`, `Wave` (acena com a mão), `AntennaTwitch` (antena balança),
+      `Yawn` e `Sleeping` (zzz, antena apagada). Cada animação repete no próprio período. Os
       storyboards só rodam com `IsAnimated`: no chat, só o avatar da resposta em andamento; no peek, só enquanto ele
       está na tela; na tela de conectar e no chat vazio, só com a aba Chat aberta.
       - **Prioridade**: `PeekKind.Bolt` só entra com a ilha livre, e qualquer aviso do sistema (volume, bateria,
@@ -411,7 +413,7 @@ NotchModule (orquestra, timers)
         uma frase do `.resw` (`BoltPhrase<Humor><n>`). Depois de 15 min sem interação com o Notch, ele dorme. Só
         aparece com a ilha recolhida, normal (sem alça, sem tela cheia), sem outro aviso, sem bloqueio e com a tela
         ligada; se não puder, desiste e agenda a próxima.
-      - **Persona**: gato "bem gato" no system prompt, com no máximo um toque felino por resposta e nunca em
+      - **Persona**: robô "bem robô" no system prompt, com no máximo um toque robótico por resposta e nunca em
         assuntos sérios.
     - **Histórico** (`ChatStore`): uma conversa por arquivo em `%LocalAppData%\Gearbox\chats\{id}.json`, com gravação
       atômica. Id de 32 hex conferido antes de virar caminho; arquivo ilegível vira `.corrupt`.
