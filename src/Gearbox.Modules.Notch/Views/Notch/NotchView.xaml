@@ -258,7 +258,7 @@
                                 <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE6A2;" />
                             </ToggleButton>
                             <ToggleButton x:Name="ChatTab" x:Uid="ChatTab" Click="OnChatTabClick" Style="{StaticResource TabStyle}" Visibility="Collapsed">
-                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE748;" />
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE762;" />
                             </ToggleButton>
                         </StackPanel>
                     </Border>
