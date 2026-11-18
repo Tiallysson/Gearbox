@@ -23,6 +23,9 @@ public sealed partial class NotchView
     private readonly ObservableCollection<ChatMessageItem> _chatItems = [];
     private bool _updatingChatChoices;
     private bool _chatStreaming;
+    private UIElement? _modePanel;
+    private BoltMood _boltPeekMood;
+    private string _boltPeekText = string.Empty;
 
     public event EventHandler<string>? ChatSendRequested;
 
@@ -59,10 +62,12 @@ public sealed partial class NotchView
         ChatConnectPanel.Visibility = connected ? Visibility.Collapsed : Visibility.Visible;
         if (!connected)
         {
-            ChatEmptyText.Visibility = ChatErrorText.Visibility = Visibility.Collapsed;
+            ChatEmptyPanel.Visibility = ChatErrorText.Visibility = Visibility.Collapsed;
         }
 
         ChatConnectText.Text = ModuleStrings.Get(errorKey ?? (connecting ? "ChatConnecting" : "ChatConnectPrompt"));
+        ChatConnectMascot.Mood = connecting ? BoltMood.Thinking : BoltMood.Wave;
+        UpdateMascots();
         var label = ModuleStrings.Get(connecting ? "ChatConnectCancel" : "ChatConnectButton");
         ChatConnectButton.Content = label;
         AutomationProperties.SetName(ChatConnectButton, label);
@@ -138,7 +143,8 @@ public sealed partial class NotchView
         }
 
         var connected = ChatInputRow.Visibility == Visibility.Visible;
-        ChatEmptyText.Visibility = connected && messages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ChatEmptyPanel.Visibility = connected && messages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateMascots();
         ChatErrorText.Text = error ?? string.Empty;
         ChatErrorText.Visibility = connected && error is not null ? Visibility.Visible : Visibility.Collapsed;
         SetChatStreaming(streaming);
@@ -175,6 +181,25 @@ public sealed partial class NotchView
     }
 
     public void ClearChatInput() => ChatInput.Text = string.Empty;
+
+    public void SetBoltPeek(BoltMood mood, string text)
+    {
+        _boltPeekMood = mood;
+        _boltPeekText = text;
+        if (_peek == PeekKind.Bolt)
+        {
+            PeekMascot.Mood = mood;
+            PeekText.Text = text;
+        }
+    }
+
+    private void UpdateMascots()
+    {
+        var chatOnScreen = _modePanel == ExpandedPanel && _page == NotchPage.Chat;
+        ChatEmptyMascot.IsAnimated = chatOnScreen && ChatEmptyPanel.Visibility == Visibility.Visible;
+        ChatConnectMascot.IsAnimated = chatOnScreen && ChatConnectPanel.Visibility == Visibility.Visible;
+        PeekMascot.IsAnimated = _modePanel == PeekPanel && _peek == PeekKind.Bolt;
+    }
 
     private void OnChatInputTextChanged(object sender, TextChangedEventArgs e)
     {

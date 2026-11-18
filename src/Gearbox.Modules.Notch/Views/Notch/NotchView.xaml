@@ -185,6 +185,11 @@
                             <Image x:Name="PeekArt" Stretch="UniformToFill" />
                         </Border>
                         <FontIcon x:Name="PeekIcon" FontFamily="{StaticResource PhosphorFont}" FontSize="16" />
+                        <controls:BoltMascot
+                            x:Name="PeekMascot"
+                            BodyBrush="{StaticResource PrimaryBrush}"
+                            FaceBrush="{StaticResource PrimaryForegroundBrush}"
+                            Visibility="Collapsed" />
                     </Grid>
                     <!-- Barra de volume como o Progress do shadcn: trilho "primary/20" e indicador "primary". -->
                     <Grid x:Name="PeekBar" Grid.Column="1" Height="6" VerticalAlignment="Center">
@@ -255,7 +260,7 @@
                                 <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE6A2;" />
                             </ToggleButton>
                             <ToggleButton x:Name="ChatTab" x:Uid="ChatTab" Click="OnChatTabClick" Style="{StaticResource TabStyle}" Visibility="Collapsed">
-                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE762;" />
+                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="14" Glyph="&#xE748;" />
                             </ToggleButton>
                         </StackPanel>
                     </Border>
@@ -859,15 +864,15 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Border
-                                                Width="24"
-                                                Height="24"
+                                            <controls:BoltMascot
+                                                Width="26"
+                                                Height="26"
                                                 VerticalAlignment="Top"
-                                                Background="{StaticResource MutedBrush}"
-                                                CornerRadius="12"
-                                                Visibility="{x:Bind AssistantVisibility}">
-                                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="13" Glyph="&#xE762;" />
-                                            </Border>
+                                                BodyBrush="{StaticResource PrimaryBrush}"
+                                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
+                                                IsAnimated="{x:Bind IsMascotAnimated, Mode=OneWay}"
+                                                Mood="{x:Bind Mood, Mode=OneWay}"
+                                                Visibility="{x:Bind AssistantVisibility}" />
                                             <Border
                                                 Grid.Column="1"
                                                 MaxWidth="340"
@@ -921,17 +926,28 @@
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <TextBlock
-                            x:Name="ChatEmptyText"
-                            x:Uid="ChatEmptyText"
+                        <StackPanel
+                            x:Name="ChatEmptyPanel"
                             Grid.Row="1"
-                            MaxWidth="320"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            FontSize="13"
-                            Foreground="{StaticResource MutedForegroundBrush}"
-                            TextAlignment="Center"
-                            TextWrapping="Wrap" />
+                            Spacing="10">
+                            <controls:BoltMascot
+                                x:Name="ChatEmptyMascot"
+                                Width="52"
+                                Height="52"
+                                HorizontalAlignment="Center"
+                                BodyBrush="{StaticResource PrimaryBrush}"
+                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
+                                Mood="Idle" />
+                            <TextBlock
+                                x:Uid="ChatEmptyText"
+                                MaxWidth="320"
+                                FontSize="13"
+                                Foreground="{StaticResource MutedForegroundBrush}"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
 
                         <Grid Grid.Row="2" ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
@@ -985,14 +1001,14 @@
                             VerticalAlignment="Center"
                             Spacing="12"
                             Visibility="Collapsed">
-                            <Border
-                                Width="48"
-                                Height="48"
+                            <controls:BoltMascot
+                                x:Name="ChatConnectMascot"
+                                Width="56"
+                                Height="56"
                                 HorizontalAlignment="Center"
-                                Background="{StaticResource MutedBrush}"
-                                CornerRadius="24">
-                                <FontIcon FontFamily="{StaticResource PhosphorFont}" FontSize="24" Glyph="&#xE762;" />
-                            </Border>
+                                BodyBrush="{StaticResource PrimaryBrush}"
+                                FaceBrush="{StaticResource PrimaryForegroundBrush}"
+                                Mood="Wave" />
                             <TextBlock
                                 x:Name="ChatConnectText"
                                 MaxWidth="320"

@@ -20,6 +20,7 @@ public enum PeekKind
     Volume,
     Battery,
     Track,
+    Bolt,
 }
 
 /// <summary>
@@ -57,6 +58,11 @@ public sealed class NotchState
     public bool ShowPeek(PeekKind kind)
     {
         if (IsHovered || kind == PeekKind.None)
+        {
+            return false;
+        }
+
+        if (kind == PeekKind.Bolt && Peek is not (PeekKind.None or PeekKind.Bolt))
         {
             return false;
         }

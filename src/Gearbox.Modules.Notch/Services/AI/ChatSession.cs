@@ -54,6 +54,8 @@ internal sealed class ChatSession : IDisposable
 
     public event EventHandler? MessagesChanged;
 
+    public event EventHandler<string>? ReplyCompleted;
+
     public List<ChatConversation> Conversations { get; private set; } = [];
 
     public ChatConversation Current { get; private set; }
@@ -205,6 +207,7 @@ internal sealed class ChatSession : IDisposable
         conversation.UpdatedAt = DateTimeOffset.Now;
         _reply.Clear();
         ErrorText = null;
+        var canceled = false;
         var stream = new CancellationTokenSource();
         _stream = stream;
         RaiseAll();
@@ -239,6 +242,7 @@ internal sealed class ChatSession : IDisposable
         }
         catch (OperationCanceledException)
         {
+            canceled = true;
         }
         catch (ChatGuardrailException ex)
         {
@@ -277,6 +281,7 @@ internal sealed class ChatSession : IDisposable
         }
 
         _renderTimer.Stop();
+        var reply = _reply.ToString();
         CompleteReply(conversation);
         if (conversation.Messages.Count > 0)
         {
@@ -284,6 +289,10 @@ internal sealed class ChatSession : IDisposable
         }
 
         RaiseAll();
+        if (!canceled && ErrorText is null && reply.Length > 0)
+        {
+            ReplyCompleted?.Invoke(this, reply);
+        }
     }
 
     private static string Describe(string error)

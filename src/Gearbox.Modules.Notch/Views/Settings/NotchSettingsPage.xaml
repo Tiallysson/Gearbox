@@ -334,6 +334,36 @@
                         MinWidth="0"
                         IsOn="{x:Bind ViewModel.AllowDataCollection, Mode=TwoWay}" />
                 </Grid>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="ShowBoltAppearancesTitle" />
+                        <TextBlock x:Uid="ShowBoltAppearancesDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Uid="ShowBoltAppearancesToggle"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.ShowBoltAppearances, Mode=TwoWay}" />
+                </Grid>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="ShowBoltReplyPeekTitle" />
+                        <TextBlock x:Uid="ShowBoltReplyPeekDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Uid="ShowBoltReplyPeekToggle"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.ShowBoltReplyPeek, Mode=TwoWay}" />
+                </Grid>
             </StackPanel>
         </Border>
 
@@ -405,6 +435,20 @@
                         SmallChange="10"
                         SpinButtonPlacementMode="Compact"
                         Value="{x:Bind ViewModel.OpenAiBudget, Mode=TwoWay}" />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="AiOpenRouterTitle" />
+                    <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.OpenRouterStatus, Mode=OneWay}" TextWrapping="Wrap" />
+                    <TextBlock x:Uid="AiOpenRouterDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    <NumberBox
+                        x:Uid="AiOpenRouterBudgetBox"
+                        HorizontalAlignment="Left"
+                        MinWidth="200"
+                        Minimum="0"
+                        SmallChange="5"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.OpenRouterBudget, Mode=TwoWay}" />
                 </StackPanel>
             </StackPanel>
         </Border>

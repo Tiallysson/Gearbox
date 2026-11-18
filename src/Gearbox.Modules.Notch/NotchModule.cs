@@ -55,6 +55,10 @@ public sealed class NotchModule(
 
     private static readonly TimeSpan PeekDuration = TimeSpan.FromSeconds(2);
 
+    private static readonly TimeSpan BoltPeekDuration = TimeSpan.FromSeconds(4);
+
+    private static readonly TimeSpan UsageRefreshGap = TimeSpan.FromSeconds(30);
+
     /// <summary>Espera entre um evento de janela e a reavaliação (eventos chegam em rajadas).</summary>
     private static readonly TimeSpan OverlapDebounce = TimeSpan.FromMilliseconds(150);
 
@@ -77,6 +81,11 @@ public sealed class NotchModule(
     private NetworkMonitor? _network;
     private AiUsageMonitor? _aiUsage;
     private ChatSession? _chat;
+    private readonly BoltScheduler _bolt = new(Random.Shared.NextDouble);
+    private DispatcherQueueTimer? _boltTimer;
+    private DateTimeOffset _lastInteraction = DateTimeOffset.Now;
+    private bool _openChatOnExpand;
+    private DateTimeOffset _lastUsageRefresh;
     private bool _chatInput;
     private readonly NetworkHistory _networkHistory = new();
     private bool _networkVisible;
@@ -132,6 +141,7 @@ public sealed class NotchModule(
             _overlapTimer = CreateTimer(OverlapDebounce, repeating: false, () => Guard(UpdateVisibility));
             _expandedTimer = CreateTimer(ExpandedTick, repeating: true, OnExpandedTick);
             _contrastTimer = CreateTimer(ContrastTick, repeating: true, () => Guard(UpdateContrast));
+            _boltTimer = CreateTimer(BoltScheduler.MinInterval, repeating: false, () => Guard(OnBoltTimer));
 
             _current = settings.Load();
             _window = new NotchWindow(GetMonitor(), logger);
@@ -215,7 +225,7 @@ public sealed class NotchModule(
         PowerManager.RemainingChargePercentChanged -= OnPowerChanged;
         PowerManager.BatteryStatusChanged -= OnPowerChanged;
 
-        foreach (var timer in new[] { _expandTimer, _collapseTimer, _peekTimer, _overlapTimer, _expandedTimer, _contrastTimer })
+        foreach (var timer in new[] { _expandTimer, _collapseTimer, _peekTimer, _overlapTimer, _expandedTimer, _contrastTimer, _boltTimer })
         {
             timer?.Stop();
         }
@@ -283,6 +293,7 @@ public sealed class NotchModule(
         _lastTrackKey = null;
         _storageVisible = false;
         _chatInput = false;
+        _openChatOnExpand = false;
         _driveScan++; // Uma leitura de discos ainda em andamento é descartada.
         _sessionLocked = _displayOff = false;
         _visibility = NotchVisibility.Normal;
@@ -365,6 +376,8 @@ public sealed class NotchModule(
             StopChat();
         }
 
+        UpdateBoltSchedule();
+
         if (_current.ShowClipboard && _clipboard is null)
         {
             _clipboard = new ClipboardWatcher(logger);
@@ -408,7 +421,8 @@ public sealed class NotchModule(
 
         if ((!_current.ShowVolume && _state.Peek == PeekKind.Volume) ||
             (!_current.ShowBattery && _state.Peek == PeekKind.Battery) ||
-            (!_current.ShowMedia && _state.Peek == PeekKind.Track))
+            (!_current.ShowMedia && _state.Peek == PeekKind.Track) ||
+            (!_current.ShowChat && _state.Peek == PeekKind.Bolt))
         {
             _state.ClearPeek();
         }
@@ -682,6 +696,7 @@ public sealed class NotchModule(
         _chat = new ChatSession(dispatcher, chatStore, openRouter, chatSettings, logger, ReportChatFault);
         _chat.ConversationsChanged += OnChatConversationsChanged;
         _chat.MessagesChanged += OnChatMessagesChanged;
+        _chat.ReplyCompleted += OnChatReplyCompleted;
         _window?.View.SetChatConnection(openRouter.State, openRouter.LastErrorKey);
         PushChatConversations();
         PushChatMessages();
@@ -697,10 +712,70 @@ public sealed class NotchModule(
 
         _chat.ConversationsChanged -= OnChatConversationsChanged;
         _chat.MessagesChanged -= OnChatMessagesChanged;
+        _chat.ReplyCompleted -= OnChatReplyCompleted;
         _chat.Dispose();
         _chat = null;
         UpdateChatInput();
     }
+
+    private void UpdateBoltSchedule()
+    {
+        if (_boltTimer is null)
+        {
+            return;
+        }
+
+        if (!_current.ShowChat || !_current.ShowBoltAppearances)
+        {
+            _boltTimer.Stop();
+            return;
+        }
+
+        if (!_boltTimer.IsRunning)
+        {
+            _boltTimer.Interval = _bolt.NextDelay();
+            _boltTimer.Start();
+        }
+    }
+
+    private void OnBoltTimer()
+    {
+        if (BoltScheduler.CanAppear(_state.Mode, _state.Peek, _visibility, _sessionLocked, _displayOff))
+        {
+            var appearance = _bolt.Choose(DateTimeOffset.Now, _lastInteraction);
+            ShowBoltPeek(appearance.Mood, ModuleStrings.Get(appearance.PhraseKey));
+        }
+
+        UpdateBoltSchedule();
+    }
+
+    private bool ShowBoltPeek(BoltMood mood, string text)
+    {
+        if (_window is null || !_state.ShowPeek(PeekKind.Bolt))
+        {
+            return false;
+        }
+
+        _window.View.SetBoltPeek(mood, text);
+        RestartPeekTimer(BoltPeekDuration);
+        Render();
+        return true;
+    }
+
+    private void OnChatReplyCompleted(object? sender, string reply) => Guard(() =>
+    {
+        RefreshUsageAfterChat();
+        var reading = _state.Mode == NotchMode.Expanded && _window?.View.CurrentPage == NotchPage.Chat;
+        if (!_current.ShowBoltReplyPeek || reading)
+        {
+            return;
+        }
+
+        if (ShowBoltPeek(BoltMood.Happy, BoltScheduler.Preview(reply)))
+        {
+            _openChatOnExpand = true;
+        }
+    });
 
     private void ReportChatFault(Exception ex)
     {
@@ -808,7 +883,23 @@ public sealed class NotchModule(
         _window?.View.SetChatConnection(openRouter.State, openRouter.LastErrorKey);
         PushChatMessages();
         UpdateChatInput();
+        if (openRouter.State != OpenRouterConnection.Connecting)
+        {
+            _aiUsage?.Refresh();
+        }
     });
+
+    private void RefreshUsageAfterChat()
+    {
+        var now = DateTimeOffset.Now;
+        if (_aiUsage is null || now - _lastUsageRefresh < UsageRefreshGap)
+        {
+            return;
+        }
+
+        _lastUsageRefresh = now;
+        _aiUsage.Refresh();
+    }
 
     private void OnAiUsageChanged(object? sender, List<AiUsage> usages) =>
         Guard(() => _window?.View.SetAiUsage(usages, DateTime.Now));
@@ -1137,16 +1228,25 @@ public sealed class NotchModule(
         }
     }
 
-    private void RestartPeekTimer()
+    private void RestartPeekTimer() => RestartPeekTimer(PeekDuration);
+
+    private void RestartPeekTimer(TimeSpan duration)
     {
-        _peekTimer?.Stop();
-        _peekTimer?.Start();
+        if (_peekTimer is null)
+        {
+            return;
+        }
+
+        _peekTimer.Stop();
+        _peekTimer.Interval = duration;
+        _peekTimer.Start();
     }
 
     private void OnHoverChanged(object? sender, bool hovered) => Guard(() =>
     {
         if (hovered)
         {
+            _lastInteraction = DateTimeOffset.Now;
             _collapseTimer?.Stop();
             if (!_state.IsHovered)
             {
@@ -1171,6 +1271,12 @@ public sealed class NotchModule(
         }
 
         _peekTimer?.Stop();
+        if (_openChatOnExpand && _chat is not null)
+        {
+            _window?.View.OpenPage(NotchPage.Chat);
+        }
+
+        _openChatOnExpand = false;
         if (_state.SetHovered(true))
         {
             // Um adaptador Wi‑Fi/Bluetooth USB pode ter sido conectado desde a última vez.

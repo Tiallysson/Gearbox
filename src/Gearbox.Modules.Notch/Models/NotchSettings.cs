@@ -41,6 +41,10 @@ public sealed class NotchSettings : IJsonOnDeserialized
 
     public bool ShowChat { get; set; }
 
+    public bool ShowBoltAppearances { get; set; } = true;
+
+    public bool ShowBoltReplyPeek { get; set; } = true;
+
     public BackgroundStyle BackgroundStyle
     {
         get => _backgroundStyle;

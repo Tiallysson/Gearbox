@@ -22,14 +22,16 @@ Uma "ilha" discreta no topo da tela, inspirada no notch do Mac.
 - Na aba **IA** (opcional, desligada por padrão), mostra quanto do orçamento mensal da Anthropic e da OpenAI já foi
   gasto. Precisa de uma chave **Admin** de cada serviço (console.anthropic.com › Settings › Admin Keys e
   platform.openai.com › Settings › Organization › Admin keys); as chaves ficam no Gerenciador de Credenciais do
-  Windows, nunca nos arquivos de configuração.
-- Na aba **Chat** (opcional, desligada por padrão), converse com o **Bolt**, o mascote do Gearbox, usando qualquer
+  Windows, nunca nos arquivos de configuração. Com o OpenRouter conectado (aba Chat), ele também aparece, sem chave
+  extra: quanto do limite de crédito da chave já foi usado, ou o gasto do mês contra um orçamento seu.
+- Na aba **Chat** (opcional, desligada por padrão), converse com o **Bolt**, o gato mascote do Gearbox, usando qualquer
   modelo do [OpenRouter](https://openrouter.ai). Clique em "Conectar com o OpenRouter", faça login no navegador e
   pronto: não precisa copiar chave nenhuma. As respostas aparecem enquanto são geradas, as conversas ficam salvas
   no seu computador e dá para trocar de modelo no próprio chat. Com a aba aberta, a ilha cresce e recebe o teclado;
   Esc fecha. Por padrão só usa modelos **gratuitos** e pede aos provedores que não guardem suas mensagens; as duas
   coisas podem ser liberadas nas configurações. O envio é bloqueado quando a chave chega a 98% do limite de
-  crédito.
+  crédito. De vez em quando o Bolt aparece na ilha com uma frase (e dorme se você sumir), e avisa quando uma
+  resposta fica pronta com o chat fechado. As duas coisas podem ser desligadas nas configurações.
 - Avisa rapidinho quando o volume muda ou quando o carregador é ligado ou desligado.
 - Some sozinha durante jogos, vídeos e apresentações em tela cheia, e vira só uma alça fininha quando uma
   janela maximizada fica embaixo dela.

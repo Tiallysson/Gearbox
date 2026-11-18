@@ -51,6 +51,21 @@ internal sealed class AiUsageClient : IDisposable
         return (AiUsageStatus.Ok, total);
     }
 
+    public async Task<(AiUsageStatus Status, KeyUsage? Usage)> FetchOpenRouterKeyAsync(string key, CancellationToken cancellation)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://openrouter.ai/api/v1/key");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        using var response = await _http.SendAsync(request, cancellation).ConfigureAwait(false);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            return (AiUsageStatus.InvalidKey, null);
+        }
+
+        response.EnsureSuccessStatusCode();
+        var usage = ChatGuardrails.ParseKeyUsage(await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false));
+        return usage is null ? (AiUsageStatus.Unavailable, null) : (AiUsageStatus.Ok, usage);
+    }
+
     public static bool IsTransient(Exception ex) =>
         ex is HttpRequestException or IOException or JsonException or TaskCanceledException;
 

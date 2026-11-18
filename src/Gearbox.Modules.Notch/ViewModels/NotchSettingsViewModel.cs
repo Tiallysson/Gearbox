@@ -72,8 +72,11 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
         var ai = aiSettings.Load();
         AnthropicBudget = (double)ai.AnthropicMonthlyBudget;
         OpenAiBudget = (double)ai.OpenAiMonthlyBudget;
+        OpenRouterBudget = (double)ai.OpenRouterMonthlyBudget;
         RefreshKeys();
         ShowChat = current.ShowChat;
+        ShowBoltAppearances = current.ShowBoltAppearances;
+        ShowBoltReplyPeek = current.ShowBoltReplyPeek;
         var chat = chatSettings.Load();
         KeyCreditLimit = (double)chat.KeyCreditLimit;
         AllowPaidModels = chat.AllowPaidModels;
@@ -164,6 +167,9 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     public partial double OpenAiBudget { get; set; }
 
     [ObservableProperty]
+    public partial double OpenRouterBudget { get; set; }
+
+    [ObservableProperty]
     public partial string AnthropicKeyStatus { get; set; } = string.Empty;
 
     [ObservableProperty]
@@ -171,6 +177,12 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool ShowChat { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowBoltAppearances { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowBoltReplyPeek { get; set; }
 
     [ObservableProperty]
     public partial double KeyCreditLimit { get; set; }
@@ -229,6 +241,10 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
 
     partial void OnShowChatChanged(bool value) => Save();
 
+    partial void OnShowBoltAppearancesChanged(bool value) => Save();
+
+    partial void OnShowBoltReplyPeekChanged(bool value) => Save();
+
     partial void OnKeyCreditLimitChanged(double value) =>
         SaveChat(settings => settings.KeyCreditLimit = double.IsFinite(value) && value > 0 ? Math.Round((decimal)value, 2) : 0m);
 
@@ -258,6 +274,8 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     partial void OnAnthropicBudgetChanged(double value) => SaveAiUsage();
 
     partial void OnOpenAiBudgetChanged(double value) => SaveAiUsage();
+
+    partial void OnOpenRouterBudgetChanged(double value) => SaveAiUsage();
 
     partial void OnHideOnFullscreenChanged(bool value) => Save();
 
@@ -385,6 +403,7 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
             {
                 AnthropicMonthlyBudget = ToBudget(AnthropicBudget),
                 OpenAiMonthlyBudget = ToBudget(OpenAiBudget),
+                OpenRouterMonthlyBudget = ToBudget(OpenRouterBudget),
             });
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -562,6 +581,8 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
             ShowLinks = ShowLinks,
             ShowAiUsage = ShowAiUsage,
             ShowChat = ShowChat,
+            ShowBoltAppearances = ShowBoltAppearances,
+            ShowBoltReplyPeek = ShowBoltReplyPeek,
             HideOnFullscreen = HideOnFullscreen,
             CompactWhenCovered = CompactWhenCovered,
             CollapseToHandle = CollapseToHandle,

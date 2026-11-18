@@ -107,4 +107,40 @@ public sealed class NotchStateTests
         Assert.True(state.ClearPeek());
         Assert.Equal(NotchMode.Collapsed, state.Mode);
     }
+
+    [Theory]
+    [InlineData(PeekKind.Volume)]
+    [InlineData(PeekKind.Battery)]
+    [InlineData(PeekKind.Track)]
+    public void Bolt_NaoPassaNaFrenteDeAvisoDoSistema(PeekKind system)
+    {
+        var state = new NotchState();
+        state.ShowPeek(system);
+
+        Assert.False(state.ShowPeek(PeekKind.Bolt));
+        Assert.Equal(system, state.Peek);
+    }
+
+    [Theory]
+    [InlineData(PeekKind.Volume)]
+    [InlineData(PeekKind.Battery)]
+    [InlineData(PeekKind.Track)]
+    public void AvisoDoSistema_SubstituiOBolt(PeekKind system)
+    {
+        var state = new NotchState();
+        state.ShowPeek(PeekKind.Bolt);
+
+        Assert.True(state.ShowPeek(system));
+        Assert.Equal(system, state.Peek);
+    }
+
+    [Fact]
+    public void Bolt_PodeTrocarOProprioAviso()
+    {
+        var state = new NotchState();
+        state.ShowPeek(PeekKind.Bolt);
+
+        Assert.True(state.ShowPeek(PeekKind.Bolt));
+        Assert.Equal(NotchMode.Peek, state.Mode);
+    }
 }

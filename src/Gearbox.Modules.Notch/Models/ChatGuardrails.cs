@@ -13,7 +13,7 @@ public enum ChatViolation
     UsageLimitReached,
 }
 
-public sealed record KeyUsage(decimal Usage, decimal? Limit, decimal? LimitRemaining)
+public sealed record KeyUsage(decimal Usage, decimal? Limit, decimal? LimitRemaining, decimal UsageMonthly = 0m)
 {
     public double? Percent
     {
@@ -114,7 +114,11 @@ public static partial class ChatGuardrails
                 return null;
             }
 
-            return new KeyUsage(Number(data, "usage") ?? 0m, Number(data, "limit"), Number(data, "limit_remaining"));
+            return new KeyUsage(
+                Number(data, "usage") ?? 0m,
+                Number(data, "limit"),
+                Number(data, "limit_remaining"),
+                Number(data, "usage_monthly") ?? 0m);
         }
         catch (JsonException)
         {

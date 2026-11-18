@@ -73,6 +73,11 @@ internal sealed class AiUsageMonitor : IDisposable
     {
         var monthStart = BillingPeriod.MonthStart(DateTimeOffset.UtcNow);
         var usages = new List<AiUsage>();
+        if (await SampleOpenRouterAsync(settings.OpenRouterMonthlyBudget, cancellation).ConfigureAwait(false) is { } openRouter)
+        {
+            usages.Add(openRouter);
+        }
+
         foreach (var provider in s_providers)
         {
             var budget = settings.Budget(provider);
@@ -94,6 +99,27 @@ internal sealed class AiUsageMonitor : IDisposable
         }
 
         return usages;
+    }
+
+    private async Task<AiUsage?> SampleOpenRouterAsync(decimal monthlyBudget, CancellationToken cancellation)
+    {
+        if (AiKeyVault.Get(AiProvider.OpenRouter) is not { } key)
+        {
+            return null;
+        }
+
+        try
+        {
+            var (status, usage) = await _client.FetchOpenRouterKeyAsync(key, cancellation).ConfigureAwait(false);
+            return usage is null
+                ? new AiUsage(AiProvider.OpenRouter, status, 0m, monthlyBudget)
+                : OpenRouterUsage.From(usage, monthlyBudget);
+        }
+        catch (Exception ex) when (!cancellation.IsCancellationRequested && AiUsageClient.IsTransient(ex))
+        {
+            _logger.LogWarning(ex, "Não foi possível ler o uso do OpenRouter");
+            return new AiUsage(AiProvider.OpenRouter, AiUsageStatus.Unavailable, 0m, monthlyBudget);
+        }
     }
 
     private void Post(List<AiUsage> usages, CancellationToken cancellation) => _dispatcher.TryEnqueue(() =>

@@ -691,7 +691,7 @@
     <value>Uso de IA</value>
   </data>
   <data name="NoAiText" xml:space="preserve">
-    <value>Salve uma chave Admin e um orçamento mensal da Anthropic ou da OpenAI nas configurações do Notch.</value>
+    <value>Conecte o OpenRouter (seção "Chat com o Bolt") ou salve uma chave Admin e um orçamento mensal da Anthropic ou da OpenAI nas configurações do Notch.</value>
   </data>
   <data name="AiProviderAnthropic" xml:space="preserve">
     <value>Anthropic</value>
@@ -741,7 +741,7 @@
     <value>Aba "IA"</value>
   </data>
   <data name="ShowAiUsageDescription.Text" xml:space="preserve">
-    <value>Quanto do orçamento mensal da Anthropic e da OpenAI já foi gasto, lido das APIs oficiais de custo a cada 5 minutos. Passe o mouse em cada anel para ver o detalhe.</value>
+    <value>Quanto do limite ou do orçamento mensal da Anthropic, da OpenAI e do OpenRouter já foi gasto, lido das APIs oficiais a cada 5 minutos e depois de cada resposta do chat. Passe o mouse em cada anel para ver o detalhe.</value>
   </data>
   <data name="ShowAiUsageToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Aba "IA"</value>
@@ -810,7 +810,7 @@
     <value>Pensando…</value>
   </data>
   <data name="ChatEmptyText.Text" xml:space="preserve">
-    <value>Oi! Eu sou o Bolt. Pergunte o que quiser.</value>
+    <value>Miau! Eu sou o Bolt. Pergunte o que quiser.</value>
   </data>
   <data name="ChatInput.PlaceholderText" xml:space="preserve">
     <value>Mensagem para o Bolt (Shift+Enter quebra a linha)</value>
@@ -856,7 +856,12 @@
     <value>erro desconhecido</value>
   </data>
   <data name="ChatSystemPrompt" xml:space="preserve">
-    <value>Você é o Bolt, o mascote do Gearbox: um parafusinho simpático que mora no notch, no topo da tela do usuário.
+    <value>Você é o Bolt, o gato mascote do Gearbox, que mora no notch, no topo da tela do usuário.
+
+Personalidade:
+- Você é bem gato: curioso, um pouco preguiçoso e orgulhoso, e gosta de trocadilhos felinos ("miau", "ronron", "isso é purr-feito", "vou dar uma patada nesse bug"). Use no máximo um toque felino por resposta, no começo ou no fim, nunca no meio de uma explicação técnica.
+- A personalidade nunca atrapalha a resposta: primeiro resolva direito o que o usuário pediu, depois brinque.
+- Em assuntos sérios (saúde, dinheiro, problemas pessoais), deixe as brincadeiras de lado.
 
 Formato:
 - Responda em português do Brasil, a menos que o usuário escreva em outra língua.
@@ -976,5 +981,79 @@ Conteúdo do usuário:
   <data name="ChatRedactedManyFormat" xml:space="preserve">
     <value>{0} segredos foram ocultados antes do envio</value>
     <comment>{0} = quantidade de chaves/tokens mascarados</comment>
+  </data>
+  <data name="BoltPhraseHappy1" xml:space="preserve">
+    <value>Miau! Precisa de algo?</value>
+  </data>
+  <data name="BoltPhraseHappy2" xml:space="preserve">
+    <value>Tô de olho em tudo por aqui.</value>
+  </data>
+  <data name="BoltPhraseHappy3" xml:space="preserve">
+    <value>Psiu… se precisar, é só passar o mouse.</value>
+  </data>
+  <data name="BoltPhraseHappy4" xml:space="preserve">
+    <value>Já fez uma pausa hoje? Eu já fiz três.</value>
+  </data>
+  <data name="BoltPhraseEarTwitch1" xml:space="preserve">
+    <value>Ouvi alguma coisa…</value>
+  </data>
+  <data name="BoltPhraseEarTwitch2" xml:space="preserve">
+    <value>Nada escapa dessas orelhas.</value>
+  </data>
+  <data name="BoltPhraseEarTwitch3" xml:space="preserve">
+    <value>Hum? Foi um passarinho?</value>
+  </data>
+  <data name="BoltPhraseYawn1" xml:space="preserve">
+    <value>Aaah… que preguiça.</value>
+  </data>
+  <data name="BoltPhraseYawn2" xml:space="preserve">
+    <value>Só mais cinco minutinhos de soneca…</value>
+  </data>
+  <data name="BoltPhraseYawn3" xml:space="preserve">
+    <value>Trabalhar cansa. Principalmente observar.</value>
+  </data>
+  <data name="BoltPhraseSleeping1" xml:space="preserve">
+    <value>Zzz… ronron… zzz</value>
+  </data>
+  <data name="BoltPhraseSleeping2" xml:space="preserve">
+    <value>Zzz… sonhando com sachê…</value>
+  </data>
+  <data name="ShowBoltAppearancesTitle.Text" xml:space="preserve">
+    <value>Aparições do Bolt</value>
+  </data>
+  <data name="ShowBoltAppearancesDescription.Text" xml:space="preserve">
+    <value>De vez em quando (a cada 8–15 min) o Bolt aparece na ilha recolhida com uma frase. Ele dorme se você ficar 15 min sem usar o Notch e nunca aparece com outro aviso, em tela cheia ou com a ilha aberta.</value>
+  </data>
+  <data name="ShowBoltAppearancesToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Aparições do Bolt</value>
+  </data>
+  <data name="ShowBoltReplyPeekTitle.Text" xml:space="preserve">
+    <value>Aviso de resposta</value>
+  </data>
+  <data name="ShowBoltReplyPeekDescription.Text" xml:space="preserve">
+    <value>Quando uma resposta chega com o chat fechado, o Bolt mostra o começo dela na ilha. Passe o mouse para abrir direto no chat.</value>
+  </data>
+  <data name="ShowBoltReplyPeekToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Aviso de resposta</value>
+  </data>
+  <data name="AiProviderOpenRouter" xml:space="preserve">
+    <value>OpenRouter</value>
+  </data>
+  <data name="AiNoBudgetFormat" xml:space="preserve">
+    <value>{0} no mês</value>
+    <comment>{0} = gasto do mês, quando não há limite nem orçamento</comment>
+  </data>
+  <data name="AiNoBudgetToolTipFormat" xml:space="preserve">
+    <value>{0}: {1} gastos neste mês, sem limite na chave nem orçamento definido · atualizado às {2}</value>
+    <comment>{0} = provedor, {1} = gasto, {2} = hora</comment>
+  </data>
+  <data name="AiOpenRouterTitle.Text" xml:space="preserve">
+    <value>OpenRouter</value>
+  </data>
+  <data name="AiOpenRouterDescription.Text" xml:space="preserve">
+    <value>Usa a chave da conexão do chat (sem chave Admin). Se a chave tiver limite de crédito, o anel mostra quanto dele já foi usado; senão, mostra o gasto do mês contra o orçamento abaixo.</value>
+  </data>
+  <data name="AiOpenRouterBudgetBox.Header" xml:space="preserve">
+    <value>Orçamento mensal (US$), usado só se a chave não tiver limite</value>
   </data>
 </root>

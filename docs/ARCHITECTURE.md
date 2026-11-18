@@ -348,7 +348,12 @@ NotchModule (orquestra, timers)
     (`AiUsageSettings`); as chaves Admin ficam só no Gerenciador de Credenciais (`PasswordVault`, recurso
     `Gearbox.AiUsage`, via `AiKeyVault`). Salvar ou remover uma chave regrava `AiUsageSettings`, e o `Changed` dispara
     uma nova leitura. Percentual = gasto ÷ orçamento (nenhuma das APIs expõe uma "cota"); anel "Total" com 2+
-    provedores lidos.
+    provedores lidos que tenham orçamento.
+    - **OpenRouter**: aparece sozinho quando há conexão (a chave do OAuth, sem chave Admin). Lê `GET /api/v1/key`;
+      com `limit` na chave, o percentual é `(limit − limit_remaining) ÷ limit`. Sem limite, usa
+      `usage_monthly ÷ OpenRouterMonthlyBudget`. Sem nenhum dos dois, o anel mostra só "US$ X no mês"
+      (`OpenRouterUsage`, puro e testado). Além do ciclo de 5 min, a leitura é refeita ao conectar ou desconectar e
+      depois de cada resposta do chat (`ReplyCompleted`), no máximo uma vez a cada 30 s.
   - *Chat* (`ShowChat`, desligada por padrão): conversa com o Bolt via OpenRouter.
     - **Conexão** (`OpenRouterAccount`, singleton compartilhado pela página de configurações e pela ilha): OAuth PKCE
       (`Pkce`, `OpenRouterOAuth`). Abre um `TcpListener` em `127.0.0.1` numa porta livre (e em `::1` na mesma porta,
@@ -391,6 +396,23 @@ NotchModule (orquestra, timers)
         que roda também em cancelamento e falha de rede.
       - A validação síncrona (modelo, tamanho) roda no `ChatSession.Send` antes de limpar a caixa de texto. Uma
         regra que barra depois (uso) retira a mensagem da conversa, porque ela não foi enviada.
+    - **Bolt, o gato mascote** (`Views/Controls/BoltMascot`): cabeça de gato desenhada em código (canvas 32×32
+      num `Viewbox`). Corpo em `BodyBrush` (`PrimaryBrush`) e traços em `FaceBrush` (`PrimaryForegroundBrush`), por
+      isso acompanha o contraste adaptativo. Humores (`BoltMood`): `Idle` (pisca), `Thinking` (olhos para cima,
+      balança), `Talking` (boca abre e fecha), `Happy`, `Wave`, `EarTwitch`, `Yawn` e `Sleeping` (zzz). Os
+      storyboards só rodam com `IsAnimated`: no chat, só o avatar da resposta em andamento; no peek, só enquanto ele
+      está na tela; na tela de conectar e no chat vazio, só com a aba Chat aberta.
+      - **Prioridade**: `PeekKind.Bolt` só entra com a ilha livre, e qualquer aviso do sistema (volume, bateria,
+        faixa) o substitui (`NotchState.ShowPeek`). Dura 4 s.
+      - **Aviso de resposta** (`ShowBoltReplyPeek`): `ChatSession.ReplyCompleted` dispara quando a resposta termina
+        sem erro e sem ser parada. Se o chat não estiver na tela, o Bolt aparece feliz com a primeira linha sem
+        markdown (`BoltScheduler.Preview`), e passar o mouse abre a ilha direto na aba Chat.
+      - **Aparições** (`ShowBoltAppearances`): `BoltScheduler` sorteia o próximo intervalo (8–15 min) e o humor, com
+        uma frase do `.resw` (`BoltPhrase<Humor><n>`). Depois de 15 min sem interação com o Notch, ele dorme. Só
+        aparece com a ilha recolhida, normal (sem alça, sem tela cheia), sem outro aviso, sem bloqueio e com a tela
+        ligada; se não puder, desiste e agenda a próxima.
+      - **Persona**: gato "bem gato" no system prompt, com no máximo um toque felino por resposta e nunca em
+        assuntos sérios.
     - **Histórico** (`ChatStore`): uma conversa por arquivo em `%LocalAppData%\Gearbox\chats\{id}.json`, com gravação
       atômica. Id de 32 hex conferido antes de virar caminho; arquivo ilegível vira `.corrupt`.
     - **Markdown** (`MarkdownBlocks`, puro): parágrafos, títulos, listas, negrito/itálico/código e blocos de código,

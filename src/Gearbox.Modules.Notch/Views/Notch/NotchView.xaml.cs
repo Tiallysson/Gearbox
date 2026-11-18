@@ -326,6 +326,8 @@ public sealed partial class NotchView : UserControl
         }
 
         UpdateBars(panel == CollapsedPanel && ShowsCollapsedMedia);
+        _modePanel = panel;
+        UpdateMascots();
 
         if (panel == _visiblePanel)
         {
@@ -967,8 +969,14 @@ public sealed partial class NotchView : UserControl
         PeekBar.Visibility = isVolume ? Visibility.Visible : Visibility.Collapsed;
         PeekText.Visibility = isVolume ? Visibility.Collapsed : Visibility.Visible;
         PeekValue.Visibility = isTrack ? Visibility.Collapsed : Visibility.Visible;
+        var isBolt = peek == PeekKind.Bolt;
         PeekArtFrame.Visibility = isTrack ? Visibility.Visible : Visibility.Collapsed;
-        PeekIcon.Visibility = isTrack ? Visibility.Collapsed : Visibility.Visible;
+        PeekIcon.Visibility = isTrack || isBolt ? Visibility.Collapsed : Visibility.Visible;
+        PeekMascot.Visibility = isBolt ? Visibility.Visible : Visibility.Collapsed;
+        if (isBolt)
+        {
+            PeekValue.Visibility = Visibility.Collapsed;
+        }
 
         switch (peek)
         {
@@ -985,6 +993,11 @@ public sealed partial class NotchView : UserControl
                     _ => "BatteryOnBattery",
                 });
                 PeekValue.Text = ModuleStrings.Format("PercentFormat", battery.Percent);
+                break;
+
+            case PeekKind.Bolt:
+                PeekMascot.Mood = _boltPeekMood;
+                PeekText.Text = _boltPeekText;
                 break;
 
             case PeekKind.Track:
@@ -1173,8 +1186,12 @@ public sealed partial class NotchView : UserControl
             PageChanged?.Invoke(this, page);
         }
 
+        UpdateMascots();
+
         static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    public void OpenPage(NotchPage page) => ShowPage(page);
 
     private void AnimatePageEntrance(NotchPage page)
     {

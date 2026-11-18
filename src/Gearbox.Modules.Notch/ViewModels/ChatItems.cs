@@ -40,6 +40,12 @@ public sealed partial class ChatMessageItem : ObservableObject
     [ObservableProperty]
     public partial Visibility RedactionVisibility { get; private set; }
 
+    [ObservableProperty]
+    public partial BoltMood Mood { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsMascotAnimated { get; private set; }
+
     public void Update(ChatMessage message, bool pending)
     {
         var content = message.Content;
@@ -54,6 +60,8 @@ public sealed partial class ChatMessageItem : ObservableObject
         Markdown = IsUser ? string.Empty : content;
         PendingVisibility = pending && content.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         CopyVisibility = !IsUser && !pending && content.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        Mood = !pending ? BoltMood.Idle : content.Length == 0 ? BoltMood.Thinking : BoltMood.Talking;
+        IsMascotAnimated = pending;
     }
 }
 

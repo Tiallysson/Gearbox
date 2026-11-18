@@ -9,10 +9,13 @@ public sealed class AiUsageSettings
 
     public decimal OpenAiMonthlyBudget { get; set; }
 
+    public decimal OpenRouterMonthlyBudget { get; set; }
+
     public decimal Budget(AiProvider provider) => provider switch
     {
         AiProvider.Anthropic => AnthropicMonthlyBudget,
         AiProvider.OpenAi => OpenAiMonthlyBudget,
+        AiProvider.OpenRouter => OpenRouterMonthlyBudget,
         _ => 0m,
     };
 }
