@@ -848,6 +848,8 @@
                         <ScrollViewer
                             x:Name="ChatScroll"
                             Grid.Row="1"
+                            VerticalAnchorRatio="1"
+                            ViewChanged="OnChatScrollViewChanged"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <ItemsRepeater x:Name="ChatMessageList" Margin="0,0,8,0">
@@ -881,9 +883,9 @@
                                                 Visibility="{x:Bind UserVisibility}">
                                                 <TextBlock
                                                     FontSize="13"
+                                                    Foreground="{StaticResource PrimaryForegroundBrush}"
                                                     IsTextSelectionEnabled="True"
                                                     SelectionHighlightColor="{StaticResource SelectionBrush}"
-                                                    Foreground="{StaticResource PrimaryForegroundBrush}"
                                                     Text="{x:Bind Text, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
                                             </Border>

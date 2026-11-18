@@ -23,6 +23,7 @@ public sealed partial class NotchView
     private readonly ObservableCollection<ChatMessageItem> _chatItems = [];
     private bool _updatingChatChoices;
     private bool _chatStreaming;
+    private bool _chatScrolling;
     private UIElement? _modePanel;
     private BoltMood _boltPeekMood;
     private string _boltPeekText = string.Empty;
@@ -125,7 +126,9 @@ public sealed partial class NotchView
 
     public void SetChatMessages(IReadOnlyList<ChatMessage> messages, bool streaming, string? error)
     {
-        var follow = ChatScroll.VerticalOffset >= ChatScroll.ScrollableHeight - FollowThreshold;
+        var follow = !_chatScrolling && ChatScroll.VerticalOffset >= ChatScroll.ScrollableHeight - FollowThreshold;
+        var countBefore = _chatItems.Count;
+        var replaced = false;
         for (var index = 0; index < messages.Count; index++)
         {
             var message = messages[index];
@@ -137,6 +140,7 @@ public sealed partial class NotchView
             else if (index < _chatItems.Count)
             {
                 _chatItems[index] = new ChatMessageItem(message, pending);
+                replaced = true;
             }
             else
             {
@@ -156,11 +160,22 @@ public sealed partial class NotchView
         ChatErrorText.Visibility = connected && error is not null ? Visibility.Visible : Visibility.Collapsed;
         SetChatStreaming(streaming);
 
-        if (follow && _chatItems.Count > 0)
+        if (!follow || _chatItems.Count == 0)
+        {
+            return;
+        }
+
+        if (replaced || _chatItems.Count != countBefore)
         {
             ScrollChatToEnd();
         }
+        else if (ChatScroll.VerticalOffset < ChatScroll.ScrollableHeight)
+        {
+            ChatScroll.ChangeView(null, ChatScroll.ScrollableHeight, null, true);
+        }
     }
+
+    private void OnChatScrollViewChanged(object? sender, ScrollViewerViewChangedEventArgs e) => _chatScrolling = e.IsIntermediate;
 
     private void ScrollChatToEnd()
     {
