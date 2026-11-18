@@ -57,6 +57,8 @@ public sealed partial class NotchView : UserControl
     private bool _hasSystem;
     private bool _hasClipboard;
     private bool _hasLinks;
+    private bool _hasAi;
+    private bool _hasChat;
     private readonly Dictionary<string, (DateTime Stamp, ImageSource Image)> _linkIcons = [];
     private readonly Dictionary<long, ClipboardEntry> _clipboardEntries = [];
     private DispatcherQueueTimer? _clipboardCopiedTimer;
@@ -79,6 +81,7 @@ public sealed partial class NotchView : UserControl
     {
         InitializeComponent();
         MixerList.ItemsSource = _mixerRows;
+        ChatInput.MaxLength = ChatGuardrails.MaxInputLength;
         SetSpeedTestRunning(false);
         SpeedTestText.Text = ModuleStrings.Get("SpeedTestHint");
         SetNetworkHistory(new NetworkHistory());
@@ -141,7 +144,7 @@ public sealed partial class NotchView : UserControl
     public bool ShowsFullControls => _page == NotchPage.Controls && _hasConnectivity && _hasAudioControls && _hasMixer;
 
     /// <summary>A ilha aberta mostra as abas (alguma aba além de "Mídia" ligada): usa a forma mais alta.</summary>
-    public bool HasTabs => HasControlsTab || _hasStorage || _hasSystem || _hasClipboard || _hasLinks;
+    public bool HasTabs => HasControlsTab || _hasStorage || _hasSystem || _hasClipboard || _hasLinks || _hasAi || _hasChat;
 
     private bool HasControlsTab => _hasConnectivity || _hasAudioControls || _hasMixer;
 
@@ -433,7 +436,7 @@ public sealed partial class NotchView : UserControl
         }
     }
 
-    public void SetTabs(bool connectivity, bool audio, bool storage, bool system, bool clipboard, bool links)
+    public void SetTabs(bool connectivity, bool audio, bool storage, bool system, bool clipboard, bool links, bool ai, bool chat)
     {
         _hasConnectivity = connectivity;
         _hasAudioControls = audio;
@@ -441,12 +444,16 @@ public sealed partial class NotchView : UserControl
         _hasSystem = system;
         _hasClipboard = clipboard;
         _hasLinks = links;
+        _hasAi = ai;
+        _hasChat = chat;
         ApplyTabs();
     }
 
     private void ApplyTabs()
     {
         LinksTab.Visibility = Visible(_hasLinks);
+        AiTab.Visibility = Visible(_hasAi);
+        ChatTab.Visibility = Visible(_hasChat);
         ClipboardTab.Visibility = Visible(_hasClipboard);
         RadiosRow.Visibility = Visible(_hasConnectivity);
         VolumeRow.Visibility = OutputButton.Visibility = Visible(_hasAudioControls);
@@ -466,6 +473,8 @@ public sealed partial class NotchView : UserControl
             NotchPage.System => !_hasSystem,
             NotchPage.Clipboard => !_hasClipboard,
             NotchPage.Links => !_hasLinks,
+            NotchPage.Ai => !_hasAi,
+            NotchPage.Chat => !_hasChat,
             _ => false,
         };
         if (pageGone)
@@ -563,6 +572,20 @@ public sealed partial class NotchView : UserControl
     {
         DriveList.ItemsSource = drives.ConvertAll(d => new DriveItem(d));
         NoDrivesText.Visibility = drives.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public void SetAiUsage(IReadOnlyList<AiUsage> usages, DateTime updatedAt)
+    {
+        var items = new List<AiUsageItem>(usages.Count + 1);
+        if (AiUsage.Total(usages) is { } total)
+        {
+            items.Add(new AiUsageItem(total, updatedAt));
+        }
+
+        items.AddRange(usages.Select(usage => new AiUsageItem(usage, updatedAt)));
+        AiUsageList.ItemsSource = items;
+        NoAiText.Text = ModuleStrings.Get("NoAiText");
+        NoAiText.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Modelos (lidos uma vez). Sem placa de vídeo física, a linha da GPU some.</summary>
@@ -1128,6 +1151,8 @@ public sealed partial class NotchView : UserControl
         MixerPage.Visibility = Visible(page == NotchPage.Mixer);
         MixerDevicesPage.Visibility = Visible(page == NotchPage.MixerDevices);
         NetworkPage.Visibility = Visible(page == NotchPage.Network);
+        AiPage.Visibility = Visible(page == NotchPage.Ai);
+        ChatPage.Visibility = Visible(page == NotchPage.Chat);
 
         MediaTab.IsChecked = page == NotchPage.Media;
         ControlsTab.IsChecked = page is NotchPage.Controls or NotchPage.Devices or NotchPage.Mixer or NotchPage.MixerDevices or NotchPage.Network;
@@ -1135,6 +1160,8 @@ public sealed partial class NotchView : UserControl
         SystemTab.IsChecked = page == NotchPage.System;
         ClipboardTab.IsChecked = page == NotchPage.Clipboard;
         LinksTab.IsChecked = page == NotchPage.Links;
+        AiTab.IsChecked = page == NotchPage.Ai;
+        ChatTab.IsChecked = page == NotchPage.Chat;
 
         if (page != _page)
         {
@@ -1204,6 +1231,10 @@ public sealed partial class NotchView : UserControl
     private void OnClipboardTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Clipboard);
 
     private void OnLinksTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Links);
+
+    private void OnAiTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Ai);
+
+    private void OnChatTabClick(object sender, RoutedEventArgs e) => ShowPage(NotchPage.Chat);
 
     private void OnLinkClick(object sender, RoutedEventArgs e)
     {

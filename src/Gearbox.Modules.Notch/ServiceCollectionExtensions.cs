@@ -15,6 +15,10 @@ public static class ServiceCollectionExtensions
         services.AddGearboxSettings<NotchSettings>(NotchModule.ModuleId);
         services.AddGearboxSettings<LinksSettings>(LinksSettings.SettingsId);
         services.AddGearboxSettings<MixerSettings>(MixerSettings.SettingsId);
+        services.AddGearboxSettings<AiUsageSettings>(AiUsageSettings.SettingsId);
+        services.AddGearboxSettings<ChatSettings>(ChatSettings.SettingsId);
+        services.TryAddSingleton<ChatStore>();
+        services.TryAddSingleton<OpenRouterAccount>();
         services.TryAddSingleton<LinkIconStore>();
         services.TryAddSingleton<LinkCatalog>();
         services.TryAddSingleton<LinkEditor>();

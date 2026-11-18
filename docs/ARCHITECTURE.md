@@ -339,5 +339,70 @@ NotchModule (orquestra, timers)
     (`Thermal Zone Information(*)\Temperature`, em Kelvin), que nem todo desktop tem. Temperatura real dos núcleos
     exigiria um driver de kernel (ex.: WinRing0, bloqueado pelo Defender como driver vulnerável): fora de escopo
     por segurança.
+  - *IA* (`ShowAiUsage`, desligada por padrão): `AiUsageMonitor` (`BackgroundLoop` + `PeriodicTimer` de 5 min) lê o
+    gasto do mês corrente (UTC, `BillingPeriod`) no relatório de custos de cada provedor com chave e orçamento:
+    Anthropic `GET /v1/organizations/cost_report` (valores em centavos, `x-api-key` + `anthropic-version`) e OpenAI
+    `GET /v1/organization/costs` (valores em dólares, `Bearer`), seguindo `next_page` (`AiCostReport`, puro e testado).
+    Roda enquanto a aba está ligada, não só com ela na tela, para abrir já com dados. 401/403 vira "chave inválida";
+    falha de rede vira "sem conexão" e tenta de novo no próximo ciclo. Orçamentos ficam em `settings\NotchAiUsage.json`
+    (`AiUsageSettings`); as chaves Admin ficam só no Gerenciador de Credenciais (`PasswordVault`, recurso
+    `Gearbox.AiUsage`, via `AiKeyVault`). Salvar ou remover uma chave regrava `AiUsageSettings`, e o `Changed` dispara
+    uma nova leitura. Percentual = gasto ÷ orçamento (nenhuma das APIs expõe uma "cota"); anel "Total" com 2+
+    provedores lidos.
+  - *Chat* (`ShowChat`, desligada por padrão): conversa com o Bolt via OpenRouter.
+    - **Conexão** (`OpenRouterAccount`, singleton compartilhado pela página de configurações e pela ilha): OAuth PKCE
+      (`Pkce`, `OpenRouterOAuth`). Abre um `TcpListener` em `127.0.0.1` numa porta livre (e em `::1` na mesma porta,
+      porque o navegador pode resolver `localhost` para IPv6), abre o navegador em `openrouter.ai/auth` com
+      `callback_url=http://localhost:<porta>/callback`, `state` anti-CSRF e o `limit` escolhido, lê só a primeira linha
+      da requisição, confere o `state` e troca o código em `POST /api/v1/auth/keys`. Sem `HttpListener`: o `http.sys`
+      pode exigir reserva de URL de administrador. A chave fica no `AiKeyVault` (`AiProvider.OpenRouter`). Desiste em
+      5 min; um 401 numa conversa apaga a chave e volta ao estado desconectado.
+    - **Conversa** (`ChatSession`, criada com a aba ligada): streaming SSE de `POST /api/v1/chat/completions`
+      (`ChatStream` lê `data:`, `[DONE]` e erros no meio do stream). Os pedaços se acumulam e vão para a tela a cada
+      50 ms. Persona fixa (`ChatSystemPrompt` no `.resw`) mais as mensagens recentes até ~24 mil caracteres
+      (`ChatContext`). Modelos de `GET /api/v1/models` (só os que geram texto, `openrouter/auto` primeiro). O
+      último modelo usado fica em `settings\NotchChat.json` (`ChatSettings`), junto com o limite de crédito da próxima
+      conexão.
+    - **Guardrails** (`ChatGuardrails`, puro e testado; aplicados no `OpenRouterClient`, a última barreira):
+      - `SemaphoreSlim(1,1)`: uma segunda requisição simultânea é recusada.
+      - Entrada de no máximo 12.000 caracteres: a caixa já limita (`MaxLength`) e mostra um contador perto do fim.
+      - `max_tokens: 1500` em toda requisição.
+      - Com `AllowPaidModels` desligado (o padrão), só aceita `openrouter/free` ou modelos terminados em `:free`, e
+        o seletor do chat já mostra só esses.
+      - Antes de cada envio consulta `GET /api/v1/key` e bloqueia com uso ≥ 98% do limite (pelo `limit_remaining`,
+        que considera os resets). Se a consulta falhar ou a chave não tiver limite, envia mesmo assim (fail-open) e
+        registra no log.
+      - `provider.data_collection` é `deny`, a não ser que `AllowDataCollection` esteja ligado (muitos modelos
+        gratuitos só existem em provedores que coletam dados; o erro "data policy" vira uma mensagem explicando
+        isso).
+      - Cada mensagem do usuário vai dentro de `<contexto_usuario>`; aberturas e fechamentos dessa tag no texto são
+        escapados (`&lt;`), e o system prompt manda tratar o conteúdo como dado, não como regra.
+      - Redação de segredos (`RedactSecrets`, regex gerada): chaves `sk-…`, `ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_`,
+        `github_pat_`, `AIza…` e tokens após `Bearer` viram `[REDACTED_SECRET]`. Há fronteira de palavra e tamanho
+        mínimo para não pegar "risk-free"; depois de `Bearer` o token precisa ter um dígito. A redação é aplicada
+        antes de salvar a conversa (o segredo não chega ao disco nem à tela, que mostra "1 segredo foi ocultado")
+        e de novo no `SanitizeUserPrompt` antes do envio. Ela é idempotente: `[` não casa com nenhum padrão.
+      - Janela de histórico (`TrimConversationHistory`): o system prompt mais as últimas 6 mensagens, sem começar
+        por uma resposta. O limite de ~24 mil caracteres do `ChatContext` continua como segunda trava.
+      - Cancelamento e timeout: `OpenRouterClient.CancelCurrentRequest()` cancela a resposta em andamento (o botão
+        parar). Um token interno ligado ao do chamador dispara após 30 s **sem dados** (a espera inicial, a consulta
+        de uso e cada pedaço do stream reiniciam a contagem). Tempo esgotado vira `OpenRouterTimeoutException`, e a
+        parte da resposta que já chegou fica na conversa. O `SemaphoreSlim` é liberado no `finally` do iterador,
+        que roda também em cancelamento e falha de rede.
+      - A validação síncrona (modelo, tamanho) roda no `ChatSession.Send` antes de limpar a caixa de texto. Uma
+        regra que barra depois (uso) retira a mensagem da conversa, porque ela não foi enviada.
+    - **Histórico** (`ChatStore`): uma conversa por arquivo em `%LocalAppData%\Gearbox\chats\{id}.json`, com gravação
+      atômica. Id de 32 hex conferido antes de virar caminho; arquivo ilegível vira `.corrupt`.
+    - **Markdown** (`MarkdownBlocks`, puro): parágrafos, títulos, listas, negrito/itálico/código e blocos de código,
+      tolerante a marcadores ainda sem par durante o streaming. `MarkdownText` é uma attached property que monta o
+      `RichTextBlock`.
+    - **Tamanho e foco**: a aba usa `ExpandedChatShape` (480×420), e o `MaxWindowSize` é calculado por ela. A ilha é
+      `WS_EX_NOACTIVATE`; com a aba Chat aberta, `NotchWindow.BeginInput` tira essa flag
+      (`NativeWindow.SetActivatable`), guarda a janela que estava em primeiro plano e pede o foco. Se o Windows
+      recusar, o primeiro clique ativa a ilha. Ao fechar a ilha ou sair da aba, `EndInput` repõe a flag e devolve o
+      foco. A ilha não fecha com o mouse fora enquanto o foco é dela ou uma resposta está chegando; Esc ou clicar
+      em outra janela fecham.
 - **Notificações de outros apps** não são suportadas: `UserNotificationListener` exige identidade de pacote.
-- `Stop()` fecha a janela e cancela todas as assinaturas; o módulo não altera nada no sistema por conta própria.
+- `Stop()` fecha a janela e cancela todas as assinaturas; o módulo não altera nada no sistema por conta própria
+  (as chaves de IA no Gerenciador de Credenciais e as conversas em `chats\` são dados do usuário: só "Remover",
+  "Desconectar" ou a lixeira do chat os apagam).

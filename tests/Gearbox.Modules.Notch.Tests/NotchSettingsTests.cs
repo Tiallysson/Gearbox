@@ -36,6 +36,26 @@ public sealed class NotchSettingsTests
     }
 
     [Fact]
+    public void AbaIA_ComecaDesligadaESobreviveAGravacao()
+    {
+        Assert.False(JsonSerializer.Deserialize<NotchSettings>("{}", s_options)!.ShowAiUsage);
+
+        var json = JsonSerializer.Serialize(new NotchSettings { ShowAiUsage = true }, s_options);
+
+        Assert.True(JsonSerializer.Deserialize<NotchSettings>(json, s_options)!.ShowAiUsage);
+    }
+
+    [Fact]
+    public void AbaChat_ComecaDesligadaESobreviveAGravacao()
+    {
+        Assert.False(JsonSerializer.Deserialize<NotchSettings>("{}", s_options)!.ShowChat);
+
+        var json = JsonSerializer.Serialize(new NotchSettings { ShowChat = true }, s_options);
+
+        Assert.True(JsonSerializer.Deserialize<NotchSettings>(json, s_options)!.ShowChat);
+    }
+
+    [Fact]
     public void Gravacao_NaoEscreveOsCamposAntigosEPreservaOsNovos()
     {
         var original = new NotchSettings

@@ -38,6 +38,10 @@ public sealed class NotchSettings : IJsonOnDeserialized
 
     public bool ShowLinks { get; set; } = true;
 
+    public bool ShowAiUsage { get; set; }
+
+    public bool ShowChat { get; set; }
+
     public BackgroundStyle BackgroundStyle
     {
         get => _backgroundStyle;

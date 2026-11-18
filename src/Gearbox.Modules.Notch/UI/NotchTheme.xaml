@@ -23,6 +23,11 @@
     <SolidColorBrush x:Key="AccentPressedBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="InputBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="InputFillBrush" Color="#0BFFFFFF" />
+    <SolidColorBrush x:Key="InputHoverBrush" Color="#13FFFFFF" />
+    <SolidColorBrush x:Key="ShadBorderBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="RingBrush" Color="#737373" />
+    <SolidColorBrush x:Key="PopoverBrush" Color="#171717" />
+    <SolidColorBrush x:Key="SelectionBrush" Color="#66A1A1A1" />
 
     <!--
         Borda de 1 px da ilha ("liquid glass"): por cima do fundo, nos lados e embaixo (o topo encosta na tela).
@@ -304,4 +309,156 @@
     <StaticResource x:Key="ListViewItemForegroundPointerOver" ResourceKey="ForegroundBrush" />
     <StaticResource x:Key="ListViewItemForegroundPressed" ResourceKey="ForegroundBrush" />
     <CornerRadius x:Key="ListViewItemCornerRadius">6</CornerRadius>
+
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid
+                        x:Name="Root"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <Grid.BackgroundTransition>
+                            <BrushTransition Duration="0:0:0.15" />
+                        </Grid.BackgroundTransition>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{StaticResource PrimaryHoverBrush}" />
+                                        <Setter Target="Root.BorderBrush" Value="{StaticResource PrimaryHoverBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Background" Value="{StaticResource PrimaryHoverBrush}" />
+                                        <Setter Target="Root.BorderBrush" Value="{StaticResource PrimaryHoverBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="Root.Opacity" Value="0.5" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                        <ContentPresenter
+                            x:Name="ContentPresenter"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            AutomationProperties.AccessibilityView="Raw"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTransitions="{TemplateBinding ContentTransitions}"
+                            FontSize="{TemplateBinding FontSize}"
+                            FontWeight="{TemplateBinding FontWeight}"
+                            Foreground="{TemplateBinding Foreground}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <StaticResource x:Key="TextControlBackground" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="InputHoverBrush" />
+    <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="TextControlBorderBrush" ResourceKey="InputBrush" />
+    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="InputBrush" />
+    <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="RingBrush" />
+    <StaticResource x:Key="TextControlBorderBrushDisabled" ResourceKey="InputBrush" />
+    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+    <StaticResource x:Key="TextControlForeground" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForeground" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForegroundPointerOver" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForegroundFocused" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="TextControlSelectionHighlightColor" ResourceKey="SelectionBrush" />
+
+    <StaticResource x:Key="ComboBoxBackground" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="InputHoverBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="InputHoverBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundFocused" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundUnfocused" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="InputFillBrush" />
+    <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="InputBrush" />
+    <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="InputBrush" />
+    <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="InputBrush" />
+    <StaticResource x:Key="ComboBoxBorderBrushDisabled" ResourceKey="InputBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundBorderBrushFocused" ResourceKey="RingBrush" />
+    <StaticResource x:Key="ComboBoxBackgroundBorderBrushUnfocused" ResourceKey="InputBrush" />
+    <StaticResource x:Key="ComboBoxForeground" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxForegroundPointerOver" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxForegroundPressed" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxForegroundFocused" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxForegroundFocusedPressed" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxPlaceHolderForeground" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="ComboBoxDropDownGlyphForeground" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocused" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocusedPressed" ResourceKey="MutedForegroundBrush" />
+    <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="PopoverBrush" />
+    <StaticResource x:Key="ComboBoxDropDownBorderBrush" ResourceKey="ShadBorderBrush" />
+    <StaticResource x:Key="ComboBoxDropDownForeground" ResourceKey="ForegroundBrush" />
+    <SolidColorBrush x:Key="ComboBoxItemBackground" Color="Transparent" />
+    <StaticResource x:Key="ComboBoxItemBackgroundPointerOver" ResourceKey="AccentBrush" />
+    <StaticResource x:Key="ComboBoxItemBackgroundPressed" ResourceKey="AccentPressedBrush" />
+    <StaticResource x:Key="ComboBoxItemBackgroundSelected" ResourceKey="AccentBrush" />
+    <StaticResource x:Key="ComboBoxItemBackgroundSelectedUnfocused" ResourceKey="AccentBrush" />
+    <StaticResource x:Key="ComboBoxItemBackgroundSelectedPointerOver" ResourceKey="AccentPressedBrush" />
+    <StaticResource x:Key="ComboBoxItemBackgroundSelectedPressed" ResourceKey="AccentPressedBrush" />
+    <StaticResource x:Key="ComboBoxItemForeground" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundPointerOver" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundPressed" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundSelected" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundSelectedUnfocused" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundSelectedPointerOver" ResourceKey="ForegroundBrush" />
+    <StaticResource x:Key="ComboBoxItemForegroundSelectedPressed" ResourceKey="ForegroundBrush" />
+    <SolidColorBrush x:Key="ComboBoxItemPillFillBrush" Color="Transparent" />
+    <CornerRadius x:Key="ComboBoxItemCornerRadius">4</CornerRadius>
+
+    <Style x:Key="SelectStyle" TargetType="ComboBox">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="10,0,0,0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MaxDropDownHeight" Value="280" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="ItemContainerStyle">
+            <Setter.Value>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="FontSize" Value="12" />
+                    <Setter Property="Padding" Value="8,6" />
+                    <Setter Property="Margin" Value="4,1" />
+                </Style>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TextareaStyle" TargetType="TextBox">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="SelectionHighlightColor" Value="{StaticResource SelectionBrush}" />
+    </Style>
 </ResourceDictionary>

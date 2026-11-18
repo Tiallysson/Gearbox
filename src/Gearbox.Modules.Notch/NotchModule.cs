@@ -28,6 +28,10 @@ public sealed class NotchModule(
     WinEventHookManager hooks,
     ISettingsService<NotchSettings> settings,
     ISettingsService<MixerSettings> mixerSettings,
+    ISettingsService<AiUsageSettings> aiUsageSettings,
+    ISettingsService<ChatSettings> chatSettings,
+    ChatStore chatStore,
+    OpenRouterAccount openRouter,
     IModuleFaultReporter faults,
     IModuleSettingsOpener settingsOpener,
     LinkCatalog links,
@@ -64,6 +68,9 @@ public sealed class NotchModule(
     private ClipboardWatcher? _clipboard;
     private AudioMixer? _mixer;
     private NetworkMonitor? _network;
+    private AiUsageMonitor? _aiUsage;
+    private ChatSession? _chat;
+    private bool _chatInput;
     private readonly NetworkHistory _networkHistory = new();
     private bool _networkVisible;
     private SpeedTester? _speedTester;
@@ -138,6 +145,15 @@ public sealed class NotchModule(
             _window.View.MixerMuteRequested += OnMixerMuteRequested;
             _window.View.MixerOutputSelected += OnMixerOutputSelected;
             _window.View.SpeedTestRequested += OnSpeedTestRequested;
+            _window.View.ChatSendRequested += OnChatSendRequested;
+            _window.View.ChatCancelRequested += OnChatCancelRequested;
+            _window.View.ChatNewRequested += OnChatNewRequested;
+            _window.View.ChatDeleteRequested += OnChatDeleteRequested;
+            _window.View.ChatConversationSelected += OnChatConversationSelected;
+            _window.View.ChatModelSelected += OnChatModelSelected;
+            _window.View.ChatConnectRequested += OnChatConnectRequested;
+            _window.View.ChatCollapseRequested += OnChatCollapseRequested;
+            openRouter.Changed += OnOpenRouterChanged;
             links.Changed += OnLinksChanged;
             ApplyAppearance();
 
@@ -151,6 +167,8 @@ public sealed class NotchModule(
             PowerManager.BatteryStatusChanged += OnPowerChanged;
 
             settings.Changed += OnSettingsChanged;
+            aiUsageSettings.Changed += OnAiUsageSettingsChanged;
+            chatSettings.Changed += OnChatSettingsChanged;
             _subscription = hooks.Subscribe(Id, OnWinEvent);
 
             IsEnabled = true;
@@ -184,6 +202,8 @@ public sealed class NotchModule(
         _subscription?.Dispose();
         _subscription = null;
         settings.Changed -= OnSettingsChanged;
+        aiUsageSettings.Changed -= OnAiUsageSettingsChanged;
+        chatSettings.Changed -= OnChatSettingsChanged;
         PowerManager.PowerSupplyStatusChanged -= OnPowerChanged;
         PowerManager.RemainingChargePercentChanged -= OnPowerChanged;
         PowerManager.BatteryStatusChanged -= OnPowerChanged;
@@ -210,6 +230,9 @@ public sealed class NotchModule(
         StopMedia();
         StopConnectivity();
         StopSystem();
+        StopAiUsage();
+        StopChat();
+        openRouter.Changed -= OnOpenRouterChanged;
         StopClipboard();
         StopAccent();
         _loggedUnsupportedBlur = false;
@@ -230,6 +253,14 @@ public sealed class NotchModule(
             _window.View.MixerMuteRequested -= OnMixerMuteRequested;
             _window.View.MixerOutputSelected -= OnMixerOutputSelected;
             _window.View.SpeedTestRequested -= OnSpeedTestRequested;
+            _window.View.ChatSendRequested -= OnChatSendRequested;
+            _window.View.ChatCancelRequested -= OnChatCancelRequested;
+            _window.View.ChatNewRequested -= OnChatNewRequested;
+            _window.View.ChatDeleteRequested -= OnChatDeleteRequested;
+            _window.View.ChatConversationSelected -= OnChatConversationSelected;
+            _window.View.ChatModelSelected -= OnChatModelSelected;
+            _window.View.ChatConnectRequested -= OnChatConnectRequested;
+            _window.View.ChatCollapseRequested -= OnChatCollapseRequested;
             _window.View.HoverChanged -= OnHoverChanged;
             _window.View.MediaCommandRequested -= OnMediaCommandRequested;
             _window.View.QuickActionRequested -= OnQuickActionRequested;
@@ -244,6 +275,7 @@ public sealed class NotchModule(
         _pluggedIn = null;
         _lastTrackKey = null;
         _storageVisible = false;
+        _chatInput = false;
         _driveScan++; // Uma leitura de discos ainda em andamento é descartada.
         _sessionLocked = _displayOff = false;
         _visibility = NotchVisibility.Normal;
@@ -307,6 +339,25 @@ public sealed class NotchModule(
             StopSystem();
         }
 
+        if (_current.ShowAiUsage && _aiUsage is null && _dispatcher is not null)
+        {
+            _aiUsage = new AiUsageMonitor(_dispatcher, aiUsageSettings.Load(), logger);
+            _aiUsage.Changed += OnAiUsageChanged;
+        }
+        else if (!_current.ShowAiUsage)
+        {
+            StopAiUsage();
+        }
+
+        if (_current.ShowChat && _chat is null && _dispatcher is not null)
+        {
+            StartChat(_dispatcher);
+        }
+        else if (!_current.ShowChat)
+        {
+            StopChat();
+        }
+
         if (_current.ShowClipboard && _clipboard is null)
         {
             _clipboard = new ClipboardWatcher(logger);
@@ -328,7 +379,7 @@ public sealed class NotchModule(
         }
 
         _window?.View.SetMixerEnabled(_mixer is not null, AppAudioRouting.IsSupported);
-        _window?.View.SetTabs(_current.ShowConnectivity, _current.ShowAudioControls, _current.ShowStorage, _current.ShowSystemInfo, _current.ShowClipboard, _current.ShowLinks);
+        _window?.View.SetTabs(_current.ShowConnectivity, _current.ShowAudioControls, _current.ShowStorage, _current.ShowSystemInfo, _current.ShowClipboard, _current.ShowLinks, _current.ShowAiUsage, _current.ShowChat);
         if (_current.ShowLinks)
         {
             PushLinks();
@@ -606,6 +657,157 @@ public sealed class NotchModule(
         _system = null;
     }
 
+    private void StopAiUsage()
+    {
+        if (_aiUsage is null)
+        {
+            return;
+        }
+
+        _aiUsage.Changed -= OnAiUsageChanged;
+        _aiUsage.Dispose();
+        _aiUsage = null;
+        _window?.View.SetAiUsage([], DateTime.Now);
+    }
+
+    private void StartChat(DispatcherQueue dispatcher)
+    {
+        _chat = new ChatSession(dispatcher, chatStore, openRouter, chatSettings, logger, ReportChatFault);
+        _chat.ConversationsChanged += OnChatConversationsChanged;
+        _chat.MessagesChanged += OnChatMessagesChanged;
+        _window?.View.SetChatConnection(openRouter.State, openRouter.LastErrorKey);
+        PushChatConversations();
+        PushChatMessages();
+        _chat.Start();
+    }
+
+    private void StopChat()
+    {
+        if (_chat is null)
+        {
+            return;
+        }
+
+        _chat.ConversationsChanged -= OnChatConversationsChanged;
+        _chat.MessagesChanged -= OnChatMessagesChanged;
+        _chat.Dispose();
+        _chat = null;
+        UpdateChatInput();
+    }
+
+    private void ReportChatFault(Exception ex)
+    {
+        if (IsEnabled)
+        {
+            faults.ReportFault(Id, ex);
+        }
+    }
+
+    private void UpdateChatInput()
+    {
+        if (_window is null)
+        {
+            return;
+        }
+
+        var wantsInput = _chat is not null &&
+            _state.Mode == NotchMode.Expanded &&
+            _window.View.CurrentPage == NotchPage.Chat &&
+            openRouter.State == OpenRouterConnection.Connected &&
+            _visibility != NotchVisibility.Hidden;
+        if (wantsInput == _chatInput)
+        {
+            return;
+        }
+
+        _chatInput = wantsInput;
+        if (wantsInput)
+        {
+            _window.BeginInput();
+            _window.View.FocusChatInput();
+        }
+        else
+        {
+            _window.EndInput();
+        }
+    }
+
+    private bool KeepsChatOpen() =>
+        _window is not null &&
+        _window.View.CurrentPage == NotchPage.Chat &&
+        (_chat?.IsStreaming == true || (_chatInput && _window.OwnsForeground));
+
+    private void PushChatConversations()
+    {
+        if (_chat is not null)
+        {
+            _window?.View.SetChatConversations(_chat.Conversations, _chat.Current);
+            _window?.View.SetChatModels(_chat.Models, _chat.Current.Model);
+        }
+    }
+
+    private void PushChatMessages()
+    {
+        if (_chat is not null)
+        {
+            _window?.View.SetChatMessages(_chat.Current.Messages, _chat.IsStreaming, _chat.ErrorText);
+        }
+    }
+
+    private void OnChatConversationsChanged(object? sender, EventArgs e) => Guard(PushChatConversations);
+
+    private void OnChatMessagesChanged(object? sender, EventArgs e) => Guard(PushChatMessages);
+
+    private void OnChatSendRequested(object? sender, string text) => Guard(() =>
+    {
+        if (_chat?.Send(text) == true)
+        {
+            _window?.View.ClearChatInput();
+        }
+    });
+
+    private void OnChatSettingsChanged(object? sender, ChatSettings e) => Guard(() => _chat?.ApplySettings(e));
+
+    private void OnChatCancelRequested(object? sender, EventArgs e) => Guard(() => _chat?.Cancel());
+
+    private void OnChatNewRequested(object? sender, EventArgs e) => Guard(() =>
+    {
+        _chat?.NewConversation();
+        _window?.View.FocusChatInput();
+    });
+
+    private void OnChatDeleteRequested(object? sender, EventArgs e) => Guard(() => _chat?.DeleteCurrent());
+
+    private void OnChatConversationSelected(object? sender, string id) => Guard(() => _chat?.Select(id));
+
+    private void OnChatModelSelected(object? sender, string model) => Guard(() => _chat?.SetModel(model));
+
+    private void OnChatConnectRequested(object? sender, EventArgs e) => Guard(() =>
+    {
+        if (openRouter.State == OpenRouterConnection.Connecting)
+        {
+            openRouter.CancelConnect();
+        }
+        else
+        {
+            _ = openRouter.ConnectAsync(chatSettings.Load().KeyCreditLimit);
+        }
+    });
+
+    private void OnChatCollapseRequested(object? sender, EventArgs e) => Guard(CollapseNow);
+
+    private void OnOpenRouterChanged(object? sender, EventArgs e) => Guard(() =>
+    {
+        _window?.View.SetChatConnection(openRouter.State, openRouter.LastErrorKey);
+        PushChatMessages();
+        UpdateChatInput();
+    });
+
+    private void OnAiUsageChanged(object? sender, List<AiUsage> usages) =>
+        Guard(() => _window?.View.SetAiUsage(usages, DateTime.Now));
+
+    private void OnAiUsageSettingsChanged(object? sender, AiUsageSettings e) => Guard(() => _aiUsage?.Configure(e));
+
     /// <summary>
     /// Discos e sensores só são lidos com a página deles na tela e a ilha aberta: a aba "Sistema" amostra a cada
     /// segundo enquanto visível; os discos são relidos cada vez que a aba "Armazenamento" aparece.
@@ -837,9 +1039,11 @@ public sealed class NotchModule(
         var compact = NotchLayout.IsCompact(_visibility, _current.CollapseToHandle, showsMedia);
         _window.View.SetMode(mode, _state.Peek, compact, showsMedia);
         var tall = _window.View.CurrentPage is NotchPage.Clipboard or NotchPage.Links || _window.View.ShowsMixer || _window.View.ShowsNetwork;
-        var shape = NotchLayout.ShapeFor(mode, showsMedia, compact, _window.View.HasTabs, tall, _window.View.ShowsFullControls);
+        var chat = _window.View.CurrentPage == NotchPage.Chat;
+        var shape = NotchLayout.ShapeFor(mode, showsMedia, compact, _window.View.HasTabs, tall, _window.View.ShowsFullControls, chat);
         _window.SetShape(NotchLayout.WithRoundness(shape, NotchAppearance.RoundnessFactor(_current.Roundness)), animate);
         UpdatePageSources();
+        UpdateChatInput();
         _window.SetVisible(_visibility != NotchVisibility.Hidden && !_sessionLocked && !_displayOff);
 
         if (mode == NotchMode.Expanded)
@@ -971,7 +1175,7 @@ public sealed class NotchModule(
     private void OnCollapseElapsed() => Guard(() =>
     {
         // Um PointerExited espúrio (clique num botão, por exemplo) não fecha a ilha com o mouse ainda em cima.
-        if (_window?.IsCursorInside() == true)
+        if (_window?.IsCursorInside() == true || KeepsChatOpen())
         {
             return;
         }

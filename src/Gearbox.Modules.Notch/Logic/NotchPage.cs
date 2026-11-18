@@ -12,6 +12,8 @@ public enum NotchPage
     Mixer,
     MixerDevices,
     Network,
+    Ai,
+    Chat,
 }
 
 public static class PageTransitions

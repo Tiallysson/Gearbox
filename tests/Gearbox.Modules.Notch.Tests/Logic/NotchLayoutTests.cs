@@ -91,6 +91,17 @@ public sealed class NotchLayoutTests
     }
 
     [Fact]
+    public void ShapeFor_Chat_EAMaiorFormaESoQuandoAberta()
+    {
+        var chat = NotchLayout.ShapeFor(NotchMode.Expanded, isPlaying: false, compact: false, withTabs: true, tall: true, chat: true);
+
+        Assert.Equal(NotchLayout.ExpandedChatShape, chat);
+        Assert.True(chat.Size.Width > NotchLayout.ExpandedTallShape.Size.Width);
+        Assert.True(chat.Size.Height > NotchLayout.ExpandedTallShape.Size.Height);
+        Assert.Equal(NotchLayout.PeekShape, NotchLayout.ShapeFor(NotchMode.Peek, isPlaying: false, compact: false, chat: true));
+    }
+
+    [Fact]
     public void ShapeFor_ControlesCompletos_CresceUmPoucoSoAberta()
     {
         var roomy = NotchLayout.ShapeFor(NotchMode.Expanded, isPlaying: false, compact: false, withTabs: true, roomy: true);
@@ -104,7 +115,7 @@ public sealed class NotchLayoutTests
     [Fact]
     public void MaxWindowSize_CabeAMaiorFormaComArredondamentoMaximoEPicoDaMola()
     {
-        var largest = NotchLayout.WindowSize(NotchLayout.WithRoundness(NotchLayout.ExpandedTallShape, NotchAppearance.MaxRoundnessFactor));
+        var largest = NotchLayout.WindowSize(NotchLayout.WithRoundness(NotchLayout.ExpandedChatShape, NotchAppearance.MaxRoundnessFactor));
         var peak = 1 + SpringMotion.MaxOvershoot;
 
         Assert.True(NotchLayout.MaxWindowSize.Width >= largest.Width * peak);
@@ -172,6 +183,7 @@ public sealed class NotchLayoutTests
         NotchLayout.ExpandedTabbedShape,
         NotchLayout.ExpandedRoomyShape,
         NotchLayout.ExpandedTallShape,
+        NotchLayout.ExpandedChatShape,
     ];
 
     public static TheoryData<NotchShape> CollapsedShapes =>

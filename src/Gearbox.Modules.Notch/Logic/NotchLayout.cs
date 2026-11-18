@@ -31,11 +31,13 @@ public static class NotchLayout
 
     public static readonly NotchShape ExpandedTallShape = new(new DipSize(420, 260), 28, 14);
 
+    public static readonly NotchShape ExpandedChatShape = new(new DipSize(480, 420), 28, 14);
+
     public static DipSize MaxWindowSize
     {
         get
         {
-            var largest = WindowSize(WithRoundness(ExpandedTallShape, NotchAppearance.MaxRoundnessFactor));
+            var largest = WindowSize(WithRoundness(ExpandedChatShape, NotchAppearance.MaxRoundnessFactor));
             var headroom = 1 + SpringMotion.MaxOvershoot;
             return new DipSize(Math.Ceiling(largest.Width * headroom), Math.Ceiling(largest.Height * headroom));
         }
@@ -68,8 +70,9 @@ public static class NotchLayout
     /// para não cobrir abas e botões (os avisos e a ilha aberta continuam no tamanho normal).
     /// <paramref name="withTabs"/> = a ilha aberta mostra as abas (algum controle rápido ligado).
     /// </summary>
-    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false, bool tall = false, bool roomy = false) => mode switch
+    public static NotchShape ShapeFor(NotchMode mode, bool isPlaying, bool compact, bool withTabs = false, bool tall = false, bool roomy = false, bool chat = false) => mode switch
     {
+        NotchMode.Expanded when chat => ExpandedChatShape,
         NotchMode.Expanded when tall => ExpandedTallShape,
         NotchMode.Expanded when roomy => ExpandedRoomyShape,
         NotchMode.Expanded => withTabs ? ExpandedTabbedShape : ExpandedShape,

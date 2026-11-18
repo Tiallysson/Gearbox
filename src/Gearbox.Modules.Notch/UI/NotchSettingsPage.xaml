@@ -257,6 +257,158 @@
             </StackPanel>
         </Border>
 
+        <TextBlock x:Uid="ChatHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowChatTitle" />
+                    <TextBlock x:Uid="ShowChatDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowChatToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowChat, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.ShowChat, Mode=OneWay}">
+            <StackPanel Spacing="12">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="OpenRouterTitle" />
+                        <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.OpenRouterStatus, Mode=OneWay}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Click="OnOpenRouterConnectClick"
+                        Content="{x:Bind ViewModel.OpenRouterConnectLabel, Mode=OneWay}" />
+                </Grid>
+                <NumberBox
+                    x:Uid="OpenRouterCreditLimitBox"
+                    HorizontalAlignment="Left"
+                    MinWidth="200"
+                    IsEnabled="{x:Bind ViewModel.CanEditCreditLimit, Mode=OneWay}"
+                    Minimum="0"
+                    SmallChange="5"
+                    SpinButtonPlacementMode="Compact"
+                    Value="{x:Bind ViewModel.KeyCreditLimit, Mode=TwoWay}" />
+                <TextBlock x:Uid="OpenRouterCreditLimitDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="AllowPaidModelsTitle" />
+                        <TextBlock x:Uid="AllowPaidModelsDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Uid="AllowPaidModelsToggle"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AllowPaidModels, Mode=TwoWay}" />
+                </Grid>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Uid="AllowDataCollectionTitle" />
+                        <TextBlock x:Uid="AllowDataCollectionDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Uid="AllowDataCollectionToggle"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AllowDataCollection, Mode=TwoWay}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <TextBlock x:Uid="AiUsageHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
+
+        <Border Style="{StaticResource CardStyle}">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Uid="ShowAiUsageTitle" />
+                    <TextBlock x:Uid="ShowAiUsageDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+                <ToggleSwitch
+                    x:Uid="ShowAiUsageToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    IsOn="{x:Bind ViewModel.ShowAiUsage, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.ShowAiUsage, Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="AiAnthropicTitle" />
+                    <TextBlock x:Uid="AiAnthropicDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <PasswordBox x:Name="AnthropicKeyBox" x:Uid="AiAnthropicKeyBox" />
+                        <Button x:Uid="AiSaveKeyButton" Grid.Column="1" Click="OnSaveAnthropicKeyClick" Style="{ThemeResource AccentButtonStyle}" />
+                        <Button x:Uid="AiRemoveKeyButton" Grid.Column="2" Click="OnRemoveAnthropicKeyClick" />
+                    </Grid>
+                    <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.AnthropicKeyStatus, Mode=OneWay}" />
+                    <NumberBox
+                        x:Uid="AiAnthropicBudgetBox"
+                        HorizontalAlignment="Left"
+                        MinWidth="200"
+                        Minimum="0"
+                        SmallChange="10"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.AnthropicBudget, Mode=TwoWay}" />
+                </StackPanel>
+
+                <StackPanel Spacing="8">
+                    <TextBlock x:Uid="AiOpenAiTitle" />
+                    <TextBlock x:Uid="AiOpenAiDescription" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <PasswordBox x:Name="OpenAiKeyBox" x:Uid="AiOpenAiKeyBox" />
+                        <Button x:Uid="AiSaveKeyButton" Grid.Column="1" Click="OnSaveOpenAiKeyClick" Style="{ThemeResource AccentButtonStyle}" />
+                        <Button x:Uid="AiRemoveKeyButton" Grid.Column="2" Click="OnRemoveOpenAiKeyClick" />
+                    </Grid>
+                    <TextBlock Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.OpenAiKeyStatus, Mode=OneWay}" />
+                    <NumberBox
+                        x:Uid="AiOpenAiBudgetBox"
+                        HorizontalAlignment="Left"
+                        MinWidth="200"
+                        Minimum="0"
+                        SmallChange="10"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.OpenAiBudget, Mode=TwoWay}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <TextBlock x:Uid="AppearanceHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="1,24,0,4" />
 
         <Border Style="{StaticResource CardStyle}">

@@ -21,6 +21,22 @@ public sealed partial class NotchSettingsPage : Page
 
     private void OnAddLinkClick(object sender, RoutedEventArgs e) => ViewModel.AddLink();
 
+    private void OnOpenRouterConnectClick(object sender, RoutedEventArgs e) => ViewModel.ToggleOpenRouterConnection();
+
+    private void OnSaveAnthropicKeyClick(object sender, RoutedEventArgs e) => SaveKey(AiProvider.Anthropic, AnthropicKeyBox);
+
+    private void OnSaveOpenAiKeyClick(object sender, RoutedEventArgs e) => SaveKey(AiProvider.OpenAi, OpenAiKeyBox);
+
+    private void OnRemoveAnthropicKeyClick(object sender, RoutedEventArgs e) => ViewModel.RemoveKey(AiProvider.Anthropic);
+
+    private void OnRemoveOpenAiKeyClick(object sender, RoutedEventArgs e) => ViewModel.RemoveKey(AiProvider.OpenAi);
+
+    private void SaveKey(AiProvider provider, PasswordBox box)
+    {
+        ViewModel.SaveKey(provider, box.Password);
+        box.Password = string.Empty;
+    }
+
     private void OnLinkMoveUpClick(object sender, RoutedEventArgs e) => WithLinkId(sender, id => ViewModel.MoveLink(id, -1));
 
     private void OnLinkMoveDownClick(object sender, RoutedEventArgs e) => WithLinkId(sender, id => ViewModel.MoveLink(id, 1));

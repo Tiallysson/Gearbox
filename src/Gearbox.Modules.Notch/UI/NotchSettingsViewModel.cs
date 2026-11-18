@@ -12,6 +12,9 @@ namespace Gearbox.Modules.Notch.UI;
 public sealed partial class NotchSettingsViewModel : ObservableObject
 {
     private readonly ISettingsService<NotchSettings> _settings;
+    private readonly ISettingsService<AiUsageSettings> _aiSettings;
+    private readonly ISettingsService<ChatSettings> _chatSettings;
+    private readonly OpenRouterAccount _openRouter;
     private readonly ILogger<NotchSettingsViewModel> _logger;
     private readonly LinkCatalog _links;
     private readonly LinkEditor _linkEditor;
@@ -22,11 +25,18 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
 
     public NotchSettingsViewModel(
         ISettingsService<NotchSettings> settings,
+        ISettingsService<AiUsageSettings> aiSettings,
+        ISettingsService<ChatSettings> chatSettings,
+        OpenRouterAccount openRouter,
         LinkCatalog links,
         LinkEditor linkEditor,
         ILogger<NotchSettingsViewModel> logger)
     {
         _settings = settings;
+        _aiSettings = aiSettings;
+        _chatSettings = chatSettings;
+        _openRouter = openRouter;
+        _openRouter.Changed += OnOpenRouterChanged;
         _links = links;
         _linkEditor = linkEditor;
         _logger = logger;
@@ -54,6 +64,17 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
         ShowSystemInfo = current.ShowSystemInfo;
         ShowClipboard = current.ShowClipboard;
         ShowLinks = current.ShowLinks;
+        ShowAiUsage = current.ShowAiUsage;
+        var ai = aiSettings.Load();
+        AnthropicBudget = (double)ai.AnthropicMonthlyBudget;
+        OpenAiBudget = (double)ai.OpenAiMonthlyBudget;
+        RefreshKeys();
+        ShowChat = current.ShowChat;
+        var chat = chatSettings.Load();
+        KeyCreditLimit = (double)chat.KeyCreditLimit;
+        AllowPaidModels = chat.AllowPaidModels;
+        AllowDataCollection = chat.AllowDataCollection;
+        RefreshOpenRouter();
         HideOnFullscreen = current.HideOnFullscreen;
         CompactWhenCovered = current.CompactWhenCovered;
         CollapseToHandle = current.CollapseToHandle;
@@ -130,6 +151,45 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     public partial bool ShowLinks { get; set; }
 
     [ObservableProperty]
+    public partial bool ShowAiUsage { get; set; }
+
+    [ObservableProperty]
+    public partial double AnthropicBudget { get; set; }
+
+    [ObservableProperty]
+    public partial double OpenAiBudget { get; set; }
+
+    [ObservableProperty]
+    public partial string AnthropicKeyStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string OpenAiKeyStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool ShowChat { get; set; }
+
+    [ObservableProperty]
+    public partial double KeyCreditLimit { get; set; }
+
+    [ObservableProperty]
+    public partial bool AllowPaidModels { get; set; }
+
+    [ObservableProperty]
+    public partial bool AllowDataCollection { get; set; }
+
+    [ObservableProperty]
+    public partial string OpenRouterStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string OpenRouterConnectLabel { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsOpenRouterConnected { get; set; }
+
+    [ObservableProperty]
+    public partial bool CanEditCreditLimit { get; set; }
+
+    [ObservableProperty]
     public partial bool HideOnFullscreen { get; set; }
 
     [ObservableProperty]
@@ -160,6 +220,40 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
     partial void OnShowClipboardChanged(bool value) => Save();
 
     partial void OnShowLinksChanged(bool value) => Save();
+
+    partial void OnShowAiUsageChanged(bool value) => Save();
+
+    partial void OnShowChatChanged(bool value) => Save();
+
+    partial void OnKeyCreditLimitChanged(double value) =>
+        SaveChat(settings => settings.KeyCreditLimit = double.IsFinite(value) && value > 0 ? Math.Round((decimal)value, 2) : 0m);
+
+    partial void OnAllowPaidModelsChanged(bool value) => SaveChat(settings => settings.AllowPaidModels = value);
+
+    partial void OnAllowDataCollectionChanged(bool value) => SaveChat(settings => settings.AllowDataCollection = value);
+
+    private void SaveChat(Action<ChatSettings> change)
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        try
+        {
+            var settings = _chatSettings.Load();
+            change(settings);
+            _chatSettings.Save(settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Não foi possível salvar as configurações do chat");
+        }
+    }
+
+    partial void OnAnthropicBudgetChanged(double value) => SaveAiUsage();
+
+    partial void OnOpenAiBudgetChanged(double value) => SaveAiUsage();
 
     partial void OnHideOnFullscreenChanged(bool value) => Save();
 
@@ -238,13 +332,115 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
         return Enum.IsDefined(value) ? value : fallback;
     }
 
+    public void SaveKey(AiProvider provider, string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        try
+        {
+            AiKeyVault.Set(provider, key);
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Não foi possível guardar a chave de {Provider}", provider);
+        }
+
+        RefreshKeys();
+        SaveAiUsage();
+    }
+
+    public void RemoveKey(AiProvider provider)
+    {
+        AiKeyVault.Remove(provider);
+        RefreshKeys();
+        SaveAiUsage();
+    }
+
+    private void RefreshKeys()
+    {
+        AnthropicKeyStatus = KeyStatus(AiProvider.Anthropic);
+        OpenAiKeyStatus = KeyStatus(AiProvider.OpenAi);
+
+        static string KeyStatus(AiProvider provider) =>
+            ModuleStrings.Get(AiKeyVault.Has(provider) ? "AiKeySaved" : "AiKeyMissing");
+    }
+
+    private void SaveAiUsage()
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        try
+        {
+            _aiSettings.Save(new AiUsageSettings
+            {
+                AnthropicMonthlyBudget = ToBudget(AnthropicBudget),
+                OpenAiMonthlyBudget = ToBudget(OpenAiBudget),
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Não foi possível salvar o orçamento de IA");
+        }
+
+        static decimal ToBudget(double value) => double.IsFinite(value) && value > 0 ? Math.Round((decimal)value, 2) : 0m;
+    }
+
+    public void ToggleOpenRouterConnection()
+    {
+        switch (_openRouter.State)
+        {
+            case OpenRouterConnection.Connecting:
+                _openRouter.CancelConnect();
+                break;
+            case OpenRouterConnection.Connected:
+                _openRouter.Disconnect();
+                break;
+            default:
+                _ = _openRouter.ConnectAsync(_chatSettings.Load().KeyCreditLimit);
+                break;
+        }
+    }
+
+    private void OnOpenRouterChanged(object? sender, EventArgs e) => RefreshOpenRouter();
+
+    private void RefreshOpenRouter()
+    {
+        var state = _openRouter.State;
+        IsOpenRouterConnected = state == OpenRouterConnection.Connected;
+        CanEditCreditLimit = state == OpenRouterConnection.Disconnected;
+        OpenRouterStatus = _openRouter.LastErrorKey is { } error
+            ? ModuleStrings.Get(error)
+            : ModuleStrings.Get(state switch
+            {
+                OpenRouterConnection.Connected => "OpenRouterStatusConnected",
+                OpenRouterConnection.Connecting => "OpenRouterStatusConnecting",
+                _ => "OpenRouterStatusDisconnected",
+            });
+        OpenRouterConnectLabel = ModuleStrings.Get(state switch
+        {
+            OpenRouterConnection.Connected => "OpenRouterDisconnectButton",
+            OpenRouterConnection.Connecting => "ChatConnectCancel",
+            _ => "ChatConnectButton",
+        });
+    }
+
     public void AddLink() => _linkEditor.Open();
 
     public void RemoveLink(string id) => _links.Remove(id);
 
     public void MoveLink(string id, int offset) => _links.Move(id, offset);
 
-    public void Detach() => _links.Changed -= OnLinksChanged;
+    public void Detach()
+    {
+        _links.Changed -= OnLinksChanged;
+        _openRouter.Changed -= OnOpenRouterChanged;
+    }
 
     private void OnLinksChanged(object? sender, EventArgs e) => RefreshLinks();
 
@@ -360,6 +556,8 @@ public sealed partial class NotchSettingsViewModel : ObservableObject
             ShowSystemInfo = ShowSystemInfo,
             ShowClipboard = ShowClipboard,
             ShowLinks = ShowLinks,
+            ShowAiUsage = ShowAiUsage,
+            ShowChat = ShowChat,
             HideOnFullscreen = HideOnFullscreen,
             CompactWhenCovered = CompactWhenCovered,
             CollapseToHandle = CollapseToHandle,

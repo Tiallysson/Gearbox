@@ -29,6 +29,8 @@ internal sealed class NotchWindow : IDisposable
     private NotchRegionShape _region;
     private bool _visible;
     private bool _disposed;
+    private bool _acceptsInput;
+    private nint _previousForeground;
 
     public NotchWindow(DisplayMonitor monitor, ILogger logger)
     {
@@ -130,6 +132,53 @@ internal sealed class NotchWindow : IDisposable
         }
     }
 
+    public bool OwnsForeground
+    {
+        get
+        {
+            var foreground = NativeWindow.GetForegroundWindow();
+            return foreground != 0 && NativeWindow.GetProcessId(foreground) == (uint)Environment.ProcessId;
+        }
+    }
+
+    public void BeginInput()
+    {
+        if (_disposed || _acceptsInput)
+        {
+            return;
+        }
+
+        _acceptsInput = true;
+        if (!OwnsForeground)
+        {
+            _previousForeground = NativeWindow.GetForegroundWindow();
+        }
+
+        NativeWindow.SetActivatable(_hwnd, true);
+        if (!NativeWindow.TrySetForeground(_hwnd))
+        {
+            _logger.LogDebug("O Windows não deu o foco à ilha; ele vem no primeiro clique");
+        }
+    }
+
+    public void EndInput()
+    {
+        if (!_acceptsInput)
+        {
+            return;
+        }
+
+        _acceptsInput = false;
+        var owned = OwnsForeground;
+        NativeWindow.SetActivatable(_hwnd, false);
+        if (owned)
+        {
+            NativeWindow.TrySetForeground(_previousForeground);
+        }
+
+        _previousForeground = 0;
+    }
+
     /// <summary>O cursor está sobre a janela (rede de segurança para um <c>PointerExited</c> perdido).</summary>
     public bool IsCursorInside() =>
         NativeWindow.TryGetCursorPosition(out var x, out var y) &&
@@ -142,6 +191,7 @@ internal sealed class NotchWindow : IDisposable
             return;
         }
 
+        EndInput();
         _disposed = true;
         View.ShapeFrame -= OnShapeFrame;
         View.StopAnimations();
