@@ -43,6 +43,14 @@ public sealed partial class NotchView
 
     public event EventHandler? ChatCollapseRequested;
 
+    private void InitializeChat()
+    {
+        ChatInput.MaxLength = ChatGuardrails.MaxInputLength;
+        ChatMessageList.ItemsSource = _chatItems;
+        ChatPage.HorizontalAlignment = HorizontalAlignment.Left;
+        ChatPage.Width = NotchLayout.ExpandedChatShape.Size.Width - ExpandedPanel.Padding.Left - ExpandedPanel.Padding.Right;
+    }
+
     public bool IsChatInputFocused => ChatInput.FocusState != FocusState.Unfocused;
 
     public void FocusChatInput()
@@ -117,7 +125,6 @@ public sealed partial class NotchView
 
     public void SetChatMessages(IReadOnlyList<ChatMessage> messages, bool streaming, string? error)
     {
-        ChatMessageList.ItemsSource ??= _chatItems;
         var follow = ChatScroll.VerticalOffset >= ChatScroll.ScrollableHeight - FollowThreshold;
         for (var index = 0; index < messages.Count; index++)
         {
@@ -149,10 +156,19 @@ public sealed partial class NotchView
         ChatErrorText.Visibility = connected && error is not null ? Visibility.Visible : Visibility.Collapsed;
         SetChatStreaming(streaming);
 
-        if (follow)
+        if (follow && _chatItems.Count > 0)
         {
-            ChatScroll.UpdateLayout();
-            ChatScroll.ChangeView(null, ChatScroll.ScrollableHeight, null, disableAnimation: true);
+            ScrollChatToEnd();
+        }
+    }
+
+    private void ScrollChatToEnd()
+    {
+        ChatScroll.UpdateLayout();
+        if (ChatMessageList.GetOrCreateElement(_chatItems.Count - 1) is { } last)
+        {
+            last.UpdateLayout();
+            last.StartBringIntoView(new BringIntoViewOptions { VerticalAlignmentRatio = 1, AnimationDesired = false });
         }
     }
 

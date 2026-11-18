@@ -85,7 +85,7 @@ public sealed partial class NotchView : UserControl
     {
         InitializeComponent();
         MixerList.ItemsSource = _mixerRows;
-        ChatInput.MaxLength = ChatGuardrails.MaxInputLength;
+        InitializeChat();
         SetSpeedTestRunning(false);
         SpeedTestText.Text = ModuleStrings.Get("SpeedTestHint");
         SetNetworkHistory(new NetworkHistory());
