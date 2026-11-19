@@ -1,7 +1,9 @@
 using Gearbox.Core;
 using Gearbox.Interop.Windowing;
-using Gearbox.Modules.Wallpaper.Native;
-using Gearbox.Modules.Wallpaper.UI;
+using Gearbox.Modules.Wallpaper.Models;
+using Gearbox.Modules.Wallpaper.Services.Storage;
+using Gearbox.Modules.Wallpaper.ViewModels;
+using Gearbox.Modules.Wallpaper.Views.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

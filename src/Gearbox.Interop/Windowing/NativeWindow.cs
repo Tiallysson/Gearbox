@@ -86,6 +86,20 @@ public static class NativeWindow
 
     public static bool AllowSetForegroundWindow(uint processId) => PInvoke.AllowSetForegroundWindow(processId);
 
+    public static bool TrySetForeground(nint hwnd) =>
+        hwnd != 0 && PInvoke.IsWindow(new HWND(hwnd)) && PInvoke.SetForegroundWindow(new HWND(hwnd));
+
+    public static void SetActivatable(nint hwnd, bool activatable)
+    {
+        var handle = new HWND(hwnd);
+        var exStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+        var updated = activatable ? exStyle & ~WINDOW_EX_STYLE.WS_EX_NOACTIVATE : exStyle | WINDOW_EX_STYLE.WS_EX_NOACTIVATE;
+        if (updated != exStyle)
+        {
+            _ = PInvoke.SetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)(uint)updated);
+        }
+    }
+
     public static void BringToFront(nint hwnd)
     {
         var window = new HWND(hwnd);

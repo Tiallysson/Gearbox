@@ -1,9 +1,9 @@
 using Gearbox.Core.Modules;
 using Gearbox.Core.Settings;
 using Gearbox.Interop.Windowing;
-using Gearbox.Modules.RoundedMaximize.Logic;
-using Gearbox.Modules.RoundedMaximize.Native;
-using Gearbox.Modules.RoundedMaximize.UI;
+using Gearbox.Modules.RoundedMaximize.Models;
+using Gearbox.Modules.RoundedMaximize.Services.Windowing;
+using Gearbox.Modules.RoundedMaximize.Views.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Windows.UI.ViewManagement;

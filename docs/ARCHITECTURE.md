@@ -14,8 +14,8 @@
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────── Gearbox.Modules.* (um por ferramenta) ─┐
-│ Módulo (Start/Stop) ─► Logic/ (regras puras) + Native/ (aplica no sistema)   │
-│ UI/ (página de configurações + ViewModel) · Strings/*.resw                   │
+│ Módulo (Start/Stop) ─► Models/ (regras puras) + Services/ (aplica no sistema)│
+│ ViewModels/ + Views/ (página de configurações, controles) · Strings/*.resw   │
 └──────────────────────────────┬───────────────────────────────────────────────┘
                                │
 ┌──────────────────────────────▼────────────────────────── Gearbox.Interop ─────┐
@@ -103,7 +103,7 @@ EVENT_OBJECT_LOCATIONCHANGE (OBJID_WINDOW, CHILDID_SELF)
              5. DwmSetWindowAttribute(CORNER_PREFERENCE = ROUND, BORDER_COLOR)
 ```
 
-- `Logic/` (`EligibilityRules`, `PseudoMaximizeTracker`, `PseudoMaximizeLayout`, `ColorRef`,
+- `Models/` (`EligibilityRules`, `PseudoMaximizeTracker`, `PseudoMaximizeLayout`, `ColorRef`,
   `ProcessNameCache`) não chama Win32 e é coberto por testes.
 - As margens são medidas a partir da moldura **visível** (`DWMWA_EXTENDED_FRAME_BOUNDS`), descontando
   as bordas invisíveis de redimensionamento.
@@ -125,7 +125,7 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
               └─ original → devolve a imagem guardada no snapshot
 ```
 
-- **Galeria** (`Logic/Gallery`): `GalleryCatalog` tem os 10 wallpapers (5 estáticos, 5 interativos), por id estável;
+- **Galeria** (`Models/Gallery`): `GalleryCatalog` tem os 10 wallpapers (5 estáticos, 5 interativos), por id estável;
   `WallpaperSettings.GalleryWallpaperId` é o ativo (nenhum por padrão). Com um ativo, ele vale para todos os
   monitores e ganha dos arquivos; escolher um arquivo na página desativa o da galeria.
   - **Estáticos**: desenhados por código em `StaticWallpaperRenderer` (ruído fractal, funções de distância,
@@ -135,7 +135,7 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
     geração falhar, o monitor volta ao original com o problema `RenderFailed`; mudar as configurações tenta de novo.
     A imagem vai pelo mesmo caminho dos arquivos (com snapshot para restaurar), sempre em "Preencher". A cada
     aplicação o cache é podado: fica só a imagem em uso (e as que estão sendo geradas), e `.tmp` órfãos somem.
-  - **Interativos**: cenas em `UI/Scenes` (`WallpaperScene` + `SceneFactory`), árvores de visuais de Composition com
+  - **Interativos**: cenas em `Views/Scenes` (`WallpaperScene` + `SceneFactory`), árvores de visuais de Composition com
     animações de quadros-chave em loop, que rodam no compositor (GPU), sem trabalho por quadro na thread de UI.
     Pausam pelos `AnimationController` (mesma `PausePolicy` dos vídeos) e, paradas, servem de pôster. As animações
     usam propriedades inteiras (`Translation`, `Offset`, `Scale`), não subcanais, para o controlador existir. Cada
@@ -168,10 +168,10 @@ WallpaperSettings + monitores (IDesktopWallpaper) + cache da galeria
 
 ```
 NotchModule (orquestra, timers)
-  ├─ NotchState (Logic) ─► modo: Collapsed | Peek (volume, bateria, faixa nova) | Expanded (mouse em cima)
-  ├─ OverlapRules (Logic) ─► Normal | Compact (alça) | Hidden (tela cheia)
-  ├─ NotchLayout (Logic) ─► forma (tamanho em DIP + raio) e posição no topo do monitor principal
-  ├─ QuickControls (Logic) ─► regras dos controles rápidos (alternar rádio, slider → volume/mudo)
+  ├─ NotchState (Models) ─► modo: Collapsed | Peek (volume, bateria, faixa nova) | Expanded (mouse em cima)
+  ├─ OverlapRules (Models) ─► Normal | Compact (alça) | Hidden (tela cheia)
+  ├─ NotchLayout (Models) ─► forma (tamanho em DIP + raio) e posição no topo do monitor principal
+  ├─ QuickControls (Models) ─► regras dos controles rápidos (alternar rádio, slider → volume/mudo)
   ├─ fontes: MediaSessionWatcher (WinRT) · AudioVolumeMonitor (Core Audio) · PowerManager (WinRT)
   │          ConnectivityWatcher (WinRT: Windows.Devices.Radios + NetworkInformation) · AudioEndpoints (Core Audio)
   └─► NotchWindow ─► NotchView (XAML: forma preta animada + conteúdo de cada modo; aberta: abas Mídia/Controles)
@@ -210,7 +210,7 @@ NotchModule (orquestra, timers)
 - **Região da janela**: a janela tem o tamanho máximo (`NotchLayout.MaxWindowSize`: a maior forma com o maior
   arredondamento, mais a folga do pico da mola) e a região recorta a forma atual, para não bloquear cliques em volta.
   Durante a animação, a `NotchView` emite `ShapeFrame` a cada quadro e a `NotchWindow` atualiza a região.
-- **Animação com mola** (`NotchSettings.SpringAnimation`/`SpringIntensity`): `SpringMotion` (Logic) é um oscilador
+- **Animação com mola** (`NotchSettings.SpringAnimation`/`SpringIntensity`): `SpringMotion` (Models) é um oscilador
   amortecido com solução fechada; `SpringAnimator` (UI) aplica os valores em `CompositionTarget.Rendering`. A forma
   (largura, altura e orelhas) e o painel que entra (escala 0,96→1 e deslocamento −6→0, junto do fade) usam a mola;
   desligada, a forma volta ao `Storyboard` com `CubicEase`. Uma animação interrompida continua do tamanho atual.
@@ -282,7 +282,7 @@ NotchModule (orquestra, timers)
     guarda os objetos COM para ler o pico (`IAudioMeterInformation`) e mudar volume e mudo (`ISimpleAudioVolume`).
     Tudo roda na thread de UI: varredura a cada 1 s (`AudioMixer`, Native) e medidor a 20 Hz só com a página do
     mixer na tela. Notificações de sessão nova exigiriam uma thread MTA, por isso a varredura.
-  - `MixerApps.Open` (Logic) mostra o mesmo que o mixer de volume do Windows: toda sessão não expirada, tocando ou
+  - `MixerApps.Open` (Models) mostra o mesmo que o mixer de volume do Windows: toda sessão não expirada, tocando ou
     não, uma linha por executável (chave = nome do `.exe` em minúsculas). "Sons do sistema" (`#system`) vem
     sempre primeiro; o volume mostrado é o da sessão que está tocando, se houver.
   - Saída por app: `AppAudioRouting` usa `IAudioPolicyConfigFactory` (`Windows.Media.Internal.AudioPolicyConfig`),
@@ -295,7 +295,7 @@ NotchModule (orquestra, timers)
     ainda não viu (inclusive as que já existiam ao ligar). Diferente dos controles rápidos, isso é estado do módulo:
     ao parar, os apps que o Gearbox mudou nesta execução voltam a 100%, sem mudo e à saída padrão
     (`MixerMemory.Reset`). Um app que já fechou não pode ser desfeito (a saída por app é por processo vivo).
-- **Visual** no estilo shadcn/ui (tema "neutral" escuro): `UI/NotchTheme.xaml` (um `ResourceDictionary` com
+- **Visual** no estilo shadcn/ui (tema "neutral" escuro): `Views/Notch/NotchTheme.xaml` (um `ResourceDictionary` com
   `x:Class`, mesclado na `NotchView` por instância, pelo mesmo motivo de caminho da fonte abaixo) tem a paleta, com
   `muted`/`accent`/`input` como brancos translúcidos para o acrílico aparecer, e templates próprios de
   `Button`/`ToggleButton` (ghost, outline, toggle e aba), sem a borda de elevação nem o acento do Windows. Slider e
@@ -305,7 +305,7 @@ NotchModule (orquestra, timers)
 - **Contraste do texto** (`NotchSettings.AdaptTextContrast`): com fundo não opaco e a janela realmente transparente
   (`TextContrast.ShowsWhatIsBehind`; se `TransparentWindow.Apply` falhou, a ilha é opaca e o texto fica claro), o módulo captura (GDI `BitBlt` com `CAPTUREBLT`, para incluir janelas em camadas,
   `Interop/Desktop/ScreenPixels`) faixas da tela logo ao lado e abaixo da ilha — fora da região recortada da janela,
-  então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Logic/TextContrast` mistura
+  então é o que está atrás dela —, a cada 1 s e depois de cada reavaliação de sobreposição. `Models/TextContrast` mistura
   a média com a cor da ilha pela opacidade do estilo, calcula a luminância relativa (WCAG) e escolhe o tom com
   histerese (escuro acima de 0,24, volta ao claro abaixo de 0,13). `NotchView.SetTextTone` troca o `RequestedTheme`
   (texto padrão dos controles) e `NotchTheme.ApplyTone` muda a `Color` dos próprios pincéis da paleta: como todo o XAML
@@ -326,7 +326,7 @@ NotchModule (orquestra, timers)
 - **Abas e páginas**: a view expõe `CurrentPage` (`NotchPage`) e `PageChanged`; `NotchModule.UpdatePageSources` só lê
   discos e sensores com a ilha aberta **e** a página deles na tela.
   - *Armazenamento*: `DriveScanner` (`DriveInfo`, numa thread do pool; só discos fixos e removíveis, sem rede/CD) é
-    relido cada vez que a aba aparece. Anéis em `UsageRing` (controle em `UI/Controls`, geometria em `RingGeometry`,
+    relido cada vez que a aba aparece. Anéis em `UsageRing` (controle em `Views/Controls`, geometria em `RingGeometry`,
     vermelho a partir de 90%). O clique abre o disco com o caminho completo do `explorer.exe` e o disco como argumento
     separado, sem shell. Antes, confere se é mesmo a raiz de uma unidade.
   - *Sistema*: `SystemMonitor` amostra a cada 1 s numa thread do pool enquanto a aba está visível (`SetActive`).
@@ -339,5 +339,94 @@ NotchModule (orquestra, timers)
     (`Thermal Zone Information(*)\Temperature`, em Kelvin), que nem todo desktop tem. Temperatura real dos núcleos
     exigiria um driver de kernel (ex.: WinRing0, bloqueado pelo Defender como driver vulnerável): fora de escopo
     por segurança.
+  - *IA* (`ShowAiUsage`, desligada por padrão): `AiUsageMonitor` (`BackgroundLoop` + `PeriodicTimer` de 5 min) lê o
+    gasto do mês corrente (UTC, `BillingPeriod`) no relatório de custos de cada provedor com chave e orçamento:
+    Anthropic `GET /v1/organizations/cost_report` (valores em centavos, `x-api-key` + `anthropic-version`) e OpenAI
+    `GET /v1/organization/costs` (valores em dólares, `Bearer`), seguindo `next_page` (`AiCostReport`, puro e testado).
+    Roda enquanto a aba está ligada, não só com ela na tela, para abrir já com dados. 401/403 vira "chave inválida";
+    falha de rede vira "sem conexão" e tenta de novo no próximo ciclo. Orçamentos ficam em `settings\NotchAiUsage.json`
+    (`AiUsageSettings`); as chaves Admin ficam só no Gerenciador de Credenciais (`PasswordVault`, recurso
+    `Gearbox.AiUsage`, via `AiKeyVault`). Salvar ou remover uma chave regrava `AiUsageSettings`, e o `Changed` dispara
+    uma nova leitura. Percentual = gasto ÷ orçamento (nenhuma das APIs expõe uma "cota"); anel "Total" com 2+
+    provedores lidos que tenham orçamento.
+    - **OpenRouter**: aparece sozinho quando há conexão (a chave do OAuth, sem chave Admin). Lê `GET /api/v1/key`;
+      com `limit` na chave, o percentual é `(limit − limit_remaining) ÷ limit`. Sem limite, usa
+      `usage_monthly ÷ OpenRouterMonthlyBudget`. Sem nenhum dos dois, o anel mostra só "US$ X no mês"
+      (`OpenRouterUsage`, puro e testado). Além do ciclo de 5 min, a leitura é refeita ao conectar ou desconectar e
+      depois de cada resposta do chat (`ReplyCompleted`), no máximo uma vez a cada 30 s.
+  - *Chat* (`ShowChat`, desligada por padrão): conversa com o Bolt via OpenRouter.
+    - **Conexão** (`OpenRouterAccount`, singleton compartilhado pela página de configurações e pela ilha): OAuth PKCE
+      (`Pkce`, `OpenRouterOAuth`). Abre um `TcpListener` em `127.0.0.1` numa porta livre (e em `::1` na mesma porta,
+      porque o navegador pode resolver `localhost` para IPv6), abre o navegador em `openrouter.ai/auth` com
+      `callback_url=http://localhost:<porta>/callback`, `state` anti-CSRF e o `limit` escolhido, lê só a primeira linha
+      da requisição, confere o `state` e troca o código em `POST /api/v1/auth/keys`. Sem `HttpListener`: o `http.sys`
+      pode exigir reserva de URL de administrador. A chave fica no `AiKeyVault` (`AiProvider.OpenRouter`). Desiste em
+      5 min; um 401 numa conversa apaga a chave e volta ao estado desconectado.
+    - **Conversa** (`ChatSession`, criada com a aba ligada): streaming SSE de `POST /api/v1/chat/completions`
+      (`ChatStream` lê `data:`, `[DONE]` e erros no meio do stream). Os pedaços se acumulam e vão para a tela a cada
+      50 ms. Persona fixa (`ChatSystemPrompt` no `.resw`) mais as mensagens recentes até ~24 mil caracteres
+      (`ChatContext`). Modelos de `GET /api/v1/models` (só os que geram texto, `openrouter/auto` primeiro). O
+      último modelo usado fica em `settings\NotchChat.json` (`ChatSettings`), junto com o limite de crédito da próxima
+      conexão.
+    - **Guardrails** (`ChatGuardrails`, puro e testado; aplicados no `OpenRouterClient`, a última barreira):
+      - `SemaphoreSlim(1,1)`: uma segunda requisição simultânea é recusada.
+      - Entrada de no máximo 12.000 caracteres: a caixa já limita (`MaxLength`) e mostra um contador perto do fim.
+      - `max_tokens: 1500` em toda requisição.
+      - Com `AllowPaidModels` desligado (o padrão), só aceita `openrouter/free` ou modelos terminados em `:free`, e
+        o seletor do chat já mostra só esses.
+      - Antes de cada envio consulta `GET /api/v1/key` e bloqueia com uso ≥ 98% do limite (pelo `limit_remaining`,
+        que considera os resets). Se a consulta falhar ou a chave não tiver limite, envia mesmo assim (fail-open) e
+        registra no log.
+      - `provider.data_collection` é `deny`, a não ser que `AllowDataCollection` esteja ligado (muitos modelos
+        gratuitos só existem em provedores que coletam dados; o erro "data policy" vira uma mensagem explicando
+        isso).
+      - Cada mensagem do usuário vai dentro de `<contexto_usuario>`; aberturas e fechamentos dessa tag no texto são
+        escapados (`&lt;`), e o system prompt manda tratar o conteúdo como dado, não como regra.
+      - Redação de segredos (`RedactSecrets`, regex gerada): chaves `sk-…`, `ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_`,
+        `github_pat_`, `AIza…` e tokens após `Bearer` viram `[REDACTED_SECRET]`. Há fronteira de palavra e tamanho
+        mínimo para não pegar "risk-free"; depois de `Bearer` o token precisa ter um dígito. A redação é aplicada
+        antes de salvar a conversa (o segredo não chega ao disco nem à tela, que mostra "1 segredo foi ocultado")
+        e de novo no `SanitizeUserPrompt` antes do envio. Ela é idempotente: `[` não casa com nenhum padrão.
+      - Janela de histórico (`TrimConversationHistory`): o system prompt mais as últimas 6 mensagens, sem começar
+        por uma resposta. O limite de ~24 mil caracteres do `ChatContext` continua como segunda trava.
+      - Cancelamento e timeout: `OpenRouterClient.CancelCurrentRequest()` cancela a resposta em andamento (o botão
+        parar). Um token interno ligado ao do chamador dispara após 30 s **sem dados** (a espera inicial, a consulta
+        de uso e cada pedaço do stream reiniciam a contagem). Tempo esgotado vira `OpenRouterTimeoutException`, e a
+        parte da resposta que já chegou fica na conversa. O `SemaphoreSlim` é liberado no `finally` do iterador,
+        que roda também em cancelamento e falha de rede.
+      - A validação síncrona (modelo, tamanho) roda no `ChatSession.Send` antes de limpar a caixa de texto. Uma
+        regra que barra depois (uso) retira a mensagem da conversa, porque ela não foi enviada.
+    - **Bolt, o robô mascote** (`Views/Controls/BoltMascot`): cabeça de robô desenhada em código (canvas 32×32
+      num `Viewbox`): casco claro, fones laterais, antena com luz e visor escuro com olhos de LED ciano. As cores são
+      fixas no controle (não seguem o contraste adaptativo), e o brilho do LED é uma cópia da forma, maior e com 25%
+      de opacidade, por trás. Humores (`BoltMood`): `Idle` (pisca), `Thinking` (olhos para cima, antena pulsa),
+      `Talking` (boca de LED abre e fecha), `Happy`, `Wave` (acena com a mão), `AntennaTwitch` (antena balança),
+      `Yawn` e `Sleeping` (zzz, antena apagada). Cada animação repete no próprio período. Os
+      storyboards só rodam com `IsAnimated`: no chat, só o avatar da resposta em andamento; no peek, só enquanto ele
+      está na tela; na tela de conectar e no chat vazio, só com a aba Chat aberta.
+      - **Prioridade**: `PeekKind.Bolt` só entra com a ilha livre, e qualquer aviso do sistema (volume, bateria,
+        faixa) o substitui (`NotchState.ShowPeek`). Dura 4 s.
+      - **Aviso de resposta** (`ShowBoltReplyPeek`): `ChatSession.ReplyCompleted` dispara quando a resposta termina
+        sem erro e sem ser parada. Se o chat não estiver na tela, o Bolt aparece feliz com a primeira linha sem
+        markdown (`BoltScheduler.Preview`), e passar o mouse abre a ilha direto na aba Chat.
+      - **Aparições** (`ShowBoltAppearances`): `BoltScheduler` sorteia o próximo intervalo (8–15 min) e o humor, com
+        uma frase do `.resw` (`BoltPhrase<Humor><n>`). Depois de 15 min sem interação com o Notch, ele dorme. Só
+        aparece com a ilha recolhida, normal (sem alça, sem tela cheia), sem outro aviso, sem bloqueio e com a tela
+        ligada; se não puder, desiste e agenda a próxima.
+      - **Persona**: robô "bem robô" no system prompt, com no máximo um toque robótico por resposta e nunca em
+        assuntos sérios.
+    - **Histórico** (`ChatStore`): uma conversa por arquivo em `%LocalAppData%\Gearbox\chats\{id}.json`, com gravação
+      atômica. Id de 32 hex conferido antes de virar caminho; arquivo ilegível vira `.corrupt`.
+    - **Markdown** (`MarkdownBlocks`, puro): parágrafos, títulos, listas, negrito/itálico/código e blocos de código,
+      tolerante a marcadores ainda sem par durante o streaming. `MarkdownText` é uma attached property que monta o
+      `RichTextBlock`.
+    - **Tamanho e foco**: a aba usa `ExpandedChatShape` (540×420), e o `MaxWindowSize` é calculado por ela. A ilha é
+      `WS_EX_NOACTIVATE`; com a aba Chat aberta, `NotchWindow.BeginInput` tira essa flag
+      (`NativeWindow.SetActivatable`), guarda a janela que estava em primeiro plano e pede o foco. Se o Windows
+      recusar, o primeiro clique ativa a ilha. Ao fechar a ilha ou sair da aba, `EndInput` repõe a flag e devolve o
+      foco. A ilha não fecha com o mouse fora enquanto o foco é dela ou uma resposta está chegando; Esc ou clicar
+      em outra janela fecham.
 - **Notificações de outros apps** não são suportadas: `UserNotificationListener` exige identidade de pacote.
-- `Stop()` fecha a janela e cancela todas as assinaturas; o módulo não altera nada no sistema por conta própria.
+- `Stop()` fecha a janela e cancela todas as assinaturas; o módulo não altera nada no sistema por conta própria
+  (as chaves de IA no Gerenciador de Credenciais e as conversas em `chats\` são dados do usuário: só "Remover",
+  "Desconectar" ou a lixeira do chat os apagam).
