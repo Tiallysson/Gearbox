@@ -848,15 +848,11 @@
                         <ScrollViewer
                             x:Name="ChatScroll"
                             Grid.Row="1"
-                            VerticalAnchorRatio="1"
                             ViewChanged="OnChatScrollViewChanged"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
-                            <ItemsRepeater x:Name="ChatMessageList" Margin="0,0,8,0">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
+                            <ItemsControl x:Name="ChatMessageList" Padding="0,0,8,0">
+                                <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:ChatMessageItem">
                                         <Grid Margin="0,4" HorizontalAlignment="{x:Bind Alignment}" ColumnSpacing="8">
                                             <Grid.RowDefinitions>
@@ -932,8 +928,8 @@
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </ScrollViewer>
 
                         <StackPanel

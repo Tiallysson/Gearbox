@@ -24,6 +24,10 @@ public sealed partial class NotchView
     private bool _updatingChatChoices;
     private bool _chatStreaming;
     private bool _chatScrolling;
+    private bool _chatPinnedToEnd = true;
+    private double _chatLastOffset;
+    private bool _chatScrollQueued;
+    private bool _chatOnScreen;
     private UIElement? _modePanel;
     private BoltMood _boltPeekMood;
     private string _boltPeekText = string.Empty;
@@ -50,6 +54,45 @@ public sealed partial class NotchView
         ChatMessageList.ItemsSource = _chatItems;
         ChatPage.HorizontalAlignment = HorizontalAlignment.Left;
         ChatPage.Width = NotchLayout.ExpandedChatShape.Size.Width - ExpandedPanel.Padding.Left - ExpandedPanel.Padding.Right;
+        ChatScroll.SizeChanged += OnChatScrollSizeChanged;
+        ChatMessageList.SizeChanged += (_, _) => RequestChatScrollToEnd();
+    }
+
+    private void UpdateChatOnScreen()
+    {
+        var onScreen = _modePanel == ExpandedPanel && _page == NotchPage.Chat;
+        if (onScreen && !_chatOnScreen)
+        {
+            PinChatToEnd();
+        }
+
+        _chatOnScreen = onScreen;
+    }
+
+    private void PinChatToEnd()
+    {
+        _chatPinnedToEnd = true;
+        RequestChatScrollToEnd();
+    }
+
+    private void OnChatScrollSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.PreviousSize.Height == 0)
+        {
+            _chatPinnedToEnd = true;
+        }
+
+        RequestChatScrollToEnd();
+    }
+
+    private void RequestChatScrollToEnd()
+    {
+        if (_chatScrollQueued || !_chatPinnedToEnd)
+        {
+            return;
+        }
+
+        _chatScrollQueued = DispatcherQueue.TryEnqueue(ScrollChatToEnd);
     }
 
     public bool IsChatInputFocused => ChatInput.FocusState != FocusState.Unfocused;
@@ -126,7 +169,6 @@ public sealed partial class NotchView
 
     public void SetChatMessages(IReadOnlyList<ChatMessage> messages, bool streaming, string? error)
     {
-        var follow = !_chatScrolling && ChatScroll.VerticalOffset >= ChatScroll.ScrollableHeight - FollowThreshold;
         var countBefore = _chatItems.Count;
         var replaced = false;
         for (var index = 0; index < messages.Count; index++)
@@ -160,30 +202,39 @@ public sealed partial class NotchView
         ChatErrorText.Visibility = connected && error is not null ? Visibility.Visible : Visibility.Collapsed;
         SetChatStreaming(streaming);
 
-        if (!follow || _chatItems.Count == 0)
+        if (replaced || _chatItems.Count != countBefore)
+        {
+            PinChatToEnd();
+        }
+    }
+
+    private void OnChatScrollViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+    {
+        _chatScrolling = e.IsIntermediate;
+        if (e.IsIntermediate)
         {
             return;
         }
 
-        if (replaced || _chatItems.Count != countBefore)
-        {
-            ScrollChatToEnd();
-        }
-        else if (ChatScroll.VerticalOffset < ChatScroll.ScrollableHeight)
-        {
-            ChatScroll.ChangeView(null, ChatScroll.ScrollableHeight, null, true);
-        }
+        var offset = ChatScroll.VerticalOffset;
+        var atEnd = offset >= ChatScroll.ScrollableHeight - FollowThreshold;
+        var scrolledUp = offset < _chatLastOffset;
+        _chatPinnedToEnd = atEnd || (_chatPinnedToEnd && !scrolledUp);
+        _chatLastOffset = offset;
     }
-
-    private void OnChatScrollViewChanged(object? sender, ScrollViewerViewChangedEventArgs e) => _chatScrolling = e.IsIntermediate;
 
     private void ScrollChatToEnd()
     {
-        ChatScroll.UpdateLayout();
-        if (ChatMessageList.GetOrCreateElement(_chatItems.Count - 1) is { } last)
+        _chatScrollQueued = false;
+        if (!_chatPinnedToEnd || _chatScrolling)
         {
-            last.UpdateLayout();
-            last.StartBringIntoView(new BringIntoViewOptions { VerticalAlignmentRatio = 1, AnimationDesired = false });
+            return;
+        }
+
+        ChatScroll.UpdateLayout();
+        if (ChatScroll.VerticalOffset < ChatScroll.ScrollableHeight)
+        {
+            ChatScroll.ChangeView(null, ChatScroll.ScrollableHeight, null, disableAnimation: true);
         }
     }
 

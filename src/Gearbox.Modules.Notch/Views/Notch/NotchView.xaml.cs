@@ -328,6 +328,7 @@ public sealed partial class NotchView : UserControl
         UpdateBars(panel == CollapsedPanel && ShowsCollapsedMedia);
         _modePanel = panel;
         UpdateMascots();
+        UpdateChatOnScreen();
 
         if (panel == _visiblePanel)
         {
@@ -1187,6 +1188,7 @@ public sealed partial class NotchView : UserControl
         }
 
         UpdateMascots();
+        UpdateChatOnScreen();
 
         static Visibility Visible(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
     }
