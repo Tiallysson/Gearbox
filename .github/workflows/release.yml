@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [Directory.Build.props]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Ler a versão
+        id: version
+        shell: pwsh
+        run: |
+          $version = (dotnet msbuild src/Gearbox/Gearbox.csproj -getProperty:Version -nologo | Select-Object -Last 1).Trim().Split('+')[0]
+          $tag = "v$version"
+          $exists = [bool](git ls-remote --tags origin "refs/tags/$tag")
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "exists=$($exists.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          "prerelease=$(($version -match '-').ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          if ($exists) { Write-Output "::notice::A tag $tag já existe; nenhuma release será criada." }
+
+      - name: Compilar solution (x64)
+        if: steps.version.outputs.exists == 'false'
+        run: dotnet build Gearbox.sln -c Release -p:Platform=x64
+
+      - name: Executar testes
+        if: steps.version.outputs.exists == 'false'
+        run: dotnet test --solution Gearbox.sln -c Release --no-build --minimum-expected-tests 1
+
+      - name: Instalar o Inno Setup
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Gerar instaladores
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          ./installer/build-installer.ps1 -Arch x64
+          ./installer/build-installer.ps1 -Arch arm64
+
+      - name: Publicar release
+        if: steps.version.outputs.exists == 'false'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          $installers = (Get-ChildItem artifacts/installer/*-setup.exe).FullName
+          $arguments = @('release', 'create', $env:TAG) + $installers + @('--title', "Gearbox $env:VERSION", '--target', $env:GITHUB_SHA, '--generate-notes')
+          if ($env:PRERELEASE -eq 'true') { $arguments += '--prerelease' }
+          gh @arguments
+          if ($LASTEXITCODE -ne 0) { throw "gh release create falhou ($LASTEXITCODE)" }
