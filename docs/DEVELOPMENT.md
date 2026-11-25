@@ -118,7 +118,8 @@ instalada já é de teste.
 
 Para publicar uma versão, mude o `<Version>` no `Directory.Build.props` (ex.: `0.4.0-alpha`) e leve a mudança para
 a `main`. O workflow `.github/workflows/release.yml` roda quando um push na `main` altera esse arquivo (ou
-manualmente, em Actions → Release → Run workflow) e, se a tag `v<versão>` ainda não existir:
+manualmente, em Actions → Release → Run workflow, só com a `main` selecionada; em outra branch o job é pulado) e, se
+a tag `v<versão>` ainda não existir:
 
 1. compila e roda os testes;
 2. gera os instaladores x64 e ARM64 com o `build-installer.ps1`;
