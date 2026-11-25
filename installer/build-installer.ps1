@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path $PSScriptRoot -Parent
 $rid = "win-$Arch"
+$platform = if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' }
 $publishDir = Join-Path $root "artifacts\publish\$rid"
 $outputDir = Join-Path $root 'artifacts\installer'
 
@@ -46,7 +47,7 @@ if (Test-Path $publishDir) {
     Remove-Item $publishDir -Recurse -Force
 }
 
-dotnet publish $project -c Release -r $rid --self-contained -o $publishDir -nologo
+dotnet publish $project -c Release -r $rid -p:Platform=$platform --self-contained -o $publishDir -nologo
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish falhou ($LASTEXITCODE)"
 }
