@@ -116,12 +116,18 @@ página Geral; nada é instalado sem o clique do usuário. Ao instalar, ele:
 Versões de teste (`-alpha`, `-beta`...) só são oferecidas com "Receber versões de teste" ligado, ou quando a versão
 instalada já é de teste.
 
-Para publicar uma versão:
+Para publicar uma versão, mude o `<Version>` no `Directory.Build.props` (ex.: `0.4.0-alpha`) e leve a mudança para
+a `main`. O workflow `.github/workflows/release.yml` roda quando um push na `main` altera esse arquivo (ou
+manualmente, em Actions → Release → Run workflow, só com a `main` selecionada; em outra branch o job é pulado) e, se
+a tag `v<versão>` ainda não existir:
 
-1. mude o `<Version>` no `Directory.Build.props` (ex.: `0.4.0-alpha`);
-2. gere os instaladores com `.\installer\build-installer.ps1` e `.\installer\build-installer.ps1 -Arch arm64`;
-3. crie a release com a tag `v<versão>` (ex.: `v0.4.0-alpha`), marque "pre-release" se a versão tiver sufixo e
-   anexe os dois `Gearbox-*-<arch>-setup.exe` (o nome precisa terminar em `-x64-setup.exe`/`-arm64-setup.exe`).
+1. compila e roda os testes;
+2. gera os instaladores x64 e ARM64 com o `build-installer.ps1`;
+3. cria a release `v<versão>` no commit do push, com notas geradas pelo GitHub a partir dos PRs desde a release
+   anterior, marcada como "pre-release" se a versão tiver sufixo, e anexa os dois `Gearbox-*-<arch>-setup.exe`.
+
+Se a tag já existir, o workflow não faz nada. Para lançar à mão, rode os dois `build-installer.ps1` e crie a
+release com a tag `v<versão>`, anexando os instaladores (o nome precisa terminar em `-x64-setup.exe`/`-arm64-setup.exe`).
 
 ### Janelas de apps elevados
 
