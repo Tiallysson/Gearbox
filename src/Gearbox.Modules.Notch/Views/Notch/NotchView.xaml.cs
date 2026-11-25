@@ -84,6 +84,7 @@ public sealed partial class NotchView : UserControl
     public NotchView()
     {
         InitializeComponent();
+        FontFamily = (FontFamily)Resources["NotchFont"];
         MixerList.ItemsSource = _mixerRows;
         InitializeChat();
         SetSpeedTestRunning(false);

@@ -9,6 +9,13 @@
         acento azul). Os templates próprios abaixo substituem os do WinUI; Slider e ListView usam lightweight styling.
     -->
 
+    <!--
+        Fonte da ilha: Google Sans (variável, licença OFL, Assets\Fonts\GoogleSans-LICENSE.txt). ContentControlThemeFontFamily
+        é a chave que os estilos padrão do WinUI usam, então também vale para popups (lista do ComboBox, menus).
+    -->
+    <FontFamily x:Key="NotchFont">ms-appx:///Gearbox.Modules.Notch/Assets/Fonts/GoogleSans.ttf#Google Sans</FontFamily>
+    <StaticResource x:Key="ContentControlThemeFontFamily" ResourceKey="NotchFont" />
+
     <!-- Paleta -->
     <SolidColorBrush x:Key="ForegroundBrush" Color="#FAFAFA" />
     <SolidColorBrush x:Key="MutedForegroundBrush" Color="#A1A1A1" />
