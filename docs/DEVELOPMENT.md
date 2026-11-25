@@ -44,8 +44,11 @@ Os testes usam xUnit v3 sobre o Microsoft.Testing.Platform, ativado no `global.j
 
 ```powershell
 cd src\Gearbox
-dotnet publish -c Release -r win-x64      # ou -r win-arm64
+dotnet publish -c Release -r win-x64      # ou -r win-arm64 -p:Platform=ARM64
 ```
+
+> No ARM64, passe também `-p:Platform=ARM64`. A RID não chega aos projetos que não dependem dela (`Gearbox.Core`,
+> `Gearbox.Interop`), que então compilariam em x64 e quebrariam o build com CS8012.
 
 A saída fica em `src\Gearbox\bin\x64\Release\net10.0-windows10.0.19041.0\win-x64\publish\`. É uma pasta
 autossuficiente quanto ao Windows App SDK (`WindowsAppSDKSelfContained=true`), mas usa o runtime do .NET 10
