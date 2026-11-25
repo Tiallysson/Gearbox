@@ -23,6 +23,7 @@
       Ícones da ilha: Phosphor Icons (regular) 2.1.1, licença MIT (Assets\Fonts\Phosphor-LICENSE.txt), do pacote npm
       @phosphor-icons/web. Vai para Gearbox.Modules.Notch\Assets\Fonts ao lado do Gearbox.exe
       (ms-appx:///Gearbox.Modules.Notch/Assets/Fonts/Phosphor.ttf).
+      Texto da ilha: Google Sans (variável), licença OFL (Assets\Fonts\GoogleSans-LICENSE.txt), de github.com/google/fonts.
     -->
     <Content Include="Assets\Fonts\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="Gearbox.Modules.Notch\Assets\Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
